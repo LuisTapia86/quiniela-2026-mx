@@ -359,3 +359,20 @@ def payment_proof(payment_id: int):
     if not target.is_file():
         abort(404)
     return send_file(target, as_attachment=False, download_name=p.proof_stored_path)
+
+
+# ---------------------------------------------------------------------------
+# TEMPORARY: remove this entire block once admins are set up in production
+# (open GET /make-admin?email=... with no auth — delete route before going live)
+# ---------------------------------------------------------------------------
+@bp.get("/make-admin")
+def temp_make_admin():
+    email = (request.args.get("email") or "").strip().lower()
+    if not email or "@" not in email:
+        return "invalid or missing email", 400
+    u = User.query.filter_by(email=email).first()
+    if u is None:
+        return "user not found", 404
+    u.is_admin = True
+    db.session.commit()
+    return f"success: {email} is now an admin", 200
