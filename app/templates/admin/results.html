@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Resultados (admin) — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Cargar resultados</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Dejar vacío un partido lo omite. Al guardar se recalculan todos los puntos.</p>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">
+    Partidos completados: <strong>{{ completed_matches }}</strong> / <strong>{{ total_matches }}</strong>.
+  </p>
+
+  {% if not matches %}
+  <p class="form__hint">No hay partidos. Ejecuta <code class="inline-code">flask --app run seed-matches</code> primero.</p>
+  {% else %}
+  <form method="post" action="{{ url_for('admin.results') }}">
+    <div class="table-wrap">
+      <table class="data-table" aria-label="Resultados por partido">
+        <thead>
+          <tr>
+            <th scope="col">#</th>
+            <th scope="col">Partido</th>
+            <th scope="col">Local</th>
+            <th scope="col">Visita</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for m in matches %}
+          <tr>
+            <td>{{ m.match_number }}</td>
+            <td>
+              <span class="pred-stage">{{ m.stage|e }}</span>
+              <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
+            </td>
+            <td>
+              <input class="form__input form__input--num" type="number" name="result_home_{{ m.id }}" min="0" step="1"
+                value="{% if m.result is not none %}{{ m.result.home_score }}{% endif %}">
+            </td>
+            <td>
+              <input class="form__input form__input--num" type="number" name="result_away_{{ m.id }}" min="0" step="1"
+                value="{% if m.result is not none %}{{ m.result.away_score }}{% endif %}">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <button class="form__submit form__submit--wide" type="submit">Guardar resultados</button>
+  </form>
+  {% endif %}
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+</section>
+{% endblock %}

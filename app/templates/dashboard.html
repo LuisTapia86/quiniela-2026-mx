@@ -1,0 +1,74 @@
+﻿{% extends "base.html" %}
+{% block title %}Inicio — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card dash" aria-labelledby="dash-title">
+  <p class="dash__badge">Fase 6</p>
+  <h1 id="dash-title">Panel</h1>
+  <p>Hola, <strong>{{ current_user.email }}</strong>.</p>
+  <div class="dash-actions">
+    <a class="btn btn--primary" href="{{ url_for('entries.new') }}">+ Nueva quiniela</a>
+    <a class="btn" href="{{ url_for('leaderboard.index') }}">Ver clasificación</a>
+    {% if current_user.is_admin %}
+    <a class="btn" href="{{ url_for('admin.dashboard') }}">Panel admin</a>
+    {% endif %}
+  </div>
+
+  <h2 class="dash__subtitle">Tus quinielas</h2>
+  {% if not entries %}
+  <div class="empty-state">
+    <p class="empty-state__title">Aún no tienes quinielas.</p>
+    <p class="form__hint">Crea una quiniela y sube comprobante de pago ({{ config.ENTRY_FEE_MXN }} MXN por entrada) para participar.</p>
+    <p><a class="btn btn--sm btn--primary" href="{{ url_for('entries.new') }}">Crear primera quiniela</a></p>
+  </div>
+  {% else %}
+  <div class="entry-grid">
+    {% for e in entries %}
+    {% set pay = payments_by_entry.get(e.id) %}
+    {% set pred_count = prediction_counts.get(e.id, 0) %}
+    <article class="entry-card" aria-label="{{ e.name|e }}">
+      <header class="entry-card__head">
+        <h3 class="entry-card__title">{{ e.name|e }}</h3>
+        <span class="entry-list__points">{{ e.total_points }} pts</span>
+      </header>
+
+      <div class="entry-card__meta">
+        <span class="entry-pay-badge entry-pay-badge--{{ pay.status.value if pay else 'none' }}">
+          {% if not pay %}Sin pago{% elif pay.status.value == 'pending' %}Pago pendiente{% elif pay.status.value == 'approved' %}Pago aprobado{% else %}Pago rechazado{% endif %}
+        </span>
+        <span class="entry-pred-badge entry-pred-badge--{% if not pay or pay.status.value != 'approved' %}blocked{% elif pred_count < total_matches %}pending{% else %}done{% endif %}">
+          {% if not pay or pay.status.value != 'approved' %}
+            Predicciones no disponibles
+          {% elif pred_count == 0 %}
+            Predicciones pendientes
+          {% elif pred_count < total_matches %}
+            Progreso {{ pred_count }}/{{ total_matches }}
+          {% else %}
+            Completadas {{ pred_count }}/{{ total_matches }}
+          {% endif %}
+        </span>
+      </div>
+
+      <div class="entry-list__actions">
+        <a class="btn btn--sm" href="{{ url_for('entries.entry_payment', entry_id=e.id) }}">Subir/actualizar pago</a>
+        {% if pay and pay.status.value == 'approved' %}
+          {% if predictions_locked %}
+          <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">Ver predicciones</a>
+          {% else %}
+          <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">Llenar predicciones</a>
+          {% endif %}
+        {% else %}
+        <span class="btn btn--sm btn--disabled" aria-disabled="true">Llenar predicciones</span>
+        {% endif %}
+      </div>
+
+      {% if not pay or pay.status.value != 'approved' %}
+      <p class="entry-list__msg">Tu pago debe ser aprobado antes de llenar predicciones.</p>
+      {% elif predictions_locked %}
+      <p class="entry-list__msg">Predicciones bloqueadas por administración. Puedes revisar en modo lectura.</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

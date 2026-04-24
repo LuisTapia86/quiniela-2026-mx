@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Registro — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Crear cuenta</h1>
+  <form method="post" action="{{ url_for('auth.register') }}" class="form" novalidate>
+    <label class="form__field">
+      <span class="form__label">Correo</span>
+      <input class="form__input" type="email" name="email" autocomplete="email" required value="{{ email|e }}">
+    </label>
+    <label class="form__field">
+      <span class="form__label">Contraseña</span>
+      <input class="form__input" type="password" name="password" autocomplete="new-password" required minlength="6" aria-describedby="pw-hint">
+    </label>
+    <p id="pw-hint" class="form__hint">Mínimo 6 caracteres</p>
+    <button class="form__submit" type="submit">Registrarse</button>
+  </form>
+  <p class="card__footer">¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Inicia sesión</a></p>
+</section>
+{% endblock %}

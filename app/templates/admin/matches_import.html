@@ -1,0 +1,40 @@
+﻿{% extends "base.html" %}
+{% block title %}Importar partidos — Admin{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Importar partidos desde CSV</h1>
+  <p class="form__hint" style="margin:-0.5rem 0 1rem;">Columnas requeridas: <code class="inline-code">match_number, stage, home_team, away_team, kickoff_at</code></p>
+  <div class="dash-actions" style="margin-bottom:1rem;">
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">Descargar plantilla CSV</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">Ver partidos</a>
+  </div>
+  <form class="form" method="post" enctype="multipart/form-data" action="{{ url_for('admin.matches_import') }}">
+    <label class="form__field">
+      <span class="form__label">Archivo CSV</span>
+      <input class="form__input" type="file" name="csv_file" accept=".csv,text/csv" required>
+    </label>
+    <button class="form__submit" type="submit">Importar</button>
+  </form>
+
+  {% if summary %}
+  <div class="prize-pool" style="margin-top:1rem;">
+    <h2 class="prize-pool__title">Resumen de importación</h2>
+    <ul class="prize-pool__list">
+      <li>Creados: <strong>{{ summary.created }}</strong></li>
+      <li>Actualizados: <strong>{{ summary.updated }}</strong></li>
+      <li>Omitidos: <strong>{{ summary.skipped }}</strong></li>
+      <li>Errores reportados: <strong>{{ summary.errors|length }}</strong></li>
+    </ul>
+    {% if summary.errors %}
+    <div class="table-wrap" style="margin-top:0.5rem;">
+      <ul class="prize-pool__list">
+        {% for err in summary.errors %}<li>{{ err }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+﻿{% extends "base.html" %}
+{% block title %}Partidos — Admin{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Partidos cargados</h1>
+  <div class="dash-actions" style="margin-bottom:1rem;">
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">Importar CSV</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">Plantilla CSV</a>
+  </div>
+  {% if not rows %}
+  <div class="empty-state">
+    <p class="empty-state__title">No hay partidos cargados.</p>
+    <p class="form__hint">Importa un CSV para comenzar.</p>
+  </div>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data-table" aria-label="Partidos admin">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Fase</th>
+          <th>Local</th>
+          <th>Visita</th>
+          <th>Kickoff</th>
+          <th>Resultado</th>
+          <th class="num">Predicciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for match, prediction_count in rows %}
+        <tr>
+          <td>{{ match.match_number }}</td>
+          <td>{{ match.stage|e }}</td>
+          <td>{{ match.home_team|e }}</td>
+          <td>{{ match.away_team|e }}</td>
+          <td>{{ match.kickoff_at.strftime('%Y-%m-%d %H:%M') if match.kickoff_at else '—' }}</td>
+          <td>{% if match.result %}Sí{% else %}No{% endif %}</td>
+          <td class="num">{{ prediction_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+</section>
+{% endblock %}

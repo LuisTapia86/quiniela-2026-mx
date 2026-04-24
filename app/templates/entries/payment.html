@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Pago — {{ entry.name|e }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Pago de inscripción: {{ entry.name|e }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Cuota: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong> por quiniela (cada quiniela paga por separado).</p>
+
+  <div class="pay-instructions">
+    <h2 class="pay-instructions__title">Datos para transferencia (SPEI)</h2>
+    <ul class="pay-instructions__list">
+      <li><strong>Beneficiario:</strong> {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
+      <li><strong>Banco:</strong> {{ config.PAYMENT_BANK|e }}</li>
+      <li><strong>CLABE:</strong> <span class="mono">{{ config.PAYMENT_CLABE|e }}</span></li>
+      <li><strong>Concepto / referencia:</strong> <span class="mono">{{ entry.id }} {{ user.email|e }}</span></li>
+    </ul>
+  </div>
+
+  {% if payment %}
+  <p class="pay-status pay-status--{{ payment.status.value }}">
+    {% if payment.status.value == 'pending' %}
+    <strong>Estado:</strong> pendiente de revisión por un administrador.
+    {% elif payment.status.value == 'approved' %}
+    <strong>Estado:</strong> aprobado. Ya puedes llenar predicciones.
+    {% else %}
+    <strong>Estado:</strong> rechazado.{% if payment.admin_note %} <span class="form__hint">— {{ payment.admin_note|e }}</span>{% endif %}
+    {% endif %}
+  </p>
+  {% else %}
+  <p class="form__hint">Aún no has subido comprobante.</p>
+  {% endif %}
+
+  <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">Subir o actualizar comprobante</h2>
+  <p class="form__hint" style="margin-top:-0.5rem;">Formatos: JPG, JPEG, PNG, WEBP, PDF. Tamaño máx. aprox. {{ (config.MAX_CONTENT_LENGTH // (1024*1024)) }} MB.</p>
+  {% if payment and payment.status.value == 'approved' %}
+  <p class="form__hint" style="margin:0 0 0.75rem;">Al subir un archivo nuevo, el pago vuelve a quedar <strong>pendiente</strong> hasta nueva revisión.</p>
+  {% endif %}
+  <form class="form" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data">
+    <label class="form__field">
+      <span class="form__label">Archivo (imagen o PDF)</span>
+      <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
+    </label>
+    <button class="form__submit" type="submit">Enviar comprobante</button>
+  </form>
+
+  <p class="card__footer">
+    <a href="{{ url_for('main.index') }}">Volver al panel</a>
+    {% if payment and payment.status.value == 'approved' %}
+    · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">Llenar predicciones</a>
+    {% endif %}
+  </p>
+</section>
+{% endblock %}

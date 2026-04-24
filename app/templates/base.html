@@ -1,0 +1,46 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Quiniela Mundial 2026{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="nav">
+    <div class="nav__inner">
+      <a class="nav__brand" href="{{ url_for('main.index') if current_user else url_for('auth.login') }}">Mundial 2026</a>
+      <nav class="nav__links" aria-label="Principal">
+        <a href="{{ url_for('rules.index') }}">Reglas</a>
+        <a href="{{ url_for('leaderboard.index') }}">Clasificación</a>
+        {% if current_user %}
+        <a href="{{ url_for('main.index') }}">Panel</a>
+        <a href="{{ url_for('entries.new') }}">Nueva quiniela</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        {% endif %}
+        <span class="nav__user">{{ current_user.email }}</span>
+        <a class="nav__btn" href="{{ url_for('auth.logout') }}">Salir</a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
+        <a class="nav__btn" href="{{ url_for('auth.register') }}">Registrarse</a>
+        {% endif %}
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=True) %}
+    {% if messages %}
+    <ul class="flash" role="status" aria-live="polite">
+      {% for category, message in messages %}
+      <li class="flash__item flash__item--{{ category }}">{{ message }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

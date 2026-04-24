@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Admin — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="dash__badge">Admin</p>
+  <h1 class="card__title">Panel de administración</h1>
+
+  <div class="stats-grid">
+    <article class="stat-card"><span>Total usuarios</span><strong>{{ total_users }}</strong></article>
+    <article class="stat-card"><span>Total quinielas</span><strong>{{ total_entries }}</strong></article>
+    <article class="stat-card"><span>Quinielas aprobadas</span><strong>{{ approved_entries }}</strong></article>
+    <article class="stat-card"><span>Pagos pendientes</span><strong>{{ pending_payments }}</strong></article>
+    <article class="stat-card"><span>Pagos rechazados</span><strong>{{ rejected_payments }}</strong></article>
+    <article class="stat-card"><span>Total partidos</span><strong>{{ total_matches }}</strong></article>
+    <article class="stat-card"><span>Partidos con resultado</span><strong>{{ completed_matches }}</strong></article>
+    <article class="stat-card"><span>Recaudado bruto</span><strong>${{ gross_collected }} MXN</strong></article>
+    <article class="stat-card"><span>Comisión admin ({{ admin_fee_percent }}%)</span><strong>${{ admin_fee_amount }} MXN</strong></article>
+    <article class="stat-card"><span>Bote ({{ 100 - admin_fee_percent }}%)</span><strong>${{ prize_pool }} MXN</strong></article>
+  </div>
+
+  <div class="admin-lock card card--subtle">
+    <h2 class="card__title card__title--sm">Control de torneo</h2>
+    <p class="form__hint">Aviso: una vez bloqueadas, los usuarios no pueden editar predicciones.</p>
+    {% if predictions_locked %}
+    <p class="entry-pay-badge entry-pay-badge--rejected">Bloqueado</p>
+    <p class="form__hint">No se pueden editar predicciones.</p>
+    <form method="post" action="{{ url_for('admin.tournament_unlock') }}">
+      <button type="submit" class="btn btn--primary">Abrir predicciones</button>
+    </form>
+    {% else %}
+    <p class="entry-pay-badge entry-pay-badge--approved">Abierto para predicciones</p>
+    <p class="form__hint">Los usuarios pueden capturar/editar sus marcadores.</p>
+    <form method="post" action="{{ url_for('admin.tournament_lock') }}">
+      <button type="submit" class="btn">Bloquear predicciones</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="dash-actions">
+    <a class="btn" href="{{ url_for('admin.matches') }}">Partidos</a>
+    <a class="btn" href="{{ url_for('admin.matches_import') }}">Importar CSV</a>
+    <a class="btn" href="{{ url_for('admin.payments') }}">Admin pagos</a>
+    <a class="btn" href="{{ url_for('admin.results') }}">Admin resultados</a>
+    <form method="post" action="{{ url_for('admin.recalculate') }}" style="display:inline;">
+      <button class="btn" type="submit">Recalcular puntajes</button>
+    </form>
+    <a class="btn" href="{{ url_for('leaderboard.index') }}">Ver clasificación</a>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Pagos (admin) — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Pagos</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Aprobar o rechazar comprobantes. Al aprobar, el dueño de la quiniela podrá llenar predicciones y entrará a la tabla.</p>
+  <div class="filter-row">
+    <div class="filter-tabs">
+      <a class="filter-tab {% if current_status == 'all' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='all', q=q) }}">Todos ({{ counts['all'] }})</a>
+      <a class="filter-tab {% if current_status == 'pending' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='pending', q=q) }}">Pendientes ({{ counts['pending'] }})</a>
+      <a class="filter-tab {% if current_status == 'approved' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='approved', q=q) }}">Aprobados ({{ counts['approved'] }})</a>
+      <a class="filter-tab {% if current_status == 'rejected' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='rejected', q=q) }}">Rechazados ({{ counts['rejected'] }})</a>
+    </div>
+    <form method="get" action="{{ url_for('admin.payments') }}" class="filter-search">
+      <input type="hidden" name="status" value="{{ current_status }}">
+      <input class="form__input" type="search" name="q" value="{{ q|e }}" placeholder="Buscar por correo o quiniela">
+      <button class="btn btn--sm" type="submit">Buscar</button>
+    </form>
+  </div>
+
+  {% if not payments %}
+  <p class="form__hint">No hay pagos registrados.</p>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data-table" aria-label="Listado de pagos">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Correo</th>
+          <th scope="col">Quiniela</th>
+          <th scope="col" class="num">$ MXN</th>
+          <th scope="col">Estado</th>
+          <th scope="col">Comprobante</th>
+          <th scope="col">Creado</th>
+          <th scope="col">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in payments %}
+        <tr>
+          <td>{{ p.id }}</td>
+          <td>{{ p.user.email|e }}</td>
+          <td><strong>{{ p.entry.name|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
+          <td class="num">{{ p.amount_mxn }}</td>
+          <td><span class="entry-pay-badge entry-pay-badge--{{ p.status.value }}">{{ p.status.value }}</span></td>
+          <td>{% if p.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=p.id) }}">{{ p.proof_stored_path|e }}</a>{% else %}—{% endif %}</td>
+          <td class="pay-cell-date">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
+          <td class="admin-pay-actions">
+            <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
+              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="Nota (opcional)" maxlength="500">
+              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' %}disabled{% endif %}>Aprobar</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
+              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="Nota (opcional)" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
+              <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>Rechazar</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <p class="card__footer">
+    <a href="{{ url_for('admin.dashboard') }}">Volver al admin</a>
+    · <a href="{{ url_for('admin.results') }}">Cargar resultados</a>
+  </p>
+</section>
+{% endblock %}

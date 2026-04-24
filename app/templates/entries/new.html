@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Nueva quiniela — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Nueva quiniela</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">Cada quiniela es una hoja de predicciones independiente. Puedes crear varias.</p>
+  <form method="post" action="{{ url_for('entries.new') }}" class="form" novalidate>
+    <label class="form__field">
+      <span class="form__label">Nombre</span>
+      <input class="form__input" type="text" name="name" required maxlength="120" placeholder="Ej. Oficina, Familia" value="{{ name|e }}">
+    </label>
+    <button class="form__submit" type="submit">Crear</button>
+  </form>
+  <p class="card__footer"><a href="{{ url_for('main.index') }}">Volver al panel</a></p>
+</section>
+{% endblock %}

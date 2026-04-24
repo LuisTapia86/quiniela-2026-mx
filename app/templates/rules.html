@@ -1,0 +1,20 @@
+﻿{% extends "base.html" %}
+{% block title %}Reglas — Quiniela Mundial 2026{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">Reglas oficiales de la quiniela</h1>
+  <ul class="prize-pool__list">
+    <li>Cuota por quiniela: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong>.</li>
+    <li>Comisión administrativa: <strong>{{ config.ADMIN_FEE_PERCENT }}%</strong>.</li>
+    <li>Bote total: <strong>95%</strong> de lo recaudado en entradas aprobadas.</li>
+    <li>Marcador exacto: <strong>6 puntos</strong> (5 + 1 extra por diferencia).</li>
+    <li>Acierto de ganador/empate: <strong>3 puntos</strong>.</li>
+    <li>Diferencia de goles correcta: <strong>+1 punto</strong> extra.</li>
+    <li>En empate de puntos finales, el premio se reparte entre las quinielas empatadas.</li>
+    <li>Las predicciones se bloquean antes de iniciar el Mundial.</li>
+    <li>Cada quiniela requiere un pago aprobado por separado.</li>
+    <li>Un usuario puede registrar múltiples quinielas.</li>
+  </ul>
+  <p class="card__footer">Para participar, revisa tu estado de pago y captura en tu panel.</p>
+</section>
+{% endblock %}
