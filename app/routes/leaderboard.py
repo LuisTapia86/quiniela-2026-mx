@@ -8,6 +8,7 @@ from sqlalchemy import func, select
 
 from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, User
+from app.prize_info import entry_financials
 from app.routes.auth import get_current_user, login_required
 
 bp = Blueprint("leaderboard", __name__, url_prefix="")
@@ -53,11 +54,8 @@ def index():
         )
         or 0
     )
-    entry_fee = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
+    fin = entry_financials(n_approved, current_app.config)
     admin_pct = int(current_app.config.get("ADMIN_FEE_PERCENT", 5))
-    gross = n_approved * entry_fee
-    admin_revenue = (gross * admin_pct) // 100
-    prize_pool = gross - admin_revenue
 
     leaderboard_rows: list[dict] = []
     prev_points: int | None = None
@@ -99,10 +97,13 @@ def index():
         n_matches=n_matches,
         n_with_result=n_with_result,
         approved_entries_count=n_approved,
-        gross_collected=gross,
-        admin_fee_amount=admin_revenue,
-        prize_pool=prize_pool,
+        gross_collected=fin["gross_collected"],
+        admin_fee_amount=fin["admin_fee_amount"],
+        prize_pool=fin["prize_pool"],
         admin_fee_percent=admin_pct,
+        estimate_1st=fin["estimate_1st"],
+        estimate_2nd=fin["estimate_2nd"],
+        estimate_3rd=fin["estimate_3rd"],
     )
 
 

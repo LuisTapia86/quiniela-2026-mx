@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Quiniela Mundial 2026{% endblock %}</title>
+  <title>{% block title %}{{ config.BRAND_NAME }}{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   {% block head_extra %}{% endblock %}
 </head>
 <body>
   <header class="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="{{ url_for('main.index') if current_user else url_for('auth.login') }}">Mundial 2026</a>
+      <a class="nav__brand" href="{{ url_for('main.index') if current_user else url_for('auth.login') }}">{{ config.BRAND_NAME }}</a>
       <nav class="nav__links" aria-label="Principal">
         <a href="{{ url_for('rules.index') }}">Reglas</a>
         <a href="{{ url_for('leaderboard.index') }}">Clasificación</a>

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Admin — Quiniela Mundial 2026{% endblock %}
+{% block title %}Admin — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
   <p class="dash__badge">Admin</p>
@@ -14,8 +14,11 @@
     <article class="stat-card"><span>Total partidos</span><strong>{{ total_matches }}</strong></article>
     <article class="stat-card"><span>Partidos con resultado</span><strong>{{ completed_matches }}</strong></article>
     <article class="stat-card"><span>Recaudado bruto</span><strong>${{ gross_collected }} MXN</strong></article>
-    <article class="stat-card"><span>Comisión admin ({{ admin_fee_percent }}%)</span><strong>${{ admin_fee_amount }} MXN</strong></article>
-    <article class="stat-card"><span>Bote ({{ 100 - admin_fee_percent }}%)</span><strong>${{ prize_pool }} MXN</strong></article>
+    <article class="stat-card"><span>Comisión de administración ({{ admin_fee_percent }}%)</span><strong>${{ admin_fee_amount }} MXN</strong></article>
+    <article class="stat-card"><span>Bote ({{ 100 - admin_fee_percent }}% del bruto)</span><strong>${{ prize_pool }} MXN</strong></article>
+    <article class="stat-card"><span>1.º premio (est. {{ config.PRIZE_TOP1_PERCENT }}% del bote)</span><strong>${{ estimate_1st }} MXN</strong></article>
+    <article class="stat-card"><span>2.º premio (est. {{ config.PRIZE_TOP2_PERCENT }}% del bote)</span><strong>${{ estimate_2nd }} MXN</strong></article>
+    <article class="stat-card"><span>3.º premio (est. {{ config.PRIZE_TOP3_PERCENT }}% del bote)</span><strong>${{ estimate_3rd }} MXN</strong></article>
   </div>
 
   <div class="admin-lock card card--subtle">

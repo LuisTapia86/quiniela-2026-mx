@@ -1,9 +1,34 @@
+import os
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from config import Config
 
 db = SQLAlchemy()
+
+
+def _admin_bootstrap_from_env(app: Flask) -> None:
+    """If ADMIN_BOOTSTRAP_EMAIL is set, grant admin to that user (no HTTP route)."""
+    raw = os.environ.get("ADMIN_BOOTSTRAP_EMAIL")
+    if raw is None:
+        return
+    email = (raw or "").strip().lower()
+    if not email or "@" not in email:
+        app.logger.warning("ADMIN_BOOTSTRAP_EMAIL is set but invalid; ignored")
+        return
+    from app.models import User
+
+    u = User.query.filter_by(email=email).first()
+    if u is None:
+        return
+    if u.is_admin:
+        return
+    u.is_admin = True
+    db.session.commit()
+    app.logger.info(
+        "Admin bootstrap: admin access granted to existing user; clear ADMIN_BOOTSTRAP_EMAIL in production when finished",
+    )
 
 
 def create_app(config_object: type = Config) -> Flask:
@@ -47,5 +72,6 @@ def create_app(config_object: type = Config) -> Flask:
 
     with app.app_context():
         db.create_all()
+        _admin_bootstrap_from_env(app)
 
     return app

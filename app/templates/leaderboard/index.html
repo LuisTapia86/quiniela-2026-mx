@@ -1,18 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Tabla de posiciones — Quiniela Mundial 2026{% endblock %}
+{% block title %}Tabla de posiciones — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
   <h1 class="card__title">Tabla de posiciones</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">Solo quinielas con <strong>pago aprobado</strong>. Orden: puntos (desc.), desempate por fecha de creación.</p>
 
-  <div class="prize-pool" aria-label="Bote y cuotas">
-    <h2 class="prize-pool__title">Bote (referencia)</h2>
+  <div class="prize-pool" aria-label="Bote y premios estimados (TOP 3)">
+    <h2 class="prize-pool__title">Recaudación y premios (TOP 3)</h2>
     <ul class="prize-pool__list">
-      <li>Quinielas con pago aprobado: <strong>{{ approved_entries_count }}</strong></li>
-      <li>Recaudado bruto: <strong>${{ gross_collected }} MXN</strong> ({{ approved_entries_count }} × {{ config.ENTRY_FEE_MXN }})</li>
-      <li>Comisión admin ({{ admin_fee_percent }}%): <strong>${{ admin_fee_amount }} MXN</strong></li>
-      <li class="prize-pool__highlight">Premio a repartir: <strong>${{ prize_pool }} MXN</strong></li>
+      <li>Entradas con pago aprobado: <strong>{{ approved_entries_count }}</strong></li>
+      <li>Recaudado bruto: <strong>${{ gross_collected }} MXN</strong> ({{ approved_entries_count }} × ${{ config.ENTRY_FEE_MXN }} MXN)</li>
+      <li>Comisión de administración ({{ admin_fee_percent }}%): <strong>${{ admin_fee_amount }} MXN</strong></li>
+      <li class="prize-pool__highlight">Bote ({{ 100 - admin_fee_percent }}% del bruto): <strong>${{ prize_pool }} MXN</strong></li>
+      <li>1.º lugar (estimado, {{ config.PRIZE_TOP1_PERCENT }}% del bote): <strong>${{ estimate_1st }} MXN</strong></li>
+      <li>2.º lugar (estimado, {{ config.PRIZE_TOP2_PERCENT }}% del bote): <strong>${{ estimate_2nd }} MXN</strong></li>
+      <li>3.º lugar (estimado, {{ config.PRIZE_TOP3_PERCENT }}% del bote): <strong>${{ estimate_3rd }} MXN</strong></li>
     </ul>
+    <p class="form__hint" style="margin:0.5rem 0 0;">En caso de empate en puntos, se reparte el monto de ese puesto entre las quinielas empatadas.</p>
   </div>
 
   <p class="form__hint" style="margin: 0 0 1.25rem;">Resultados oficiales cargados: <strong>{{ n_with_result }}</strong> de <strong>{{ n_matches }}</strong> partidos.</p>

@@ -1,4 +1,4 @@
-/* Mobile-first: Quiniela Mundial 2026 */
+/* Mobile-first: Quiniela 2026 MX Soccer */
 :root {
   --bg: #0f172a;
   --surface: #1e293b;
@@ -699,6 +699,23 @@ button.btn:disabled {
 .card__title--sm {
   font-size: 1rem;
   margin-bottom: 0.6rem;
+}
+
+ol.rules-list {
+  margin: 0 0 1rem;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+ol.pay-steps {
+  margin: 0 0 1.25rem;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 36rem;
 }
 
 .admin-lock {

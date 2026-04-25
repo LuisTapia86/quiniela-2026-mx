@@ -1,9 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Pago — {{ entry.name|e }}{% endblock %}
+{% block title %}Pago — {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
   <h1 class="card__title">Pago de inscripción: {{ entry.name|e }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Cuota: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong> por quiniela (cada quiniela paga por separado).</p>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">Cuota: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong> por quiniela. Cada quiniela requiere su propio pago y comprobante.</p>
+
+  <ol class="pay-steps" aria-label="Pasos de pago">
+    <li><strong>Transfiere ${{ config.ENTRY_FEE_MXN }} MXN</strong> por SPEI a los datos de abajo (usa el concepto indicado).</li>
+    <li><strong>Sube tu comprobante</strong> en el formulario de esta página (imagen o PDF).</li>
+    <li><strong>Espera la aprobación</strong> de un administrador. Recibirás el estado en esta misma pantalla y en el panel.</li>
+    <li><strong>Cuando el pago esté aprobado</strong>, podrás llenar o editar predicciones mientras sigan abiertas (hasta el bloqueo del torneo).</li>
+  </ol>
 
   <div class="pay-instructions">
     <h2 class="pay-instructions__title">Datos para transferencia (SPEI)</h2>

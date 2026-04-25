@@ -22,6 +22,7 @@ from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState, User, utcnow
 from app.routes.auth import get_current_user, login_required
 from app.services.matches_csv import import_matches_from_reader
+from app.prize_info import entry_financials
 from app.services.scoring import recalculate_all_points
 
 bp = Blueprint("admin", __name__, url_prefix="")
@@ -89,11 +90,8 @@ def dashboard():
     )
     total_matches = db.session.scalar(select(func.count()).select_from(Match)) or 0
     completed_matches = db.session.scalar(select(func.count()).select_from(Result)) or 0
-    entry_fee = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
     admin_fee_percent = int(current_app.config.get("ADMIN_FEE_PERCENT", 5))
-    gross_collected = approved_entries * entry_fee
-    admin_fee_amount = int(gross_collected * (admin_fee_percent / 100))
-    prize_pool = gross_collected - admin_fee_amount
+    fin = entry_financials(approved_entries, current_app.config)
     state = TournamentState.get_singleton()
 
     return render_template(
@@ -103,10 +101,13 @@ def dashboard():
         approved_entries=approved_entries,
         pending_payments=pending_payments,
         rejected_payments=rejected_payments,
-        gross_collected=gross_collected,
+        gross_collected=fin["gross_collected"],
         admin_fee_percent=admin_fee_percent,
-        admin_fee_amount=admin_fee_amount,
-        prize_pool=prize_pool,
+        admin_fee_amount=fin["admin_fee_amount"],
+        prize_pool=fin["prize_pool"],
+        estimate_1st=fin["estimate_1st"],
+        estimate_2nd=fin["estimate_2nd"],
+        estimate_3rd=fin["estimate_3rd"],
         total_matches=total_matches,
         completed_matches=completed_matches,
         predictions_locked=state.predictions_locked,
@@ -359,9 +360,3 @@ def payment_proof(payment_id: int):
     if not target.is_file():
         abort(404)
     return send_file(target, as_attachment=False, download_name=p.proof_stored_path)
-
-
-# ---------------------------------------------------------------------------
-# TEMPORARY: remove this entire block once admins are set up in production
-# (open GET /make-admin?email=... with no auth — delete route before going live)
-# ---------------------------------------------------------------------------

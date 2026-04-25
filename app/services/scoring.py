@@ -19,7 +19,7 @@ def calculate_prediction_points(
     pred_home: int, pred_away: int, result_home: int, result_away: int
 ) -> int:
     if pred_home == result_home and pred_away == result_away:
-        return 5 + 1
+        return 6
     total = 0
     if get_outcome(pred_home, pred_away) == get_outcome(result_home, result_away):
         total += 3

@@ -20,9 +20,9 @@ def register_cli(app: Flask) -> None:
         total = db.session.scalar(select(func.count()).select_from(Match)) or 0
         click.echo(f"Total de partidos en la base: {total}.")
 
-    @app.cli.command("make-admin")
+    @app.cli.command("set-admin")
     @click.argument("email", type=str, required=True)
-    def make_admin(email: str) -> None:
+    def set_admin(email: str) -> None:
         """Set is_admin=True for the user with this email (case-insensitive)."""
         from app import db
         from app.models import User
