@@ -1,58 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Pago — {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.payment") }} — {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Pago de inscripción: {{ entry.name|e }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">Cuota: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong> por quiniela. Cada quiniela requiere su propio pago y comprobante.</p>
+  <h1 class="card__title">{{ t("payment.heading") }}: {{ entry.name|e }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
 
-  <ol class="pay-steps" aria-label="Pasos de pago">
-    <li><strong>Transfiere ${{ config.ENTRY_FEE_MXN }} MXN</strong> por SPEI a los datos de abajo (usa el concepto indicado).</li>
-    <li><strong>Sube tu comprobante</strong> en el formulario de esta página (imagen o PDF).</li>
-    <li><strong>Espera la aprobación</strong> de un administrador. Recibirás el estado en esta misma pantalla y en el panel.</li>
-    <li><strong>Cuando el pago esté aprobado</strong>, podrás llenar o editar predicciones mientras sigan abiertas (hasta el bloqueo del torneo).</li>
+  {% if not payment_banking_configured %}
+  <p class="pay-gate" role="status">{{ t("payment.safe_gate") }}<br>{{ t("payment.safe_gate.en") }}</p>
+  <ol class="pay-steps" aria-label="{{ t('payment.steps_future') }}">
+    <li>{{ t("payment.step1.future", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+    <li>{{ t("payment.step2") }}</li>
+    <li>{{ t("payment.step3") }}</li>
+    <li>{{ t("payment.step4") }}</li>
+  </ol>
+  {% else %}
+  <ol class="pay-steps" aria-label="{{ t('payment.steps') }}">
+    <li>{{ t("payment.step1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+    <li>{{ t("payment.step2") }}</li>
+    <li>{{ t("payment.step3") }}</li>
+    <li>{{ t("payment.step4") }}</li>
   </ol>
 
   <div class="pay-instructions">
-    <h2 class="pay-instructions__title">Datos para transferencia (SPEI)</h2>
+    <h2 class="pay-instructions__title">{{ t("payment.transfer_title") }}</h2>
     <ul class="pay-instructions__list">
-      <li><strong>Beneficiario:</strong> {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
-      <li><strong>Banco:</strong> {{ config.PAYMENT_BANK|e }}</li>
-      <li><strong>CLABE:</strong> <span class="mono">{{ config.PAYMENT_CLABE|e }}</span></li>
-      <li><strong>Concepto / referencia:</strong> <span class="mono">{{ entry.id }} {{ user.email|e }}</span></li>
+      <li><strong>{{ t("payment.beneficiary") }}</strong> {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
+      <li><strong>{{ t("payment.bank") }}</strong> {{ config.PAYMENT_BANK|e }}</li>
+      <li><strong>{{ t("payment.clabe") }}</strong> <span class="mono">{{ config.PAYMENT_CLABE|e }}</span></li>
+      <li><strong>{{ t("payment.reference") }}</strong> <span class="mono">{{ entry.id }} {{ user.email|e }}</span></li>
     </ul>
   </div>
+  {% endif %}
 
   {% if payment %}
   <p class="pay-status pay-status--{{ payment.status.value }}">
     {% if payment.status.value == 'pending' %}
-    <strong>Estado:</strong> pendiente de revisión por un administrador.
+    <strong>{{ t("payment.status") }}</strong> {{ t("payment.status.pending") }}
     {% elif payment.status.value == 'approved' %}
-    <strong>Estado:</strong> aprobado. Ya puedes llenar predicciones.
+    <strong>{{ t("payment.status") }}</strong> {{ t("payment.status.approved") }}
     {% else %}
-    <strong>Estado:</strong> rechazado.{% if payment.admin_note %} <span class="form__hint">— {{ payment.admin_note|e }}</span>{% endif %}
+    <strong>{{ t("payment.status") }}</strong> {{ t("payment.status.rejected") }}{% if payment.admin_note %} <span class="form__hint">— {{ payment.admin_note|e }}</span>{% endif %}
     {% endif %}
   </p>
   {% else %}
-  <p class="form__hint">Aún no has subido comprobante.</p>
+  <p class="form__hint">{{ t("payment.none_uploaded") }}</p>
   {% endif %}
 
-  <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">Subir o actualizar comprobante</h2>
-  <p class="form__hint" style="margin-top:-0.5rem;">Formatos: JPG, JPEG, PNG, WEBP, PDF. Tamaño máx. aprox. {{ (config.MAX_CONTENT_LENGTH // (1024*1024)) }} MB.</p>
+  <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">{{ t("payment.upload_title") }}</h2>
+  {% if payment_banking_configured %}
+  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.formats", max_mb=(config.MAX_CONTENT_LENGTH // (1024*1024))) }}</p>
   {% if payment and payment.status.value == 'approved' %}
-  <p class="form__hint" style="margin:0 0 0.75rem;">Al subir un archivo nuevo, el pago vuelve a quedar <strong>pendiente</strong> hasta nueva revisión.</p>
+  <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("payment.approved_warn") }}</p>
   {% endif %}
   <form class="form" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data">
     <label class="form__field">
-      <span class="form__label">Archivo (imagen o PDF)</span>
+      <span class="form__label">{{ t("payment.file_label") }}</span>
       <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
     </label>
-    <button class="form__submit" type="submit">Enviar comprobante</button>
+    <button class="form__submit" type="submit">{{ t("payment.send") }}</button>
   </form>
+  {% else %}
+  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.disabled_hint") }}</p>
+  <form class="form form--disabled" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data" aria-disabled="true">
+    <label class="form__field">
+      <span class="form__label">{{ t("payment.file_label") }}</span>
+      <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf" disabled aria-disabled="true">
+    </label>
+    <button class="form__submit" type="submit" disabled aria-disabled="true">{{ t("payment.send_disabled") }}</button>
+  </form>
+  {% endif %}
 
   <p class="card__footer">
-    <a href="{{ url_for('main.index') }}">Volver al panel</a>
+    <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
     {% if payment and payment.status.value == 'approved' %}
-    · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">Llenar predicciones</a>
+    · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">{{ t("common.fill_predictions") }}</a>
     {% endif %}
   </p>
 </section>

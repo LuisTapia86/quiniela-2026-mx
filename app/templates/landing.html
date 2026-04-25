@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ config.BRAND_NAME }}{% endblock %}
+{% block main_class %} container--landing{% endblock %}
+{% block content %}
+<div class="landing">
+  <section class="landing-hero" aria-labelledby="landing-hero-title">
+    <h1 id="landing-hero-title" class="landing-hero__title">{{ config.BRAND_NAME }}</h1>
+    <p class="landing-hero__subtitle">{{ t("landing.hero.subtitle") }}</p>
+    <div class="landing-hero__ctas">
+      <a class="btn btn--primary" href="{{ url_for('auth.register') }}">{{ t("landing.cta.create") }}</a>
+      <a class="btn" href="{{ url_for('rules.index') }}">{{ t("landing.cta.rules") }}</a>
+    </div>
+  </section>
+
+  <section class="landing-section" aria-labelledby="how-title">
+    <h2 id="how-title" class="landing-section__title">{{ t("landing.how.title") }}</h2>
+    <ol class="landing-steps">
+      <li class="landing-step"><span class="landing-step__num">1</span> {{ t("landing.how.1") }}</li>
+      <li class="landing-step"><span class="landing-step__num">2</span> {{ t("landing.how.2") }}</li>
+      <li class="landing-step"><span class="landing-step__num">3</span> {{ t("landing.how.3") }}</li>
+      <li class="landing-step"><span class="landing-step__num">4</span> {{ t("landing.how.4") }}</li>
+      <li class="landing-step"><span class="landing-step__num">5</span> {{ t("landing.how.5") }}</li>
+    </ol>
+  </section>
+
+  <section class="landing-section" aria-labelledby="prize-title">
+    <h2 id="prize-title" class="landing-section__title">{{ t("landing.prizes.title") }}</h2>
+    <div class="landing-card">
+      <ul class="landing-list">
+        <li>{{ t("landing.prizes.entry_fee", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+        <li>{{ t("landing.prizes.admin_fee", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
+        <li>{{ t("landing.prizes.pool") }}</li>
+        <li>{{ t("landing.prizes.dist") }}</li>
+      </ul>
+      <p class="landing-note">{{ t("landing.prizes.note") }}</p>
+    </div>
+  </section>
+
+  <section class="landing-section" aria-labelledby="points-title">
+    <h2 id="points-title" class="landing-section__title">{{ t("landing.points.title") }}</h2>
+    <div class="landing-grid-3">
+      <div class="landing-pill">{{ t("landing.points.exact") }}</div>
+      <div class="landing-pill">{{ t("landing.points.result") }}</div>
+      <div class="landing-pill">{{ t("landing.points.diff") }}</div>
+    </div>
+  </section>
+
+  <section class="landing-section" aria-labelledby="trust-title">
+    <h2 id="trust-title" class="landing-section__title">{{ t("landing.trust.title") }}</h2>
+    <ul class="landing-trust" role="list">
+      <li>{{ t("landing.trust.1") }}</li>
+      <li>{{ t("landing.trust.2") }}</li>
+      <li>{{ t("landing.trust.3") }}</li>
+      <li>{{ t("landing.trust.4") }}</li>
+      <li>{{ t("landing.trust.5") }}</li>
+    </ul>
+  </section>
+
+  <section class="landing-section" aria-labelledby="faq-title">
+    <h2 id="faq-title" class="landing-section__title">{{ t("landing.faq.title") }}</h2>
+    <div class="landing-faq">
+      <div class="landing-faq__item">
+        <h3 class="landing-faq__q">{{ t("landing.faq.q1") }}</h3>
+        <p class="landing-faq__a">{{ t("landing.faq.a1") }}</p>
+      </div>
+      <div class="landing-faq__item">
+        <h3 class="landing-faq__q">{{ t("landing.faq.q2") }}</h3>
+        <p class="landing-faq__a">{{ t("landing.faq.a2") }}</p>
+      </div>
+      <div class="landing-faq__item">
+        <h3 class="landing-faq__q">{{ t("landing.faq.q3") }}</h3>
+        <p class="landing-faq__a">{{ t("landing.faq.a3") }}</p>
+      </div>
+      <div class="landing-faq__item">
+        <h3 class="landing-faq__q">{{ t("landing.faq.q4") }}</h3>
+        <p class="landing-faq__a">{{ t("landing.faq.a4") }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="landing-cta" aria-label="{{ t('landing.final_aria') }}">
+    <a class="btn btn--primary btn--wide" href="{{ url_for('auth.register') }}">{{ t("landing.final_cta") }}</a>
+  </section>
+</div>
+{% endblock %}

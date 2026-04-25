@@ -1,29 +1,29 @@
 ﻿{% extends "base.html" %}
-{% block title %}Importar partidos (admin) — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.admin_matches_import") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Importar partidos desde CSV</h1>
-  <p class="form__hint" style="margin:-0.5rem 0 1rem;">Columnas requeridas: <code class="inline-code">match_number, stage, home_team, away_team, kickoff_at</code></p>
+  <h1 class="card__title">{{ t("admin.import.heading") }}</h1>
+  <p class="form__hint" style="margin:-0.5rem 0 1rem;">{{ t("admin.import.required_cols") }} <code class="inline-code">match_number, stage, home_team, away_team, kickoff_at</code></p>
   <div class="dash-actions" style="margin-bottom:1rem;">
-    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">Descargar plantilla CSV</a>
-    <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">Ver partidos</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_csv_template") }}</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">{{ t("admin.view_matches") }}</a>
   </div>
   <form class="form" method="post" enctype="multipart/form-data" action="{{ url_for('admin.matches_import') }}">
     <label class="form__field">
-      <span class="form__label">Archivo CSV</span>
+      <span class="form__label">{{ t("admin.csv_file") }}</span>
       <input class="form__input" type="file" name="csv_file" accept=".csv,text/csv" required>
     </label>
-    <button class="form__submit" type="submit">Importar</button>
+    <button class="form__submit" type="submit">{{ t("common.import") }}</button>
   </form>
 
   {% if summary %}
   <div class="prize-pool" style="margin-top:1rem;">
-    <h2 class="prize-pool__title">Resumen de importación</h2>
+    <h2 class="prize-pool__title">{{ t("admin.import.summary") }}</h2>
     <ul class="prize-pool__list">
-      <li>Creados: <strong>{{ summary.created }}</strong></li>
-      <li>Actualizados: <strong>{{ summary.updated }}</strong></li>
-      <li>Omitidos: <strong>{{ summary.skipped }}</strong></li>
-      <li>Errores reportados: <strong>{{ summary.errors|length }}</strong></li>
+      <li>{{ t("admin.import.created", n=summary.created) }}</li>
+      <li>{{ t("admin.import.updated", n=summary.updated) }}</li>
+      <li>{{ t("admin.import.skipped", n=summary.skipped) }}</li>
+      <li>{{ t("admin.import.errors", n=summary.errors|length) }}</li>
     </ul>
     {% if summary.errors %}
     <div class="table-wrap" style="margin-top:0.5rem;">
@@ -35,6 +35,6 @@
   </div>
   {% endif %}
 
-  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
 </section>
 {% endblock %}

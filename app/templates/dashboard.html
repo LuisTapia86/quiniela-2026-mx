@@ -1,24 +1,24 @@
 ﻿{% extends "base.html" %}
-{% block title %}Inicio — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.dashboard") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card dash" aria-labelledby="dash-title">
-  <p class="dash__badge">Fase 6</p>
-  <h1 id="dash-title">Panel</h1>
-  <p>Hola, <strong>{{ current_user.email }}</strong>.</p>
+  <p class="dash__badge">{{ t("dashboard.phase") }}</p>
+  <h1 id="dash-title">{{ t("dashboard.panel") }}</h1>
+  <p>{{ t("dashboard.hello") }}, <strong>{{ current_user.email }}</strong>.</p>
   <div class="dash-actions">
-    <a class="btn btn--primary" href="{{ url_for('entries.new') }}">+ Nueva quiniela</a>
-    <a class="btn" href="{{ url_for('leaderboard.index') }}">Ver clasificación</a>
+    <a class="btn btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.new_entry") }}</a>
+    <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
     {% if current_user.is_admin %}
-    <a class="btn" href="{{ url_for('admin.dashboard') }}">Panel admin</a>
+    <a class="btn" href="{{ url_for('admin.dashboard') }}">{{ t("dashboard.admin_panel") }}</a>
     {% endif %}
   </div>
 
-  <h2 class="dash__subtitle">Tus quinielas</h2>
+  <h2 class="dash__subtitle">{{ t("dashboard.your_entries") }}</h2>
   {% if not entries %}
   <div class="empty-state">
-    <p class="empty-state__title">Aún no tienes quinielas.</p>
-    <p class="form__hint">Crea una quiniela y sube comprobante de pago ({{ config.ENTRY_FEE_MXN }} MXN por entrada) para participar.</p>
-    <p><a class="btn btn--sm btn--primary" href="{{ url_for('entries.new') }}">Crear primera quiniela</a></p>
+    <p class="empty-state__title">{{ t("dashboard.no_entries") }}</p>
+    <p class="form__hint">{{ t("dashboard.no_entries_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
+    <p><a class="btn btn--sm btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.create_first") }}</a></p>
   </div>
   {% else %}
   <div class="entry-grid">
@@ -28,43 +28,43 @@
     <article class="entry-card" aria-label="{{ e.name|e }}">
       <header class="entry-card__head">
         <h3 class="entry-card__title">{{ e.name|e }}</h3>
-        <span class="entry-list__points">{{ e.total_points }} pts</span>
+        <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
       </header>
 
       <div class="entry-card__meta">
         <span class="entry-pay-badge entry-pay-badge--{{ pay.status.value if pay else 'none' }}">
-          {% if not pay %}Sin pago{% elif pay.status.value == 'pending' %}Pago pendiente{% elif pay.status.value == 'approved' %}Pago aprobado{% else %}Pago rechazado{% endif %}
+          {% if not pay %}{{ t("entry.payment.none") }}{% elif pay.status.value == 'pending' %}{{ t("entry.payment.pending") }}{% elif pay.status.value == 'approved' %}{{ t("entry.payment.approved") }}{% else %}{{ t("entry.payment.rejected") }}{% endif %}
         </span>
         <span class="entry-pred-badge entry-pred-badge--{% if not pay or pay.status.value != 'approved' %}blocked{% elif pred_count < total_matches %}pending{% else %}done{% endif %}">
           {% if not pay or pay.status.value != 'approved' %}
-            Predicciones no disponibles
+            {{ t("entry.pred.unavailable") }}
           {% elif pred_count == 0 %}
-            Predicciones pendientes
+            {{ t("entry.pred.pending") }}
           {% elif pred_count < total_matches %}
-            Progreso {{ pred_count }}/{{ total_matches }}
+            {{ t("entry.pred.progress", done=pred_count, total=total_matches) }}
           {% else %}
-            Completadas {{ pred_count }}/{{ total_matches }}
+            {{ t("entry.pred.done", done=pred_count, total=total_matches) }}
           {% endif %}
         </span>
       </div>
 
       <div class="entry-list__actions">
-        <a class="btn btn--sm" href="{{ url_for('entries.entry_payment', entry_id=e.id) }}">Subir/actualizar pago</a>
+        <a class="btn btn--sm" href="{{ url_for('entries.entry_payment', entry_id=e.id) }}">{{ t("entry.upload_payment") }}</a>
         {% if pay and pay.status.value == 'approved' %}
           {% if predictions_locked %}
-          <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">Ver predicciones</a>
+          <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.view_predictions") }}</a>
           {% else %}
-          <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">Llenar predicciones</a>
+          <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.fill_predictions") }}</a>
           {% endif %}
         {% else %}
-        <span class="btn btn--sm btn--disabled" aria-disabled="true">Llenar predicciones</span>
+        <span class="btn btn--sm btn--disabled" aria-disabled="true">{{ t("entry.fill_predictions") }}</span>
         {% endif %}
       </div>
 
       {% if not pay or pay.status.value != 'approved' %}
-      <p class="entry-list__msg">Tu pago debe ser aprobado antes de llenar predicciones.</p>
+      <p class="entry-list__msg">{{ t("entry.payment_required") }}</p>
       {% elif predictions_locked %}
-      <p class="entry-list__msg">Predicciones bloqueadas por administración. Puedes revisar en modo lectura.</p>
+      <p class="entry-list__msg">{{ t("entry.pred.locked_msg") }}</p>
       {% endif %}
     </article>
     {% endfor %}

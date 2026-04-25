@@ -9,6 +9,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db
 from app.models import User
+from app.translations import tr
 
 bp = Blueprint("auth", __name__)
 
@@ -51,13 +52,13 @@ def register():
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
         if not email or not _EMAIL_RE.match(email):
-            flash("Introduce un correo electrónico válido.", "error")
+            flash(tr("flash.auth.invalid_email"), "error")
             return render_template("auth/register.html", email=email)
         if len(password) < 6:
-            flash("La contraseña debe tener al menos 6 caracteres.", "error")
+            flash(tr("flash.auth.password_short"), "error")
             return render_template("auth/register.html", email=email)
         if db.session.query(User.id).filter_by(email=email).first() is not None:
-            flash("Ese correo ya está registrado.", "error")
+            flash(tr("flash.auth.email_exists"), "error")
             return render_template("auth/register.html", email=email)
         user = User(
             email=email,
@@ -65,7 +66,7 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-        flash("Cuenta creada. Inicia sesión.", "ok")
+        flash(tr("flash.auth.account_created"), "ok")
         return redirect(url_for("auth.login"))
     return render_template("auth/register.html", email="")
 
@@ -79,7 +80,7 @@ def login():
         password = request.form.get("password") or ""
         user = User.query.filter_by(email=email).first()
         if user is None or not check_password_hash(user.password_hash, password):
-            flash("Correo o contraseña incorrectos.", "error")
+            flash(tr("flash.auth.bad_credentials"), "error")
             return render_template("auth/login.html", email=email)
         session.clear()
         session["user_id"] = user.id

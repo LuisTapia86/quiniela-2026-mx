@@ -1,17 +1,18 @@
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import func, select
 
 from app import db
 from app.models import Entry, Match, Payment, Prediction, TournamentState
-from app.routes.auth import get_current_user, login_required
+from app.routes.auth import get_current_user
 
 bp = Blueprint("main", __name__)
 
 
 @bp.get("/")
-@login_required
 def index():
     user = get_current_user()
+    if user is None:
+        return render_template("landing.html")
     assert user is not None
     entries = list(
         db.session.scalars(
@@ -51,3 +52,14 @@ def index():
 @bp.get("/health")
 def health():
     return jsonify(status="ok", phase=1), 200
+
+
+@bp.get("/set-language/<lang>")
+def set_language(lang: str):
+    chosen = (lang or "").strip().lower()
+    if chosen in {"es", "en"}:
+        session["lang"] = chosen
+    next_url = (request.args.get("next") or request.referrer or "").strip()
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect(url_for("main.index"))

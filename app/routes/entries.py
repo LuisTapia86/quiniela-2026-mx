@@ -11,7 +11,9 @@ from werkzeug.utils import secure_filename
 
 from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, TournamentState
+from app.payment_gating import is_payment_banking_configured
 from app.routes.auth import get_current_user, login_required
+from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
 
@@ -26,12 +28,12 @@ def new():
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()
         if not name or len(name) > 120:
-            flash("El nombre es obligatorio (máx. 120 caracteres).", "error")
+            flash(tr("flash.entry.name_required"), "error")
             return render_template("entries/new.html", name=name)
         e = Entry(user_id=user.id, name=name)
         db.session.add(e)
         db.session.commit()
-        flash("Quiniela creada.", "ok")
+        flash(tr("flash.entry.created"), "ok")
         return redirect(url_for("main.index"))
     return render_template("entries/new.html", name="")
 
@@ -48,39 +50,39 @@ def entry_payment(entry_id: int):
         abort(403)
 
     payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
+    banking_configured = is_payment_banking_configured(current_app.config)
+
+    def _payment_page(**extra):
+        ctx = {
+            "entry": entry,
+            "user": user,
+            "payment": payment,
+            "payment_banking_configured": banking_configured,
+        }
+        ctx.update(extra)
+        return render_template("entries/payment.html", **ctx)
+
+    if request.method == "POST" and not banking_configured:
+        flash(f"{tr('payment.safe_gate')} {tr('payment.safe_gate.en')}", "error")
+        return redirect(url_for("entries.entry_payment", entry_id=entry_id))
 
     if request.method == "POST":
         f = request.files.get("proof")
         if f is None or f.filename is None or f.filename.strip() == "":
-            flash("Selecciona un archivo de comprobante (imagen o PDF).", "error")
-            return render_template(
-                "entries/payment.html",
-                entry=entry,
-                user=user,
-                payment=payment,
-            )
+            flash(tr("flash.payment.select_file"), "error")
+            return _payment_page()
         raw_name = secure_filename(f.filename)
         if not raw_name or "." not in raw_name:
-            flash("Nombre de archivo no válido.", "error")
-            return render_template(
-                "entries/payment.html",
-                entry=entry,
-                user=user,
-                payment=payment,
-            )
+            flash(tr("flash.payment.invalid_name"), "error")
+            return _payment_page()
         ext = raw_name.rsplit(".", 1)[-1].lower()
         allowed = current_app.config.get("ALLOWED_PAYMENT_EXTENSIONS", frozenset())
         if ext not in allowed:
             flash(
-                f"Formato no permitido. Usa: {', '.join(sorted(allowed))}.",
+                tr("flash.payment.invalid_format", allowed=", ".join(sorted(allowed))),
                 "error",
             )
-            return render_template(
-                "entries/payment.html",
-                entry=entry,
-                user=user,
-                payment=payment,
-            )
+            return _payment_page()
         store_name = f"{entry.id}_{secrets.token_hex(6)}.{ext}"
         dest_dir = Path(current_app.config["PAYMENT_PROOFS_FOLDER"])
         dest_dir.mkdir(parents=True, exist_ok=True)
@@ -108,15 +110,10 @@ def entry_payment(entry_id: int):
             payment.status = PaymentStatus.PENDING
             payment.amount_mxn = fee
         db.session.commit()
-        flash("Comprobante recibido. Queda pendiente de aprobación.", "ok")
+        flash(tr("flash.payment.received"), "ok")
         return redirect(url_for("entries.entry_payment", entry_id=entry.id))
 
-    return render_template(
-        "entries/payment.html",
-        entry=entry,
-        user=user,
-        payment=payment,
-    )
+    return _payment_page()
 
 
 @bp.route("/entries/<int:entry_id>/predictions", methods=["GET", "POST"])
@@ -132,7 +129,7 @@ def predictions(entry_id: int):
 
     pay = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
     if pay is None or pay.status != PaymentStatus.APPROVED:
-        flash("Tu pago debe ser aprobado antes de llenar predicciones.", "error")
+        flash(tr("entry.payment_required"), "error")
         return redirect(url_for("entries.entry_payment", entry_id=entry_id))
 
     state = TournamentState.get_singleton()
@@ -149,7 +146,7 @@ def predictions(entry_id: int):
 
     if request.method == "POST" and not locked:
         if _save_predictions(entry, matches):
-            flash("Predicciones guardadas.", "ok")
+            flash(tr("flash.predictions.saved"), "ok")
             return redirect(url_for("entries.predictions", entry_id=entry.id))
         by_match_id = {
             p.match_id: p
@@ -191,7 +188,7 @@ def _save_predictions(entry: Entry, matches: list[Match]) -> bool:
         raw_a = request.form.get(f"away_{m.id}")
         h, a = _parse_score(raw_h), _parse_score(raw_a)
         if h is None or a is None:
-            flash("Los goles deben ser números enteros mayores o iguales a 0.", "error")
+            flash(tr("flash.predictions.integer_goals"), "error")
             return False
         parsed.append((m, h, a))
     for m, h, a in parsed:

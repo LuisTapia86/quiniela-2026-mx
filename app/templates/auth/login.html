@@ -1,20 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Iniciar sesión — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.login") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Iniciar sesión</h1>
+  <h1 class="card__title">{{ t("login.heading") }}</h1>
   <form method="post" action="{{ url_for('auth.login') }}" class="form" novalidate>
     <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
     <label class="form__field">
-      <span class="form__label">Correo</span>
+      <span class="form__label">{{ t("form.email") }}</span>
       <input class="form__input" type="email" name="email" autocomplete="email" required value="{{ email|e }}">
     </label>
     <label class="form__field">
-      <span class="form__label">Contraseña</span>
+      <span class="form__label">{{ t("form.password") }}</span>
       <input class="form__input" type="password" name="password" autocomplete="current-password" required>
     </label>
-    <button class="form__submit" type="submit">Entrar</button>
+    <button class="form__submit" type="submit">{{ t("form.submit.login") }}</button>
   </form>
-  <p class="card__footer">¿No tienes cuenta? <a href="{{ url_for('auth.register') }}">Regístrate</a></p>
+  <p class="card__footer">{{ t("login.no_account") }} <a href="{{ url_for('auth.register') }}">{{ t("login.signup") }}</a></p>
 </section>
 {% endblock %}

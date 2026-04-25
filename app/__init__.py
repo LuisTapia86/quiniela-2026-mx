@@ -4,6 +4,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from config import Config
+from app.translations import get_lang, t
 
 db = SQLAlchemy()
 
@@ -68,7 +69,7 @@ def create_app(config_object: type = Config) -> Flask:
 
     @app.context_processor
     def _inject_current_user() -> dict:
-        return {"current_user": get_current_user()}
+        return {"current_user": get_current_user(), "t": t, "lang": get_lang()}
 
     with app.app_context():
         db.create_all()

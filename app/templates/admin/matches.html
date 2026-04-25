@@ -1,29 +1,29 @@
 ﻿{% extends "base.html" %}
-{% block title %}Partidos (admin) — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.admin_matches") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Partidos cargados</h1>
+  <h1 class="card__title">{{ t("admin.matches.heading") }}</h1>
   <div class="dash-actions" style="margin-bottom:1rem;">
-    <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">Importar CSV</a>
-    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">Plantilla CSV</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_template") }}</a>
   </div>
   {% if not rows %}
   <div class="empty-state">
-    <p class="empty-state__title">No hay partidos cargados.</p>
-    <p class="form__hint">Importa un CSV para comenzar.</p>
+    <p class="empty-state__title">{{ t("admin.matches.empty") }}</p>
+    <p class="form__hint">{{ t("admin.matches.empty_hint") }}</p>
   </div>
   {% else %}
   <div class="table-wrap">
-    <table class="data-table" aria-label="Partidos admin">
+    <table class="data-table" aria-label="{{ t('admin.matches.table_aria') }}">
       <thead>
         <tr>
           <th>#</th>
-          <th>Fase</th>
-          <th>Local</th>
-          <th>Visita</th>
-          <th>Kickoff</th>
-          <th>Resultado</th>
-          <th class="num">Predicciones</th>
+          <th>{{ t("admin.col.stage") }}</th>
+          <th>{{ t("admin.col.home") }}</th>
+          <th>{{ t("admin.col.away") }}</th>
+          <th>{{ t("admin.col.kickoff") }}</th>
+          <th>{{ t("admin.col.result") }}</th>
+          <th class="num">{{ t("admin.col.predictions") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -34,7 +34,7 @@
           <td>{{ match.home_team|e }}</td>
           <td>{{ match.away_team|e }}</td>
           <td>{{ match.kickoff_at.strftime('%Y-%m-%d %H:%M') if match.kickoff_at else '—' }}</td>
-          <td>{% if match.result %}Sí{% else %}No{% endif %}</td>
+          <td>{% if match.result %}{{ t("common.yes") }}{% else %}{{ t("common.no") }}{% endif %}</td>
           <td class="num">{{ prediction_count }}</td>
         </tr>
         {% endfor %}
@@ -42,6 +42,6 @@
     </table>
   </div>
   {% endif %}
-  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
 </section>
 {% endblock %}

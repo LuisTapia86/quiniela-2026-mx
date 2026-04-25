@@ -1,38 +1,38 @@
 {% extends "base.html" %}
-{% block title %}Pagos (admin) — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.admin_payments") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Pagos</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Aprobar o rechazar comprobantes. Al aprobar, el dueño de la quiniela podrá llenar predicciones y entrará a la tabla.</p>
+  <h1 class="card__title">{{ t("admin.payments.heading") }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("admin.payments.hint") }}</p>
   <div class="filter-row">
     <div class="filter-tabs">
-      <a class="filter-tab {% if current_status == 'all' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='all', q=q) }}">Todos ({{ counts['all'] }})</a>
-      <a class="filter-tab {% if current_status == 'pending' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='pending', q=q) }}">Pendientes ({{ counts['pending'] }})</a>
-      <a class="filter-tab {% if current_status == 'approved' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='approved', q=q) }}">Aprobados ({{ counts['approved'] }})</a>
-      <a class="filter-tab {% if current_status == 'rejected' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='rejected', q=q) }}">Rechazados ({{ counts['rejected'] }})</a>
+      <a class="filter-tab {% if current_status == 'all' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='all', q=q) }}">{{ t("admin.filter.all") }} ({{ counts['all'] }})</a>
+      <a class="filter-tab {% if current_status == 'pending' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='pending', q=q) }}">{{ t("admin.filter.pending") }} ({{ counts['pending'] }})</a>
+      <a class="filter-tab {% if current_status == 'approved' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='approved', q=q) }}">{{ t("admin.filter.approved") }} ({{ counts['approved'] }})</a>
+      <a class="filter-tab {% if current_status == 'rejected' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='rejected', q=q) }}">{{ t("admin.filter.rejected") }} ({{ counts['rejected'] }})</a>
     </div>
     <form method="get" action="{{ url_for('admin.payments') }}" class="filter-search">
       <input type="hidden" name="status" value="{{ current_status }}">
-      <input class="form__input" type="search" name="q" value="{{ q|e }}" placeholder="Buscar por correo o quiniela">
-      <button class="btn btn--sm" type="submit">Buscar</button>
+      <input class="form__input" type="search" name="q" value="{{ q|e }}" placeholder="{{ t('admin.search.placeholder') }}">
+      <button class="btn btn--sm" type="submit">{{ t("common.search") }}</button>
     </form>
   </div>
 
   {% if not payments %}
-  <p class="form__hint">No hay pagos registrados.</p>
+  <p class="form__hint">{{ t("admin.payments.empty") }}</p>
   {% else %}
   <div class="table-wrap">
-    <table class="data-table" aria-label="Listado de pagos">
+    <table class="data-table" aria-label="{{ t('admin.payments.table_aria') }}">
       <thead>
         <tr>
           <th scope="col">ID</th>
-          <th scope="col">Correo</th>
-          <th scope="col">Quiniela</th>
+          <th scope="col">{{ t("leaderboard.col.email") }}</th>
+          <th scope="col">{{ t("leaderboard.col.entry") }}</th>
           <th scope="col" class="num">$ MXN</th>
-          <th scope="col">Estado</th>
-          <th scope="col">Comprobante</th>
-          <th scope="col">Creado</th>
-          <th scope="col">Acciones</th>
+          <th scope="col">{{ t("admin.col.status") }}</th>
+          <th scope="col">{{ t("admin.col.proof") }}</th>
+          <th scope="col">{{ t("admin.col.created") }}</th>
+          <th scope="col">{{ t("admin.col.actions") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -47,12 +47,12 @@
           <td class="pay-cell-date">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
           <td class="admin-pay-actions">
             <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
-              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="Nota (opcional)" maxlength="500">
-              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' %}disabled{% endif %}>Aprobar</button>
+              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
+              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' %}disabled{% endif %}>{{ t("common.approve") }}</button>
             </form>
             <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
-              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="Nota (opcional)" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
-              <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>Rechazar</button>
+              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
+              <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>
           </td>
         </tr>
@@ -62,8 +62,8 @@
   </div>
   {% endif %}
   <p class="card__footer">
-    <a href="{{ url_for('admin.dashboard') }}">Volver al admin</a>
-    · <a href="{{ url_for('admin.results') }}">Cargar resultados</a>
+    <a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a>
+    · <a href="{{ url_for('admin.results') }}">{{ t("admin.load_results") }}</a>
   </p>
 </section>
 {% endblock %}

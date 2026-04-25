@@ -20,7 +20,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = BASE_DIR / "instance" / "uploads"
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB; payment proofs + other uploads
-    BRAND_NAME = "Quiniela 2026 MX Soccer"
+    BRAND_NAME = "Quiniela World Cup 2026 MX"
     ADMIN_FEE_PERCENT = 5
     ENTRY_FEE_MXN = 1000
     # Share of the prize pool (100% - admin) for TOP 3; ties split that amount.

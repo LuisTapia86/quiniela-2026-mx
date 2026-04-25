@@ -1,25 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Resultados (admin) — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.admin_results") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Cargar resultados</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Dejar vacío un partido lo omite. Al guardar se recalculan todos los puntos.</p>
+  <h1 class="card__title">{{ t("admin.results.heading") }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("admin.results.hint") }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">
-    Partidos completados: <strong>{{ completed_matches }}</strong> / <strong>{{ total_matches }}</strong>.
+    {{ t("admin.results.completed", done=completed_matches, total=total_matches) }}
   </p>
 
   {% if not matches %}
-  <p class="form__hint">No hay partidos. Ejecuta <code class="inline-code">flask --app run seed-matches</code> primero.</p>
+  <p class="form__hint">{{ t("admin.results.none") }}</p>
   {% else %}
   <form method="post" action="{{ url_for('admin.results') }}">
     <div class="table-wrap">
-      <table class="data-table" aria-label="Resultados por partido">
+      <table class="data-table" aria-label="{{ t('admin.results.table_aria') }}">
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Partido</th>
-            <th scope="col">Local</th>
-            <th scope="col">Visita</th>
+            <th scope="col">{{ t("admin.col.match") }}</th>
+            <th scope="col">{{ t("admin.col.home") }}</th>
+            <th scope="col">{{ t("admin.col.away") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -43,9 +43,9 @@
         </tbody>
       </table>
     </div>
-    <button class="form__submit form__submit--wide" type="submit">Guardar resultados</button>
+    <button class="form__submit form__submit--wide" type="submit">{{ t("admin.results.save") }}</button>
   </form>
   {% endif %}
-  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">Volver al admin</a></p>
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
 </section>
 {% endblock %}

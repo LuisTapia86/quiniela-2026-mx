@@ -1,43 +1,43 @@
 ﻿{% extends "base.html" %}
-{% block title %}Reglas — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.rules") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Reglas oficiales</h1>
+  <h1 class="card__title">{{ t("rules.heading") }}</h1>
 
-  <h2 class="card__title card__title--sm" style="margin-top:0;">Cómo participar</h2>
+  <h2 class="card__title card__title--sm" style="margin-top:0;">{{ t("rules.how_title") }}</h2>
   <ol class="rules-list">
-    <li>Regístrate e inicia sesión.</li>
-    <li>Crea una o más quinielas (entradas). Cada quiniela es independiente y tiene su propia hoja de predicciones.</li>
-    <li><strong>Un pago por quiniela:</strong> cada entrada requiere su propia transferencia y comprobante; no se comparte un pago entre varias quinielas.</li>
-    <li>Sube el comprobante de pago. Un administrador lo revisará (aprobado o rechazado).</li>
-    <li>Cuando el pago esté <strong>aprobado</strong>, podrás capturar tus predicciones de marcadores mientras sigan <strong>abiertas</strong>.</li>
-    <li><strong>Predicciones bloqueadas:</strong> un administrador puede bloquear predicciones cuando proceda, normalmente <strong>antes de que inicie el torneo</strong>. A partir de ese bloqueo no se permiten ediciones, solo consulta (según el estado de la plataforma).</li>
+    <li>{{ t("rules.how.1") }}</li>
+    <li>{{ t("rules.how.2") }}</li>
+    <li>{{ t("rules.how.3") }}</li>
+    <li>{{ t("rules.how.4") }}</li>
+    <li>{{ t("rules.how.5") }}</li>
+    <li>{{ t("rules.how.6") }}</li>
   </ol>
 
-  <h2 class="card__title card__title--sm">Cuota y bote</h2>
+  <h2 class="card__title card__title--sm">{{ t("rules.fee_title") }}</h2>
   <ul class="prize-pool__list">
-    <li>Cuota por quiniela: <strong>${{ config.ENTRY_FEE_MXN }} MXN</strong>.</li>
-    <li>Comisión de administración: <strong>{{ config.ADMIN_FEE_PERCENT }}%</strong> de lo recaudado en entradas con pago aprobado.</li>
-    <li>Bote (premio a repartir): <strong>95%</strong> de lo recaudado (es decir, el 100% menos el {{ config.ADMIN_FEE_PERCENT }}% de administración), deducido de las entradas aprobadas.</li>
+    <li>{{ t("rules.fee.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+    <li>{{ t("rules.fee.2", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
+    <li>{{ t("rules.fee.3", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
   </ul>
 
-  <h2 class="card__title card__title--sm">Distribución del premio (TOP 3)</h2>
-  <p class="form__hint" style="margin-top:-0.5rem;">El bote se reparte en tres puestos, sobre el monto del bote (no del bruto):</p>
+  <h2 class="card__title card__title--sm">{{ t("rules.prizes_title") }}</h2>
+  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("rules.prizes_hint") }}</p>
   <ul class="prize-pool__list">
-    <li><strong>1.º lugar:</strong> {{ config.PRIZE_TOP1_PERCENT }}% del bote</li>
-    <li><strong>2.º lugar:</strong> {{ config.PRIZE_TOP2_PERCENT }}% del bote</li>
-    <li><strong>3.º lugar:</strong> {{ config.PRIZE_TOP3_PERCENT }}% del bote</li>
+    <li>{{ t("rules.prizes.1", p1=config.PRIZE_TOP1_PERCENT) }}</li>
+    <li>{{ t("rules.prizes.2", p2=config.PRIZE_TOP2_PERCENT) }}</li>
+    <li>{{ t("rules.prizes.3", p3=config.PRIZE_TOP3_PERCENT) }}</li>
   </ul>
-  <p class="form__hint"><strong>Empates en la tabla de posiciones:</strong> quienes empatan se reparten en partes iguales el monto de premio que corresponde a ese puesto (o a los puestos afectados, según el empate múltiple).</p>
+  <p class="form__hint">{{ t("rules.tie_note") }}</p>
 
-  <h2 class="card__title card__title--sm">Sistema de puntos (por partido)</h2>
+  <h2 class="card__title card__title--sm">{{ t("rules.points_title") }}</h2>
   <ul class="prize-pool__list">
-    <li><strong>Marcador exacto:</strong> 6 puntos</li>
-    <li><strong>Resultado correcto (ganador local, visita o empate), sin marcador exacto:</strong> 3 puntos</li>
-    <li><strong>Diferencia de goles correcta</strong> (sin marcador exacto): <strong>+1</strong> punto adicional</li>
+    <li>{{ t("rules.points.1") }}</li>
+    <li>{{ t("rules.points.2") }}</li>
+    <li>{{ t("rules.points.3") }}</li>
   </ul>
-  <p class="form__hint" style="margin-top:-0.25rem;">Si aciertas resultado y diferencia sin el marcador exacto, suman 3 + 1 puntos. El marcador exacto vale 6 puntos y no suma el +1 de diferencia.</p>
+  <p class="form__hint" style="margin-top:-0.25rem;">{{ t("rules.points.note") }}</p>
 
-  <p class="card__footer" style="margin-top:1.5rem;">Dudas sobre pago: revisa el estado de cada quiniela en tu panel; solo con pago aprobado puedes llenar predicciones (mientras sigan abiertas).</p>
+  <p class="card__footer" style="margin-top:1.5rem;">{{ t("rules.footer") }}</p>
 </section>
 {% endblock %}

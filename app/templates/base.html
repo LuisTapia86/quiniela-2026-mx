@@ -1,5 +1,5 @@
 ﻿<!DOCTYPE html>
-<html lang="es">
+<html lang="{{ lang }}">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,27 +10,34 @@
 <body>
   <header class="nav">
     <div class="nav__inner">
-      <a class="nav__brand" href="{{ url_for('main.index') if current_user else url_for('auth.login') }}">{{ config.BRAND_NAME }}</a>
-      <nav class="nav__links" aria-label="Principal">
-        <a href="{{ url_for('rules.index') }}">Reglas</a>
-        <a href="{{ url_for('leaderboard.index') }}">Clasificación</a>
+      <a class="nav__brand" href="{{ url_for('main.index') }}">{{ config.BRAND_NAME }}</a>
+      <nav class="nav__links" aria-label="{{ t('nav.primary') }}">
         {% if current_user %}
-        <a href="{{ url_for('main.index') }}">Panel</a>
-        <a href="{{ url_for('entries.new') }}">Nueva quiniela</a>
+        <a href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
+        <a href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
+        <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
         {% if current_user.is_admin %}
-        <a href="{{ url_for('admin.dashboard') }}">Admin</a>
+        <a href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
         {% endif %}
         <span class="nav__user">{{ current_user.email }}</span>
-        <a class="nav__btn" href="{{ url_for('auth.logout') }}">Salir</a>
+        <a class="nav__btn" href="{{ url_for('auth.logout') }}">{{ t("nav.logout") }}</a>
         {% else %}
-        <a href="{{ url_for('auth.login') }}">Iniciar sesión</a>
-        <a class="nav__btn" href="{{ url_for('auth.register') }}">Registrarse</a>
+        <a href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+        <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
+        <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
         {% endif %}
+        <span class="nav__lang">
+          <a href="{{ url_for('main.set_language', lang='es', next=request.full_path) }}">{{ t("lang.es") }}</a>
+          <span>·</span>
+          <a href="{{ url_for('main.set_language', lang='en', next=request.full_path) }}">{{ t("lang.en") }}</a>
+        </span>
       </nav>
     </div>
   </header>
 
-  <main class="container">
+  <main class="container{% block main_class %}{% endblock %}">
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
     <ul class="flash" role="status" aria-live="polite">

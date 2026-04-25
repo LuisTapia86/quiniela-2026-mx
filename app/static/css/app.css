@@ -1,4 +1,4 @@
-/* Mobile-first: Quiniela 2026 MX Soccer */
+/* Mobile-first: Quiniela World Cup 2026 MX */
 :root {
   --bg: #0f172a;
   --surface: #1e293b;
@@ -85,6 +85,17 @@ a:focus-visible {
 
 .nav__links a {
   color: var(--muted);
+}
+
+.nav__lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: 0.25rem;
+  padding-left: 0.45rem;
+  border-left: 1px solid #334155;
+  color: var(--muted);
+  font-size: 0.8125rem;
 }
 
 .nav__user {
@@ -783,4 +794,220 @@ ol.pay-steps {
     width: auto;
     min-width: 16rem;
   }
+}
+
+/* —— Public landing (Phase 7) —— */
+.container--landing {
+  max-width: 48rem;
+}
+
+.landing {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 1rem;
+}
+
+.landing-hero {
+  text-align: center;
+  padding: 1.25rem 0.5rem 1.75rem;
+  border-radius: var(--radius);
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.85) 100%);
+  border: 1px solid #334155;
+}
+
+.landing-hero__title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.35rem, 4.5vw, 1.85rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.landing-hero__subtitle {
+  margin: 0 auto 1.25rem;
+  max-width: 36rem;
+  font-size: 1rem;
+  color: var(--muted);
+}
+
+.landing-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  justify-content: center;
+}
+
+.btn--wide {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.landing-section__title {
+  margin: 0 0 1rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text);
+  padding-bottom: 0.35rem;
+  border-bottom: 1px solid #334155;
+}
+
+.landing-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.landing-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+}
+
+.landing-step__num {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.15);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.landing-card {
+  background: var(--surface);
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  padding: 1.1rem 1.15rem;
+}
+
+.landing-list {
+  margin: 0;
+  padding-left: 1.15rem;
+  color: #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.landing-note {
+  margin: 0.9rem 0 0;
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.5;
+  padding: 0.6rem 0.7rem;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: var(--radius);
+  border: 1px solid #1e293b;
+}
+
+.landing-grid-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.landing-pill {
+  padding: 0.65rem 0.9rem;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+
+.landing-trust {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.landing-trust li {
+  position: relative;
+  padding-left: 1.35rem;
+  color: #cbd5e1;
+  font-size: 0.95rem;
+}
+
+.landing-trust li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--ok);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.landing-faq {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.landing-faq__item {
+  background: var(--surface);
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+}
+
+.landing-faq__q {
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+}
+
+.landing-faq__a {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.landing-cta {
+  text-align: center;
+  padding: 1rem 0 0.5rem;
+}
+
+@media (min-width: 32rem) {
+  .landing-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+  }
+}
+
+/* Payment gate when bank env not set */
+.pay-gate {
+  margin: 0 0 1rem;
+  padding: 0.75rem 0.9rem;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.35);
+  border-radius: var(--radius);
+  color: #bae6fd;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.form--disabled {
+  opacity: 0.65;
+  pointer-events: none;
 }
