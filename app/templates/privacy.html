@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.privacy") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card legal-page">
+  <h1 class="card__title">{{ t("privacy.heading") }}</h1>
+  <p class="form__hint">{{ t("legal.updated_note") }} 2026-04-25</p>
+
+  <h2 class="card__title card__title--sm">{{ t("privacy.data_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("privacy.data.1") }}</li>
+    <li>{{ t("privacy.data.2") }}</li>
+    <li>{{ t("privacy.data.3") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("privacy.usage_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("privacy.usage.1") }}</li>
+    <li>{{ t("privacy.usage.2") }}</li>
+    <li>{{ t("privacy.usage.3") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("privacy.protection_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("privacy.protection.1") }}</li>
+    <li>{{ t("privacy.protection.2") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("privacy.rights_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("privacy.rights.1") }}</li>
+  </ul>
+</section>
+{% endblock %}

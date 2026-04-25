@@ -16,6 +16,8 @@
         <a href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
         <a href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
         <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a href="{{ url_for('rules.terms') }}">{{ t("nav.terms") }}</a>
+        <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
         <a href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
@@ -25,6 +27,8 @@
         {% else %}
         <a href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
         <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a href="{{ url_for('rules.terms') }}">{{ t("nav.terms") }}</a>
+        <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
         <a href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
         <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
         {% endif %}

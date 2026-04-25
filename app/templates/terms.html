@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.terms") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card legal-page">
+  <h1 class="card__title">{{ t("terms.heading") }}</h1>
+  <p class="form__hint">{{ t("legal.updated_note") }} 2026-04-25</p>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.service_title") }}</h2>
+  <p>{{ t("terms.service_text") }}</p>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.nature_title") }}</h2>
+  <p>{{ t("terms.nature_text") }}</p>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.participation_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("terms.participation.1") }}</li>
+    <li>{{ t("terms.participation.2") }}</li>
+    <li>{{ t("terms.participation.3") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.rules_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("terms.rules.1") }}</li>
+    <li>{{ t("terms.rules.2") }}</li>
+    <li>{{ t("terms.rules.3") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.prizes_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("terms.prizes.1") }}</li>
+    <li>{{ t("terms.prizes.2") }}</li>
+    <li>{{ t("terms.prizes.dist") }}</li>
+    <li>{{ t("terms.prizes.3") }}</li>
+    <li>{{ t("terms.prizes.4") }}</li>
+    <li>{{ t("terms.prizes.5") }}</li>
+    <li>{{ t("terms.prizes.6") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.payments_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("terms.payments.1") }}</li>
+    <li>{{ t("terms.payments.2") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.liability_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("terms.liability.1") }}</li>
+    <li>{{ t("terms.liability.2") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("terms.changes_title") }}</h2>
+  <p>{{ t("terms.changes_text") }}</p>
+</section>
+{% endblock %}
