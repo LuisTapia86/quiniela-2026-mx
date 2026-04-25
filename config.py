@@ -10,7 +10,8 @@ class Config:
     _is_production = _env == "production"
     _is_dev_or_test = _env in {"development", "test"} or _debug_on
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-change-me-in-production")
-    PERMANENT_SESSION_LIFETIME = timedelta(days=7)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=1)
+    SESSION_REFRESH_EACH_REQUEST = True
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = _is_production or not _debug_on

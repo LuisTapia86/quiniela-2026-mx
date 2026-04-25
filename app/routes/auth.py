@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from functools import wraps
 from typing import Any, Callable, TypeVar
 
@@ -18,9 +19,13 @@ F = TypeVar("F", bound=Callable[..., Any])
 
 _EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 _DISPLAY_NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{3,40}$")
+_ADMIN_SESSION_TIMEOUT_SECONDS = 30 * 60
 
 
 def get_current_user() -> User | None:
+    if _session_expired_for_admin():
+        session.clear()
+        return None
     uid = session.get("user_id")
     if uid is None:
         return None
@@ -30,11 +35,27 @@ def get_current_user() -> User | None:
         return None
 
 
+def _session_expired_for_admin() -> bool:
+    if not session.get("is_admin"):
+        return False
+    last_seen_raw = session.get("last_seen_at")
+    if last_seen_raw is None:
+        return True
+    try:
+        last_seen = float(last_seen_raw)
+    except (TypeError, ValueError):
+        return True
+    return (time.time() - last_seen) > _ADMIN_SESSION_TIMEOUT_SECONDS
+
+
 def login_required(f: F) -> F:
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if get_current_user() is None:
+        user = get_current_user()
+        if user is None:
             return redirect(url_for("auth.login", next=request.path))
+        session["last_seen_at"] = time.time()
+        session.permanent = True
         return f(*args, **kwargs)
 
     return wrapper  # type: ignore[return-value]
@@ -114,6 +135,8 @@ def login():
         session.clear()
         session["user_id"] = user.id
         session.permanent = True
+        session["is_admin"] = bool(user.is_admin)
+        session["last_seen_at"] = time.time()
         next_url = (request.form.get("next") or request.args.get("next") or "").strip()
         if _is_safe_redirect(next_url):
             return redirect(next_url)
