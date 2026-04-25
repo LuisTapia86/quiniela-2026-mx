@@ -47,10 +47,12 @@
           <td class="pay-cell-date">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
           <td class="admin-pay-actions">
             <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
               <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' %}disabled{% endif %}>{{ t("common.approve") }}</button>
             </form>
             <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
               <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>

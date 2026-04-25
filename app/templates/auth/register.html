@@ -4,10 +4,16 @@
 <section class="card">
   <h1 class="card__title">{{ t("register.heading") }}</h1>
   <form method="post" action="{{ url_for('auth.register') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("form.email") }}</span>
       <input class="form__input" type="email" name="email" autocomplete="email" required value="{{ email|e }}">
     </label>
+    <label class="form__field">
+      <span class="form__label">{{ t("form.display_name") }}</span>
+      <input class="form__input" type="text" name="display_name" autocomplete="nickname" required minlength="3" maxlength="40" value="{{ display_name|e }}">
+    </label>
+    <p class="form__hint">{{ t("form.display_name_hint") }}</p>
     <label class="form__field">
       <span class="form__label">{{ t("form.password") }}</span>
       <input class="form__input" type="password" name="password" autocomplete="new-password" required minlength="6" aria-describedby="pw-hint">

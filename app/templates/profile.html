@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.profile") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("profile.heading") }}</h1>
+  <p class="form__hint">{{ t("profile.hint") }}</p>
+  <form method="post" action="{{ url_for('main.profile') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="form__field">
+      <span class="form__label">{{ t("form.display_name") }}</span>
+      <input class="form__input" type="text" name="display_name" maxlength="40" minlength="3" required value="{{ display_name|e }}">
+    </label>
+    <p class="form__hint">{{ t("profile.alias_rules") }}</p>
+    <p class="form__hint">{{ t("profile.email_private") }} <strong>{{ current_user.email }}</strong></p>
+    <button class="form__submit" type="submit">{{ t("profile.save") }}</button>
+  </form>
+</section>
+{% endblock %}

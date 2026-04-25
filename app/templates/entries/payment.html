@@ -53,6 +53,7 @@
   <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("payment.approved_warn") }}</p>
   {% endif %}
   <form class="form" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("payment.file_label") }}</span>
       <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
@@ -62,6 +63,7 @@
   {% else %}
   <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.disabled_hint") }}</p>
   <form class="form form--disabled" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data" aria-disabled="true">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("payment.file_label") }}</span>
       <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf" disabled aria-disabled="true">

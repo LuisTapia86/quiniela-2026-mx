@@ -5,6 +5,7 @@
   <h1 class="card__title">{{ t("title.new_entry") }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("new_entry.hint") }}</p>
   <form method="post" action="{{ url_for('entries.new') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("form.name") }}</span>
       <input class="form__input" type="text" name="name" required maxlength="120" placeholder="Ej. Oficina, Familia" value="{{ name|e }}">

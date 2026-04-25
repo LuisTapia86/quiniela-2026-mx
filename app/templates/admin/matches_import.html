@@ -9,6 +9,7 @@
     <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">{{ t("admin.view_matches") }}</a>
   </div>
   <form class="form" method="post" enctype="multipart/form-data" action="{{ url_for('admin.matches_import') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("admin.csv_file") }}</span>
       <input class="form__input" type="file" name="csv_file" accept=".csv,text/csv" required>

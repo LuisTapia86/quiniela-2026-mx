@@ -4,6 +4,7 @@
 <section class="card">
   <h1 class="card__title">{{ t("login.heading") }}</h1>
   <form method="post" action="{{ url_for('auth.login') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
     <label class="form__field">
       <span class="form__label">{{ t("form.email") }}</span>

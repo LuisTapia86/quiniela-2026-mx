@@ -1,9 +1,10 @@
-from flask import Blueprint, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import func, select
 
 from app import db
-from app.models import Entry, Match, Payment, Prediction, TournamentState
-from app.routes.auth import get_current_user
+from app.models import Entry, Match, Payment, Prediction, TournamentState, User
+from app.routes.auth import _validate_display_name, get_current_user, login_required
+from app.translations import tr
 
 bp = Blueprint("main", __name__)
 
@@ -46,7 +47,32 @@ def index():
         prediction_counts=prediction_counts,
         total_matches=total_matches,
         predictions_locked=predictions_locked,
+        needs_display_name=not bool((user.display_name or "").strip()),
     )
+
+
+@bp.route("/profile", methods=["GET", "POST"])
+@login_required
+def profile():
+    user = get_current_user()
+    assert user is not None
+    if request.method == "POST":
+        ok_alias, alias_or_error = _validate_display_name(request.form.get("display_name"))
+        if not ok_alias:
+            flash(alias_or_error, "error")
+            return render_template("profile.html", display_name=(request.form.get("display_name") or "").strip())
+        alias = alias_or_error
+        dup_user = db.session.scalar(
+            select(User.id).where(func.lower(User.display_name) == alias.lower(), User.id != user.id),
+        )
+        if dup_user is not None:
+            flash(tr("flash.auth.alias_exists"), "error")
+            return render_template("profile.html", display_name=alias)
+        user.display_name = alias
+        db.session.commit()
+        flash(tr("flash.profile.updated"), "ok")
+        return redirect(url_for("main.profile"))
+    return render_template("profile.html", display_name=(user.display_name or ""))
 
 
 @bp.get("/health")

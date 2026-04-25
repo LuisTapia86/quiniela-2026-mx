@@ -4,10 +4,15 @@ from pathlib import Path
 
 
 class Config:
+    _env = (os.environ.get("FLASK_ENV") or os.environ.get("APP_ENV") or "").strip().lower()
+    _debug_env = (os.environ.get("FLASK_DEBUG") or "0").strip().lower()
+    _debug_on = _debug_env in {"1", "true", "yes", "on"}
+    _is_production = _env == "production"
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-change-me-in-production")
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
+    SESSION_COOKIE_SECURE = _is_production or not _debug_on
     BASE_DIR = Path(__file__).resolve().parent
     INSTANCE_DIR = BASE_DIR / "instance"
     _default_db = (INSTANCE_DIR / "app.db").resolve().as_posix()

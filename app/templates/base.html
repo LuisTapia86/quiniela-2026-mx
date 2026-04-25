@@ -25,7 +25,7 @@
       </a>
       <div class="nav__right">
         {% if current_user %}
-        <span class="nav__user">{{ current_user.email }}</span>
+        <span class="nav__user">{{ current_user.display_name or t("nav.user_fallback") }}</span>
         <a class="nav__btn" href="{{ url_for('auth.logout') }}">{{ t("nav.logout") }}</a>
         {% endif %}
         <span class="nav__lang">
@@ -50,6 +50,7 @@
       </nav>
       <nav class="sidebar-nav sidebar-nav--bottom">
         <a class="sidebar-link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a class="sidebar-link{% if request.path == '/profile' %} is-active{% endif %}" href="{{ url_for('main.profile') }}">{{ t("nav.profile") }}</a>
       </nav>
     </aside>
 

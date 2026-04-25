@@ -36,7 +36,7 @@
         <tr>
           <th scope="col">#</th>
           <th scope="col">{{ t("leaderboard.col.entry") }}</th>
-          <th scope="col">{{ t("leaderboard.col.email") }}</th>
+          <th scope="col">{{ t("leaderboard.col.player") }}</th>
           <th scope="col" class="num">{{ t("leaderboard.col.pts") }}</th>
           <th scope="col" class="num">{{ t("leaderboard.col.pred") }}</th>
           <th scope="col" class="num">{{ t("leaderboard.col.with_result") }}</th>
@@ -47,7 +47,7 @@
         <tr>
           <td>{{ row.rank }}</td>
           <td><strong>{{ row.entry.name|e }}</strong></td>
-          <td>{{ row.email_masked|e }}</td>
+          <td>{{ row.public_name|e }}</td>
           <td class="num">{{ row.entry.total_points }}</td>
           <td class="num">{{ row.n_predictions }}</td>
           <td class="num">{{ row.n_results_counted }}</td>

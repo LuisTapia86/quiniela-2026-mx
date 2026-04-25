@@ -28,12 +28,14 @@
     <p class="entry-pay-badge entry-pay-badge--rejected">{{ t("admin.locked") }}</p>
     <p class="form__hint">{{ t("admin.locked_hint") }}</p>
     <form method="post" action="{{ url_for('admin.tournament_unlock') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn btn--primary">{{ t("admin.open_predictions") }}</button>
     </form>
     {% else %}
     <p class="entry-pay-badge entry-pay-badge--approved">{{ t("admin.open_for_predictions") }}</p>
     <p class="form__hint">{{ t("admin.open_hint") }}</p>
     <form method="post" action="{{ url_for('admin.tournament_lock') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button type="submit" class="btn">{{ t("admin.lock_predictions") }}</button>
     </form>
     {% endif %}
@@ -45,6 +47,7 @@
     <a class="btn" href="{{ url_for('admin.payments') }}">{{ t("admin.payments") }}</a>
     <a class="btn" href="{{ url_for('admin.results') }}">{{ t("admin.results") }}</a>
     <form method="post" action="{{ url_for('admin.recalculate') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">{{ t("admin.recalc") }}</button>
     </form>
     <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>

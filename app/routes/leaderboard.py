@@ -10,17 +10,9 @@ from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, User
 from app.prize_info import entry_financials
 from app.routes.auth import get_current_user, login_required
+from app.translations import tr
 
 bp = Blueprint("leaderboard", __name__, url_prefix="")
-
-
-def mask_email(email: str) -> str:
-    if "@" not in email:
-        return "***"
-    local, domain = email.split("@", 1)
-    if not local:
-        return f"***@{domain}"
-    return f"{local[0]}***@{domain}"
 
 
 @bp.get("/leaderboard")
@@ -86,7 +78,7 @@ def index():
             {
                 "rank": rank,
                 "entry": entry,
-                "email_masked": mask_email(user.email),
+                "public_name": (user.display_name or "").strip() or f"{tr('leaderboard.player_fallback')} {entry.id}",
                 "n_predictions": n_pred,
                 "n_results_counted": n_done,
             }

@@ -16,6 +16,7 @@
   <p class="form__hint">Aún no hay partidos cargados. Un administrador debe importar partidos antes de capturar predicciones.</p>
   {% else %}
   <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
       <table class="data-table" role="grid" aria-label="Partidos y pronósticos">
         <thead>

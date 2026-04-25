@@ -4,10 +4,19 @@
 <section class="card dash" aria-labelledby="dash-title">
   <p class="dash__badge">{{ t("dashboard.phase") }}</p>
   <h1 id="dash-title">{{ t("dashboard.panel") }}</h1>
-  <p>{{ t("dashboard.hello") }}, <strong>{{ current_user.email }}</strong>.</p>
+  <p>{{ t("dashboard.hello") }}, <strong>{{ current_user.display_name or t("dashboard.no_alias") }}</strong>.</p>
+  <p class="form__hint">{{ t("dashboard.account_email") }} <strong>{{ current_user.email }}</strong></p>
+  {% if needs_display_name %}
+  <div class="empty-state" style="margin-top: 0.75rem;">
+    <p class="empty-state__title">{{ t("dashboard.alias_missing_title") }}</p>
+    <p class="form__hint">{{ t("dashboard.alias_missing_hint") }}</p>
+    <p><a class="btn btn--sm btn--primary" href="{{ url_for('main.profile') }}">{{ t("dashboard.set_alias") }}</a></p>
+  </div>
+  {% endif %}
   <div class="dash-actions">
     <a class="btn btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.new_entry") }}</a>
     <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
+    <a class="btn" href="{{ url_for('main.profile') }}">{{ t("nav.profile") }}</a>
     {% if current_user.is_admin %}
     <a class="btn" href="{{ url_for('admin.dashboard') }}">{{ t("dashboard.admin_panel") }}</a>
     {% endif %}

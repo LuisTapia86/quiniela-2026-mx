@@ -12,6 +12,7 @@
   <p class="form__hint">{{ t("admin.results.none") }}</p>
   {% else %}
   <form method="post" action="{{ url_for('admin.results') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
       <table class="data-table" aria-label="{{ t('admin.results.table_aria') }}">
         <thead>

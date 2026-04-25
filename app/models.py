@@ -21,6 +21,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    display_name = db.Column(db.String(40), nullable=True, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
@@ -30,6 +31,11 @@ class User(db.Model):
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"
+
+    @property
+    def public_name(self) -> str:
+        name = (self.display_name or "").strip()
+        return name or ""
 
 
 class Entry(db.Model):

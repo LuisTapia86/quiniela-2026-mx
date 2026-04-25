@@ -5,9 +5,10 @@ from functools import wraps
 from typing import Any, Callable, TypeVar
 
 from flask import Blueprint, flash, redirect, render_template, request, session, url_for
+from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app import db
+from app import db, limiter
 from app.models import User
 from app.translations import tr
 
@@ -16,6 +17,7 @@ bp = Blueprint("auth", __name__)
 F = TypeVar("F", bound=Callable[..., Any])
 
 _EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+_DISPLAY_NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{3,40}$")
 
 
 def get_current_user() -> User | None:
@@ -44,34 +46,61 @@ def _is_safe_redirect(target: str) -> bool:
     return not target.startswith("//") and "://" not in target
 
 
+def _normalize_display_name(raw: str | None) -> str:
+    return " ".join((raw or "").strip().split())
+
+
+def _validate_display_name(raw: str | None) -> tuple[bool, str]:
+    value = _normalize_display_name(raw)
+    if not value:
+        return False, tr("flash.auth.alias_required")
+    if not _DISPLAY_NAME_RE.fullmatch(value):
+        return False, tr("flash.auth.alias_invalid")
+    if "@" in value or _EMAIL_RE.match(value):
+        return False, tr("flash.auth.alias_no_email")
+    return True, value
+
+
 @bp.route("/register", methods=["GET", "POST"])
+@limiter.limit("8 per minute")
 def register():
     if get_current_user() is not None:
         return redirect(url_for("main.index"))
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
+        display_name_raw = request.form.get("display_name")
         password = request.form.get("password") or ""
         if not email or not _EMAIL_RE.match(email):
             flash(tr("flash.auth.invalid_email"), "error")
-            return render_template("auth/register.html", email=email)
+            return render_template("auth/register.html", email=email, display_name=_normalize_display_name(display_name_raw))
+        ok_alias, alias_or_error = _validate_display_name(display_name_raw)
+        if not ok_alias:
+            flash(alias_or_error, "error")
+            return render_template("auth/register.html", email=email, display_name=_normalize_display_name(display_name_raw))
+        display_name = alias_or_error
         if len(password) < 6:
             flash(tr("flash.auth.password_short"), "error")
-            return render_template("auth/register.html", email=email)
+            return render_template("auth/register.html", email=email, display_name=display_name)
         if db.session.query(User.id).filter_by(email=email).first() is not None:
             flash(tr("flash.auth.email_exists"), "error")
-            return render_template("auth/register.html", email=email)
+            return render_template("auth/register.html", email=email, display_name=display_name)
+        if db.session.query(User.id).filter(func.lower(User.display_name) == display_name.lower()).first() is not None:
+            flash(tr("flash.auth.alias_exists"), "error")
+            return render_template("auth/register.html", email=email, display_name=display_name)
         user = User(
             email=email,
+            display_name=display_name,
             password_hash=generate_password_hash(password),
         )
         db.session.add(user)
         db.session.commit()
         flash(tr("flash.auth.account_created"), "ok")
         return redirect(url_for("auth.login"))
-    return render_template("auth/register.html", email="")
+    return render_template("auth/register.html", email="", display_name="")
 
 
 @bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if get_current_user() is not None:
         return redirect(url_for("main.index"))

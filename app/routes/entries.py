@@ -83,6 +83,19 @@ def entry_payment(entry_id: int):
                 "error",
             )
             return _payment_page()
+        try:
+            f.stream.seek(0, 2)
+            size_bytes = int(f.stream.tell())
+            f.stream.seek(0)
+        except Exception:
+            size_bytes = 0
+        max_bytes = int(current_app.config.get("MAX_CONTENT_LENGTH", 5 * 1024 * 1024))
+        if size_bytes > 0 and size_bytes > max_bytes:
+            flash(
+                tr("flash.payment.file_too_large", max_mb=max(1, max_bytes // (1024 * 1024))),
+                "error",
+            )
+            return _payment_page()
         store_name = f"{entry.id}_{secrets.token_hex(6)}.{ext}"
         dest_dir = Path(current_app.config["PAYMENT_PROOFS_FOLDER"])
         dest_dir.mkdir(parents=True, exist_ok=True)
