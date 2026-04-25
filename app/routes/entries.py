@@ -141,7 +141,8 @@ def predictions(entry_id: int):
         abort(403)
 
     pay = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
-    if pay is None or pay.status != PaymentStatus.APPROVED:
+    bypass_in_dev = bool(current_app.config.get("TEST_MODE_PREDICTIONS_BYPASS", False))
+    if (pay is None or pay.status != PaymentStatus.APPROVED) and not bypass_in_dev:
         flash(tr("entry.payment_required"), "error")
         return redirect(url_for("entries.entry_payment", entry_id=entry_id))
 

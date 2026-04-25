@@ -4,6 +4,17 @@
 <section class="card">
   <h1 class="card__title">{{ t("admin.payments.heading") }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("admin.payments.hint") }}</p>
+  {% if test_mode_payments %}
+  <div class="empty-state" style="margin-bottom: 1rem;">
+    <p class="empty-state__title">{{ t("admin.payments.test_mode_title") }}</p>
+    <p class="form__hint">{{ t("admin.payments.test_mode_hint") }}</p>
+    <form method="post" action="{{ url_for('admin.payment_test_approve', status=current_status, q=q) }}" class="admin-inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input class="form__input form__input--note" type="number" min="1" step="1" name="entry_id" placeholder="{{ t('admin.payments.entry_id_placeholder') }}" required>
+      <button type="submit" class="btn btn--sm btn--primary">{{ t("admin.payments.test_approve_btn") }}</button>
+    </form>
+  </div>
+  {% endif %}
   <div class="filter-row">
     <div class="filter-tabs">
       <a class="filter-tab {% if current_status == 'all' %}is-active{% endif %}" href="{{ url_for('admin.payments', status='all', q=q) }}">{{ t("admin.filter.all") }} ({{ counts['all'] }})</a>

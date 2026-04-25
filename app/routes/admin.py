@@ -58,6 +58,10 @@ def _safe_status(raw: str | None) -> str:
     return "all"
 
 
+def _is_test_payment_mode() -> bool:
+    return bool(current_app.config.get("TEST_MODE_PAYMENTS", False))
+
+
 @bp.get("/admin")
 @login_required
 def dashboard():
@@ -309,7 +313,48 @@ def payments():
         current_status=status,
         q=q,
         counts=counts,
+        test_mode_payments=_is_test_payment_mode(),
     )
+
+
+@bp.post("/admin/payments/test-approve")
+@login_required
+def payment_test_approve():
+    _require_admin()
+    if not _is_test_payment_mode():
+        abort(404)
+    status = _safe_status(request.args.get("status"))
+    q = (request.args.get("q") or "").strip()
+    raw_entry_id = (request.form.get("entry_id") or "").strip()
+    try:
+        entry_id = int(raw_entry_id)
+    except ValueError:
+        flash("ID de quiniela inválido.", "error")
+        return redirect(url_for("admin.payments", status=status, q=q))
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        flash(f"No existe la quiniela #{entry_id}.", "error")
+        return redirect(url_for("admin.payments", status=status, q=q))
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
+    amount = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
+    if payment is None:
+        payment = Payment(
+            user_id=entry.user_id,
+            entry_id=entry.id,
+            amount_mxn=amount,
+            status=PaymentStatus.APPROVED,
+            admin_note="TEST MODE: aprobación manual sin comprobante",
+        )
+        db.session.add(payment)
+    else:
+        payment.user_id = entry.user_id
+        payment.amount_mxn = amount
+        payment.status = PaymentStatus.APPROVED
+        payment.admin_note = "TEST MODE: aprobación manual sin comprobante"
+        payment.updated_at = utcnow()
+    db.session.commit()
+    flash(f"Pago de prueba aprobado para quiniela #{entry.id}.", "ok")
+    return redirect(url_for("admin.payments", status=status, q=q))
 
 
 @bp.post("/admin/payments/<int:payment_id>/approve")

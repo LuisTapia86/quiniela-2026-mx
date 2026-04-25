@@ -8,11 +8,14 @@ class Config:
     _debug_env = (os.environ.get("FLASK_DEBUG") or "0").strip().lower()
     _debug_on = _debug_env in {"1", "true", "yes", "on"}
     _is_production = _env == "production"
+    _is_dev_or_test = _env in {"development", "test"} or _debug_on
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-change-me-in-production")
     PERMANENT_SESSION_LIFETIME = timedelta(days=7)
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SAMESITE = "Lax"
     SESSION_COOKIE_SECURE = _is_production or not _debug_on
+    TEST_MODE_PAYMENTS = _is_dev_or_test and not _is_production
+    TEST_MODE_PREDICTIONS_BYPASS = TEST_MODE_PAYMENTS
     BASE_DIR = Path(__file__).resolve().parent
     INSTANCE_DIR = BASE_DIR / "instance"
     _default_db = (INSTANCE_DIR / "app.db").resolve().as_posix()
