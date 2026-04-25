@@ -857,24 +857,29 @@ ol.pay-steps {
 
 .brand-lockup {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 24px;
+  gap: 12px;
 }
 
 .hero-brand-lockup {
-  margin-bottom: 28px;
+  margin-bottom: 14px;
 }
 
-.hero-brand-lockup .brand-lockup-icon {
-  width: 88px;
-  height: 88px;
+.hero-logo-icon {
+  width: 128px !important;
+  height: 128px !important;
+  min-width: 128px;
+  min-height: 128px;
   object-fit: contain;
-  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.5));
+  display: block;
+  margin: 0 auto 16px;
+  filter: drop-shadow(0 12px 24px rgba(0, 0, 0, 0.45));
 }
 
 .brand-lockup-text {
-  text-align: left;
+  text-align: center;
 }
 
 .brand-lockup-title {
@@ -887,7 +892,7 @@ ol.pay-steps {
 }
 
 .brand-lockup-subtitle {
-  margin-top: 8px;
+  margin-top: 6px;
   font-size: clamp(1rem, 2.5vw, 2rem);
   font-weight: 800;
   letter-spacing: 0.08em;
@@ -895,16 +900,8 @@ ol.pay-steps {
   text-transform: uppercase;
 }
 
-.landing-hero__title {
-  margin: 0 0 0.75rem;
-  font-size: clamp(1.35rem, 4.5vw, 1.85rem);
-  line-height: 1.2;
-  font-weight: 700;
-  color: var(--text);
-}
-
 .landing-hero__subtitle {
-  margin: 0 auto 1.25rem;
+  margin: 0.25rem auto 1.1rem;
   max-width: 36rem;
   font-size: 1rem;
   color: var(--muted);
@@ -918,14 +915,11 @@ ol.pay-steps {
 }
 
 @media (max-width: 640px) {
-  .brand-lockup {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .hero-brand-lockup .brand-lockup-icon {
-    width: 72px;
-    height: 72px;
+  .hero-logo-icon {
+    width: 96px !important;
+    height: 96px !important;
+    min-width: 96px;
+    min-height: 96px;
   }
 
   .brand-lockup-text {
