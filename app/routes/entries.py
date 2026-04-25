@@ -7,12 +7,14 @@ from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.models import Entry, Match, Payment, PaymentStatus, Prediction, TournamentState
+from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState
 from app.payment_gating import is_payment_banking_configured
 from app.routes.auth import get_current_user, login_required
+from app.services.scoring import calculate_prediction_breakdown
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
@@ -146,7 +148,9 @@ def predictions(entry_id: int):
     locked = state.predictions_locked
     matches = list(
         db.session.scalars(
-            select(Match).order_by(Match.match_number.asc(), Match.id.asc())
+            select(Match)
+            .options(joinedload(Match.result))
+            .order_by(Match.match_number.asc(), Match.id.asc())
         )
     )
     preds = list(
@@ -245,11 +249,28 @@ def _render_predictions(
         p = by_match_id.get(m.id)
         if p is not None:
             completed_predictions += 1
+        result: Result | None = m.result
+        breakdown = None
+        result_pending = result is None
+        if p is not None and result is not None:
+            breakdown = calculate_prediction_breakdown(
+                p.home_goals,
+                p.away_goals,
+                result.home_score,
+                result.away_score,
+            )
+        points_earned = p.points_earned if p is not None and result is not None else None
         rows.append(
             {
                 "match": m,
                 "home": p.home_goals if p else 0,
                 "away": p.away_goals if p else 0,
+                "has_prediction": p is not None,
+                "prediction_text": f"{p.home_goals}-{p.away_goals}" if p is not None else "—",
+                "result_text": f"{result.home_score}-{result.away_score}" if result is not None else tr("pred.pending_result"),
+                "result_pending": result_pending,
+                "points_earned": points_earned,
+                "breakdown": breakdown,
             }
         )
     return render_template(

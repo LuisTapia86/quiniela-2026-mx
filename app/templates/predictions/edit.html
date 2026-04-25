@@ -1,56 +1,105 @@
 {% extends "base.html" %}
-{% block title %}Predicciones: {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("pred.heading") }}: {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">Predicciones: {{ entry.name|e }}</h1>
+  <h1 class="card__title">{{ t("pred.heading") }}: {{ entry.name|e }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">
-    Progreso: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> partidos capturados.
+    {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
   </p>
   {% if locked %}
-  <p class="lock-banner" role="status">Predicciones cerradas (solo lectura).</p>
+  <p class="lock-banner" role="status">{{ t("pred.locked_readonly") }}</p>
   {% else %}
-  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">Indica goles de local y visita. Puedes guardar y volver a editar mientras sigan abiertas.</p>
+  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
 
   {% if rows|length == 0 %}
-  <p class="form__hint">Aún no hay partidos cargados. Un administrador debe importar partidos antes de capturar predicciones.</p>
+  <p class="form__hint">{{ t("pred.no_matches") }}</p>
   {% else %}
   <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
-      <table class="data-table" role="grid" aria-label="Partidos y pronósticos">
+      <table class="data-table" role="grid" aria-label="{{ t('pred.table_aria') }}">
         <thead>
           <tr>
             <th scope="col">#</th>
-            <th scope="col">Fase / partido</th>
-            <th scope="col">Hora (CDMX)</th>
-            <th scope="col">Local</th>
-            <th scope="col">Visita</th>
+            <th scope="col">{{ t("pred.col.match") }}</th>
+            <th scope="col">{{ t("pred.col.kickoff") }}</th>
+            <th scope="col">{{ t("pred.col.home") }}</th>
+            <th scope="col">{{ t("pred.col.away") }}</th>
+            <th scope="col">{{ t("pred.col.result") }}</th>
+            <th scope="col">{{ t("pred.col.points") }}</th>
+            <th scope="col">{{ t("pred.col.detail") }}</th>
           </tr>
         </thead>
         <tbody>
           {% for row in rows %}
           {% set m = row.match %}
           <tr>
-            <td data-label="Número">{{ m.match_number }}</td>
-            <td data-label="Partido">
+            <td data-label="#">{{ m.match_number }}</td>
+            <td data-label="{{ t('pred.col.match') }}">
               <span class="pred-stage">{{ m.stage|e }}</span>
               <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
             </td>
-            <td data-label="Hora">{{ format_kickoff(m.kickoff_at) }}</td>
-            <td data-label="Local">
+            <td data-label="{{ t('pred.col.kickoff') }}">{{ format_kickoff(m.kickoff_at) }}</td>
+            <td data-label="{{ t('pred.col.home') }}">
               {% if locked %}
               <span class="pred-readonly">{{ row.home }}</span>
               {% else %}
               <input class="form__input form__input--num" type="number" name="home_{{ m.id }}" min="0" step="1" required value="{{ row.home }}">
               {% endif %}
             </td>
-            <td data-label="Visita">
+            <td data-label="{{ t('pred.col.away') }}">
               {% if locked %}
               <span class="pred-readonly">{{ row.away }}</span>
               {% else %}
               <input class="form__input form__input--num" type="number" name="away_{{ m.id }}" min="0" step="1" required value="{{ row.away }}">
               {% endif %}
+            </td>
+            <td data-label="{{ t('pred.col.result') }}">
+              {% if row.result_pending %}
+              <span class="form__hint">{{ t("pred.pending_result") }}</span>
+              {% else %}
+              <span class="pred-readonly">{{ row.result_text }}</span>
+              {% endif %}
+            </td>
+            <td data-label="{{ t('pred.col.points') }}">
+              {% if row.points_earned is none %}
+              <span class="form__hint">—</span>
+              {% else %}
+              <strong>{{ row.points_earned }}</strong>
+              {% endif %}
+            </td>
+            <td data-label="{{ t('pred.col.detail') }}">
+              <button class="btn btn--sm pred-detail-btn" type="button"
+                data-open-text="{{ t('pred.view_detail') }}"
+                data-close-text="{{ t('pred.hide_detail') }}"
+                aria-expanded="false"
+                aria-controls="pred-detail-{{ m.id }}">
+                {{ t("pred.view_detail") }}
+              </button>
+            </td>
+          </tr>
+          <tr id="pred-detail-{{ m.id }}" class="pred-detail-row" hidden>
+            <td colspan="8">
+              <div class="pred-detail-panel">
+                <p><strong>{{ t("pred.detail.prediction") }}:</strong> {{ row.prediction_text }}</p>
+                <p><strong>{{ t("pred.detail.result") }}:</strong> {{ row.result_text }}</p>
+                {% if row.result_pending %}
+                <p class="form__hint">{{ t("pred.detail.pending") }}</p>
+                {% elif not row.has_prediction %}
+                <p class="form__hint">{{ t("pred.detail.no_prediction") }}</p>
+                {% else %}
+                <p><strong>{{ t("pred.detail.points") }}:</strong> {{ row.points_earned }}</p>
+                <ul class="pred-detail-list">
+                  {% for code in row.breakdown.reason_codes %}
+                  <li>{{ t("pred.reason." ~ code) }}</li>
+                  {% endfor %}
+                  {% if not row.breakdown.reason_codes %}
+                  <li>{{ t("pred.reason.no_points") }}</li>
+                  {% endif %}
+                </ul>
+                {% endif %}
+              </div>
             </td>
           </tr>
           {% endfor %}
@@ -59,14 +108,27 @@
     </div>
     {% if not locked %}
     <div class="sticky-save-wrap">
-      <button class="form__submit pred-form__save" type="submit">Guardar predicciones</button>
+      <button class="form__submit pred-form__save" type="submit">{{ t("pred.save") }}</button>
     </div>
     {% endif %}
   </form>
   {% if locked %}
-  <p class="card__footer">No se pueden modificar mientras el torneo tenga el bloqueo de predicciones activo.</p>
+  <p class="card__footer">{{ t("pred.locked_footer") }}</p>
   {% endif %}
   {% endif %}
-  <p class="card__footer"><a href="{{ url_for('main.index') }}">Volver al panel</a></p>
+  <p class="card__footer"><a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a></p>
 </section>
+<script>
+  document.querySelectorAll('.pred-detail-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var targetId = btn.getAttribute('aria-controls');
+      var row = document.getElementById(targetId);
+      if (!row) return;
+      var isOpen = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      btn.textContent = isOpen ? btn.dataset.openText : btn.dataset.closeText;
+      row.hidden = isOpen;
+    });
+  });
+</script>
 {% endblock %}

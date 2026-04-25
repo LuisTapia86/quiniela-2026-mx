@@ -28,6 +28,48 @@ def calculate_prediction_points(
     return total
 
 
+def calculate_prediction_breakdown(
+    pred_home: int, pred_away: int, result_home: int, result_away: int
+) -> dict:
+    exact = pred_home == result_home and pred_away == result_away
+    pred_outcome = get_outcome(pred_home, pred_away)
+    real_outcome = get_outcome(result_home, result_away)
+    correct_outcome = pred_outcome == real_outcome
+    correct_goal_diff = (pred_home - pred_away) == (result_home - result_away)
+
+    reasons: list[str] = []
+    reason_codes: list[str] = []
+
+    if exact:
+        reasons.append("Marcador exacto: +5")
+        reasons.append("Diferencia de goles correcta: +1")
+        reason_codes.extend(["exact_score", "correct_goal_difference"])
+        total = 6
+    else:
+        total = 0
+        if correct_outcome:
+            if real_outcome == "draw":
+                reasons.append("Empate correcto: +3")
+                reason_codes.append("correct_draw")
+            else:
+                reasons.append("Ganador correcto: +3")
+                reason_codes.append("correct_winner")
+            total += 3
+        if correct_goal_diff:
+            reasons.append("Diferencia de goles correcta: +1")
+            reason_codes.append("correct_goal_difference")
+            total += 1
+
+    return {
+        "total": total,
+        "exact_score": exact,
+        "correct_outcome": correct_outcome,
+        "correct_goal_difference": correct_goal_diff,
+        "reasons": reasons,
+        "reason_codes": reason_codes,
+    }
+
+
 def recalculate_entry_points(entry_id: int) -> int:
     entry = db.session.get(Entry, entry_id)
     if entry is None:
