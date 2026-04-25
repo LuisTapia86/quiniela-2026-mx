@@ -4,6 +4,18 @@
 {% block content %}
 <div class="landing">
   <section class="landing-hero" aria-labelledby="landing-hero-title">
+    <div class="brand-lockup hero-brand-lockup">
+      <img
+        src="{{ url_for('static', filename='img/logo-icon.png') }}"
+        alt="Quiniela World Cup 2026 MX"
+        class="brand-lockup-icon"
+        onerror="this.style.display='none';"
+      >
+      <div class="brand-lockup-text">
+        <div class="brand-lockup-title">Quiniela</div>
+        <div class="brand-lockup-subtitle">World Cup 2026 MX</div>
+      </div>
+    </div>
     <h1 id="landing-hero-title" class="landing-hero__title">{{ config.BRAND_NAME }}</h1>
     <p class="landing-hero__subtitle">{{ t("landing.hero.subtitle") }}</p>
     <div class="landing-hero__ctas">
@@ -83,3 +95,6 @@
   </section>
 </div>
 {% endblock %}
+
+<img src="{{ url_for('static', filename='img/logo-icon.png') }}"
+     style="width: 96px; height: 96px;">

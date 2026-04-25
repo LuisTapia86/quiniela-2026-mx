@@ -7,41 +7,77 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   {% block head_extra %}{% endblock %}
 </head>
-<body>
-  <header class="nav">
-    <div class="nav__inner">
-      <a class="nav__brand" href="{{ url_for('main.index') }}">{{ config.BRAND_NAME }}</a>
-      <nav class="nav__links" aria-label="{{ t('nav.primary') }}">
+<body class="{% if current_user %}app-auth{% else %}app-public{% endif %}">
+  {% set page_main_class %}{% block main_class %}{% endblock %}{% endset %}
+  {% set page_content %}{% block content %}{% endblock %}{% endset %}
+  <header class="nav nav--app">
+    <div class="nav__inner nav__inner--app">
+      <a class="brand-wrap" href="{{ url_for('main.index') }}" aria-label="{{ config.BRAND_NAME }}">
+        <span class="brand-slot" aria-hidden="true">
+          <img
+            class="brand-logo"
+            src="{{ url_for('static', filename='img/logo-icon.png') }}"
+            alt="Quiniela World Cup 2026 MX"
+            onerror="this.style.display='none';"
+          >
+        </span>
+        <span class="brand-text">{{ config.BRAND_NAME }}</span>
+      </a>
+      <div class="nav__right">
         {% if current_user %}
-        <a href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
-        <a href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
-        <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
-        <a href="{{ url_for('rules.terms') }}">{{ t("nav.terms") }}</a>
-        <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
-        <a href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
-        {% if current_user.is_admin %}
-        <a href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
-        {% endif %}
         <span class="nav__user">{{ current_user.email }}</span>
         <a class="nav__btn" href="{{ url_for('auth.logout') }}">{{ t("nav.logout") }}</a>
-        {% else %}
-        <a href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
-        <a href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
-        <a href="{{ url_for('rules.terms') }}">{{ t("nav.terms") }}</a>
-        <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
-        <a href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
-        <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
         {% endif %}
         <span class="nav__lang">
           <a href="{{ url_for('main.set_language', lang='es', next=request.full_path) }}">{{ t("lang.es") }}</a>
           <span>·</span>
           <a href="{{ url_for('main.set_language', lang='en', next=request.full_path) }}">{{ t("lang.en") }}</a>
         </span>
-      </nav>
+      </div>
     </div>
   </header>
 
-  <main class="container{% block main_class %}{% endblock %}">
+  {% if current_user %}
+  <div class="app-layout">
+    <aside class="app-sidebar" aria-label="{{ t('nav.primary') }}">
+      <nav class="sidebar-nav">
+        <a class="sidebar-link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
+        <a class="sidebar-link{% if request.path == '/entries/new' %} is-active{% endif %}" href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
+        {% if current_user.is_admin %}
+        <a class="sidebar-link{% if request.path.startswith('/admin') %} is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
+        {% endif %}
+      </nav>
+      <nav class="sidebar-nav sidebar-nav--bottom">
+        <a class="sidebar-link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+      </nav>
+    </aside>
+
+    <main class="container container--app{{ page_main_class }}">
+      {% with messages = get_flashed_messages(with_categories=True) %}
+      {% if messages %}
+      <ul class="flash" role="status" aria-live="polite">
+        {% for category, message in messages %}
+        <li class="flash__item flash__item--{{ category }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% endwith %}
+      {{ page_content }}
+    </main>
+  </div>
+  {% else %}
+  <header class="nav nav--public">
+    <div class="nav__inner nav__inner--public">
+      <nav class="nav__links" aria-label="{{ t('nav.primary') }}">
+        <a class="public-nav__link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+        <a class="public-nav__link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        <a class="public-nav__link{% if request.path == '/login' %} is-active{% endif %}" href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
+        <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
+      </nav>
+    </div>
+  </header>
+  <main class="container{{ page_main_class }}">
     {% with messages = get_flashed_messages(with_categories=True) %}
     {% if messages %}
     <ul class="flash" role="status" aria-live="polite">
@@ -51,7 +87,16 @@
     </ul>
     {% endif %}
     {% endwith %}
-    {% block content %}{% endblock %}
+    {{ page_content }}
   </main>
+  {% endif %}
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <a href="{{ url_for('rules.terms') }}">{{ t("nav.terms") }}</a>
+      <span>·</span>
+      <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
+    </div>
+  </footer>
 </body>
 </html>

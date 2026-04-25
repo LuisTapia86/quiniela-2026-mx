@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -69,7 +70,13 @@ def create_app(config_object: type = Config) -> Flask:
 
     @app.context_processor
     def _inject_current_user() -> dict:
-        return {"current_user": get_current_user(), "t": t, "lang": get_lang()}
+        logo_path = Path(app.static_folder or "") / "img" / "logo.svg"
+        return {
+            "current_user": get_current_user(),
+            "t": t,
+            "lang": get_lang(),
+            "has_logo": logo_path.is_file(),
+        }
 
     with app.app_context():
         db.create_all()
