@@ -21,6 +21,7 @@ from sqlalchemy.orm import joinedload
 from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState, User, utcnow
 from app.routes.auth import get_current_user, login_required
+from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_reader
 from app.prize_info import entry_financials
 from app.services.scoring import recalculate_all_points
@@ -405,3 +406,12 @@ def payment_proof(payment_id: int):
     if not target.is_file():
         abort(404)
     return send_file(target, as_attachment=False, download_name=p.proof_stored_path)
+
+
+@bp.get("/admin/seed-matches")
+@login_required
+def seed_matches_admin():
+    _require_admin()
+    generate_world_cup_2026_matches()
+    flash("Matches created", "ok")
+    return redirect(url_for("admin.matches"))
