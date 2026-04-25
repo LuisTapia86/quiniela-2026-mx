@@ -62,10 +62,6 @@ def entry_payment(entry_id: int):
         ctx.update(extra)
         return render_template("entries/payment.html", **ctx)
 
-    if request.method == "POST" and not banking_configured:
-        flash(f"{tr('payment.safe_gate')} {tr('payment.safe_gate.en')}", "error")
-        return redirect(url_for("entries.entry_payment", entry_id=entry_id))
-
     if request.method == "POST":
         f = request.files.get("proof")
         if f is None or f.filename is None or f.filename.strip() == "":

@@ -6,7 +6,7 @@
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
 
   {% if not payment_banking_configured %}
-  <p class="pay-gate" role="status">{{ t("payment.safe_gate") }}<br>{{ t("payment.safe_gate.en") }}</p>
+  <p class="pay-gate" role="status">{{ t("payment.beta_mode_notice") }}</p>
   <ol class="pay-steps" aria-label="{{ t('payment.steps_future') }}">
     <li>{{ t("payment.step1.future", entry_fee=config.ENTRY_FEE_MXN) }}</li>
     <li>{{ t("payment.step2") }}</li>
@@ -46,8 +46,9 @@
   <p class="form__hint">{{ t("payment.none_uploaded") }}</p>
   {% endif %}
 
-  <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">{{ t("payment.upload_title") }}</h2>
-  {% if payment_banking_configured %}
+  <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">
+    {% if payment_banking_configured %}{{ t("payment.upload_title") }}{% else %}{{ t("payment.upload_test_title") }}{% endif %}
+  </h2>
   <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.formats", max_mb=(config.MAX_CONTENT_LENGTH // (1024*1024))) }}</p>
   {% if payment and payment.status.value == 'approved' %}
   <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("payment.approved_warn") }}</p>
@@ -58,19 +59,8 @@
       <span class="form__label">{{ t("payment.file_label") }}</span>
       <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
     </label>
-    <button class="form__submit" type="submit">{{ t("payment.send") }}</button>
+    <button class="form__submit" type="submit">{% if payment_banking_configured %}{{ t("payment.send") }}{% else %}{{ t("payment.send_test") }}{% endif %}</button>
   </form>
-  {% else %}
-  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.disabled_hint") }}</p>
-  <form class="form form--disabled" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data" aria-disabled="true">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <label class="form__field">
-      <span class="form__label">{{ t("payment.file_label") }}</span>
-      <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf" disabled aria-disabled="true">
-    </label>
-    <button class="form__submit" type="submit" disabled aria-disabled="true">{{ t("payment.send_disabled") }}</button>
-  </form>
-  {% endif %}
 
   <p class="card__footer">
     <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
