@@ -6,7 +6,22 @@
   <div class="dash-actions" style="margin-bottom:1rem;">
     <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
     <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_template") }}</a>
+    <form method="post" action="{{ url_for('admin.import_public_fixtures') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--sm">{{ t("admin.public_import.button") }}</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.cleanup_placeholder_matches') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--sm">Limpiar partidos de prueba</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.reset_all_matches') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--sm">Resetear todos los partidos</button>
+    </form>
   </div>
+  <p class="form__hint" style="margin-top:-0.5rem; margin-bottom:1rem;">Esto eliminará partidos Team/TBD y sus predicciones/resultados asociados.</p>
+  <p class="form__hint" style="margin-top:-0.5rem; margin-bottom:1rem;">Esto borra partidos, predicciones y resultados. Usar solo en pruebas.</p>
+  <p class="form__hint" style="margin-top:-0.5rem; margin-bottom:1rem;">{{ t("common.local_time_note") }}</p>
   {% if not rows %}
   <div class="empty-state">
     <p class="empty-state__title">{{ t("admin.matches.empty") }}</p>
@@ -33,7 +48,13 @@
           <td>{{ match.stage|e }}</td>
           <td>{{ match.home_team|e }}</td>
           <td>{{ match.away_team|e }}</td>
-          <td>{{ match.kickoff_at.strftime('%Y-%m-%d %H:%M') if match.kickoff_at else '—' }}</td>
+          <td>
+            {% if match.kickoff_at %}
+            <time class="match-time" datetime="{{ match.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ match.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
+            {% else %}
+            —
+            {% endif %}
+          </td>
           <td>{% if match.result %}{{ t("common.yes") }}{% else %}{{ t("common.no") }}{% endif %}</td>
           <td class="num">{{ prediction_count }}</td>
         </tr>

@@ -5,12 +5,29 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app import db
 from app.models import Match
 
 _REQUIRED_COLUMNS = {"match_number", "stage", "home_team", "away_team", "kickoff_at"}
+
+
+def _delete_placeholder_matches_without_predictions() -> None:
+    placeholder_stmt = (
+        select(Match)
+        .where(
+            or_(
+                Match.home_team.like("Team%"),
+                Match.away_team.like("Team%"),
+                Match.away_team == "TBD",
+            ),
+        )
+        .where(~Match.predictions.any())
+    )
+    for match in db.session.scalars(placeholder_stmt):
+        db.session.delete(match)
+    db.session.flush()
 
 
 def parse_kickoff(raw: str) -> datetime:
@@ -35,6 +52,7 @@ def import_matches_from_reader(reader: TextIO) -> dict:
         return {"created": 0, "updated": 0, "skipped": 0, "errors": ["CSV sin encabezados."]}
     fields = {f.strip() for f in csv_reader.fieldnames if f}
     missing = sorted(_REQUIRED_COLUMNS - fields)
+    has_group_name = "group_name" in fields
     if missing:
         return {
             "created": 0,
@@ -47,11 +65,13 @@ def import_matches_from_reader(reader: TextIO) -> dict:
     updated = 0
     skipped = 0
     errors: list[str] = []
+    _delete_placeholder_matches_without_predictions()
 
     for i, row in enumerate(csv_reader, start=2):
         try:
             match_number = int((row.get("match_number") or "").strip())
             stage = (row.get("stage") or "").strip()
+            group_name = (row.get("group_name") or "").strip() if has_group_name else ""
             home = (row.get("home_team") or "").strip()
             away = (row.get("away_team") or "").strip()
             kickoff = parse_kickoff(row.get("kickoff_at") or "")
@@ -65,6 +85,7 @@ def import_matches_from_reader(reader: TextIO) -> dict:
                     Match(
                         match_number=match_number,
                         stage=stage,
+                        group_name=group_name or None,
                         home_team=home,
                         away_team=away,
                         kickoff_at=kickoff,
@@ -73,6 +94,7 @@ def import_matches_from_reader(reader: TextIO) -> dict:
                 created += 1
             else:
                 m.stage = stage
+                m.group_name = group_name or None
                 m.home_team = home
                 m.away_team = away
                 m.kickoff_at = kickoff

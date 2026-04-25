@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ t("groups.heading") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("groups.heading") }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("groups.note") }}</p>
+
+  {% if not has_group_data %}
+  <div class="empty-state">
+    <p class="empty-state__title">{{ t("groups.empty_title") }}</p>
+    <p class="form__hint">{{ t("groups.empty_hint") }}</p>
+  </div>
+  {% else %}
+  <div class="groups-grid">
+    {% for g in groups %}
+    <article class="group-card">
+      <h2 class="group-card__title">{{ t("groups.group_label", group=g.group) }}</h2>
+      <div class="table-wrap">
+        <table class="data-table" aria-label="{{ t('groups.table_aria', group=g.group) }}">
+          <thead>
+            <tr>
+              <th>{{ t("groups.col.team") }}</th>
+              <th class="num">{{ t("groups.col.played") }}</th>
+              <th class="num">{{ t("groups.col.won") }}</th>
+              <th class="num">{{ t("groups.col.drawn") }}</th>
+              <th class="num">{{ t("groups.col.lost") }}</th>
+              <th class="num">{{ t("groups.col.gf") }}</th>
+              <th class="num">{{ t("groups.col.gc") }}</th>
+              <th class="num">{{ t("groups.col.gd") }}</th>
+              <th class="num">{{ t("groups.col.pts") }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if g.rows %}
+              {% for row in g.rows %}
+              <tr>
+                <td>{{ row.team|e }}</td>
+                <td class="num">{{ row.played }}</td>
+                <td class="num">{{ row.won }}</td>
+                <td class="num">{{ row.drawn }}</td>
+                <td class="num">{{ row.lost }}</td>
+                <td class="num">{{ row.gf }}</td>
+                <td class="num">{{ row.gc }}</td>
+                <td class="num">{{ row.gd }}</td>
+                <td class="num"><strong>{{ row.pts }}</strong></td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="9" class="form__hint">{{ t("groups.group_empty") }}</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="card__footer">
+    {% if current_user %}<a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
+    {% else %}<a href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+    {% endif %}
+  </p>
+</section>
+{% endblock %}

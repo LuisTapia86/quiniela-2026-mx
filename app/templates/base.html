@@ -42,6 +42,7 @@
     <aside class="app-sidebar" aria-label="{{ t('nav.primary') }}">
       <nav class="sidebar-nav">
         <a class="sidebar-link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/groups') %} is-active{% endif %}" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
         <a class="sidebar-link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
         <a class="sidebar-link{% if request.path == '/entries/new' %} is-active{% endif %}" href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
         {% if current_user.is_admin %}
@@ -72,6 +73,7 @@
     <div class="nav__inner nav__inner--public">
       <nav class="nav__links" aria-label="{{ t('nav.primary') }}">
         <a class="public-nav__link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+        <a class="public-nav__link{% if request.path.startswith('/groups') %} is-active{% endif %}" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
         <a class="public-nav__link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
         <a class="public-nav__link{% if request.path == '/login' %} is-active{% endif %}" href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
         <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
@@ -99,5 +101,6 @@
       <a href="{{ url_for('rules.privacy') }}">{{ t("nav.privacy") }}</a>
     </div>
   </footer>
+  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>

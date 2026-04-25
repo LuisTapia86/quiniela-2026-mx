@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ t("admin.api.heading") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("admin.api.heading") }}</h1>
+  <p class="form__hint">{{ t("admin.api.key_status") }}:
+    {% if api_configured %}<strong>{{ t("common.yes") }}</strong>{% else %}<strong>{{ t("common.no") }}</strong>{% endif %}
+  </p>
+  <p class="form__hint">Base URL: <code class="inline-code">{{ base_url }}</code></p>
+  <p class="form__hint">{{ t("admin.api.free_warning") }}</p>
+
+  <div class="dash-actions" style="margin-bottom: 1rem;">
+    <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">{{ t("admin.view_matches") }}</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
+  </div>
+
+  <div class="card card--subtle" style="margin-bottom: 1rem;">
+    <h2 class="card__title card__title--sm">{{ t("admin.api.search_heading") }}</h2>
+    <form class="form" method="post" action="{{ url_for('admin.api_football_search_leagues') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.real_import.season") }}</span>
+        <input class="form__input" type="number" name="season" min="2020" max="2100" value="{{ season }}" required>
+      </label>
+      <button class="form__submit" type="submit">{{ t("admin.api.search_button") }}</button>
+    </form>
+  </div>
+
+  {% if candidates %}
+  <div class="table-wrap" style="margin-bottom: 1rem;">
+    <table class="data-table" aria-label="{{ t('admin.api.candidates_aria') }}">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>{{ t("admin.api.candidate_name") }}</th>
+          <th>{{ t("admin.api.candidate_country") }}</th>
+          <th>{{ t("admin.real_import.season") }}</th>
+          <th>{{ t("admin.api.candidate_coverage") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in candidates %}
+        <tr>
+          <td>{{ c.league_id }}</td>
+          <td>{{ c.league_name|e }}</td>
+          <td>{{ c.country|e }}</td>
+          <td>{{ c.season }}</td>
+          <td><code class="inline-code">{{ c.coverage|tojson }}</code></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="card card--subtle" style="margin-bottom: 1rem;">
+    <h2 class="card__title card__title--sm">{{ t("admin.api.import_heading") }}</h2>
+    <form class="form" method="post" action="{{ url_for('admin.api_football_import_fixtures') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.api.league_id") }}</span>
+        <input class="form__input" type="number" name="league_id" min="1" required value="{{ configured_league_id or '' }}">
+      </label>
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.real_import.season") }}</span>
+        <input class="form__input" type="number" name="season" min="2020" max="2100" required value="{{ season }}">
+      </label>
+      <button class="form__submit" type="submit">{{ t("admin.api.import_button") }}</button>
+    </form>
+  </div>
+
+  <div class="card card--subtle">
+    <h2 class="card__title card__title--sm">{{ t("admin.api.sync_heading") }}</h2>
+    <form class="form" method="post" action="{{ url_for('admin.api_football_sync_results') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.api.league_id") }}</span>
+        <input class="form__input" type="number" name="league_id" min="1" required value="{{ configured_league_id or '' }}">
+      </label>
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.real_import.season") }}</span>
+        <input class="form__input" type="number" name="season" min="2020" max="2100" required value="{{ season }}">
+      </label>
+      <button class="form__submit" type="submit">{{ t("admin.api.sync_button") }}</button>
+    </form>
+  </div>
+
+  {% if last_summary %}
+  <div class="prize-pool" style="margin-top:1rem;">
+    <h2 class="prize-pool__title">{{ t("admin.api.last_summary") }}</h2>
+    <ul class="prize-pool__list">
+      <li>{{ t("admin.import.created", n=last_summary.get('created', 0)) }}</li>
+      <li>{{ t("admin.import.updated", n=last_summary.get('updated', 0)) }}</li>
+      <li>{{ t("admin.import.skipped", n=last_summary.get('skipped', 0)) }}</li>
+      <li>{{ t("admin.api.results_synced", n=last_summary.get('results_synced', 0)) }}</li>
+      <li>{{ t("admin.import.errors", n=(last_summary.get('errors') or [])|length) }}</li>
+    </ul>
+  </div>
+  {% endif %}
+
+  <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
+</section>
+{% endblock %}

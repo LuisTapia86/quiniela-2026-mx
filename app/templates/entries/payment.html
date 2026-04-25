@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ t("title.payment") }} — {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("title.payment") }} — {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("payment.heading") }}: {{ entry.name|e }}</h1>
+  <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
 
   {% if not payment_banking_configured %}

@@ -1,5 +1,6 @@
-from flask import Blueprint, flash, jsonify, redirect, render_template, request, session, url_for
+from flask import Blueprint, current_app, flash, jsonify, redirect, render_template, request, session, url_for
 from sqlalchemy import func, select
+from sqlalchemy.orm import joinedload
 
 from app import db
 from app.models import Entry, Match, Payment, Prediction, TournamentState, User
@@ -78,6 +79,115 @@ def profile():
 @bp.get("/health")
 def health():
     return jsonify(status="ok", phase=1), 200
+
+
+def _extract_group_letter(group_name: str | None) -> str | None:
+    import re
+
+    value = (group_name or "").strip()
+    if not value:
+        return None
+    m = re.search(r"\b(?:grupo|group)\s+([A-L])\b", value, flags=re.IGNORECASE)
+    if not m:
+        return None
+    return m.group(1).upper()
+
+
+def _group_stage_matches() -> list[Match]:
+    return list(
+        db.session.scalars(
+            select(Match)
+            .options(joinedload(Match.result))
+            .where(
+                func.lower(Match.stage) == "fase de grupos",
+                Match.group_name.is_not(None),
+                func.trim(Match.group_name) != "",
+            )
+            .order_by(Match.match_number.asc(), Match.id.asc()),
+        ),
+    )
+
+
+@bp.get("/groups")
+def groups():
+    letters = [chr(code) for code in range(ord("A"), ord("L") + 1)]
+    matches = _group_stage_matches()
+
+    group_rows: dict[str, dict[str, dict]] = {g: {} for g in letters}
+    for m in matches:
+        home = (m.home_team or "").strip()
+        away = (m.away_team or "").strip()
+        if not home or not away:
+            continue
+        group_letter = _extract_group_letter(m.group_name)
+        if group_letter not in group_rows:
+            continue
+        group_bucket = group_rows[group_letter]
+        if home not in group_bucket:
+            group_bucket[home] = {
+                "team": home,
+                "played": 0,
+                "won": 0,
+                "drawn": 0,
+                "lost": 0,
+                "gf": 0,
+                "gc": 0,
+                "gd": 0,
+                "pts": 0,
+            }
+        if away not in group_bucket:
+            group_bucket[away] = {
+                "team": away,
+                "played": 0,
+                "won": 0,
+                "drawn": 0,
+                "lost": 0,
+                "gf": 0,
+                "gc": 0,
+                "gd": 0,
+                "pts": 0,
+            }
+        if m.result is None:
+            continue
+        hs = int(m.result.home_score)
+        aw = int(m.result.away_score)
+        home_row = group_rows[group_letter][home]
+        away_row = group_rows[group_letter][away]
+        home_row["played"] += 1
+        away_row["played"] += 1
+        home_row["gf"] += hs
+        home_row["gc"] += aw
+        away_row["gf"] += aw
+        away_row["gc"] += hs
+        if hs > aw:
+            home_row["won"] += 1
+            away_row["lost"] += 1
+            home_row["pts"] += 3
+        elif hs < aw:
+            away_row["won"] += 1
+            home_row["lost"] += 1
+            away_row["pts"] += 3
+        else:
+            home_row["drawn"] += 1
+            away_row["drawn"] += 1
+            home_row["pts"] += 1
+            away_row["pts"] += 1
+
+    for group_letter in letters:
+        for row in group_rows[group_letter].values():
+            row["gd"] = row["gf"] - row["gc"]
+
+    groups_payload = []
+    summary_for_logs: list[str] = []
+    for group_letter in letters:
+        rows = list(group_rows[group_letter].values())
+        rows.sort(key=lambda r: (-r["pts"], -r["gd"], -r["gf"], r["team"].lower()))
+        groups_payload.append({"group": group_letter, "rows": rows})
+        summary_for_logs.append(f"Grupo {group_letter}: {len(rows)} equipos")
+
+    has_group_data = any(g["rows"] for g in groups_payload)
+    current_app.logger.info("Groups summary -> %s", ", ".join(summary_for_logs))
+    return render_template("groups/index.html", groups=groups_payload, has_group_data=has_group_data)
 
 
 @bp.get("/set-language/<lang>")

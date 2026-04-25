@@ -7,6 +7,7 @@
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">
     {{ t("admin.results.completed", done=completed_matches, total=total_matches) }}
   </p>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
 
   {% if not matches %}
   <p class="form__hint">{{ t("admin.results.none") }}</p>
@@ -19,6 +20,7 @@
           <tr>
             <th scope="col">#</th>
             <th scope="col">{{ t("admin.col.match") }}</th>
+            <th scope="col">{{ t("admin.col.kickoff") }}</th>
             <th scope="col">{{ t("admin.col.home") }}</th>
             <th scope="col">{{ t("admin.col.away") }}</th>
           </tr>
@@ -30,6 +32,13 @@
             <td>
               <span class="pred-stage">{{ m.stage|e }}</span>
               <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
+            </td>
+            <td>
+              {% if m.kickoff_at %}
+              <time class="match-time" datetime="{{ m.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ m.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
+              {% else %}
+              —
+              {% endif %}
             </td>
             <td>
               <input class="form__input form__input--num" type="number" name="result_home_{{ m.id }}" min="0" step="1"

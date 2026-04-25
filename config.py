@@ -41,3 +41,8 @@ class Config:
     PAYMENT_BENEFICIARY_NAME = os.environ.get("PAYMENT_BENEFICIARY_NAME", "TODO_NOMBRE_BENEFICIARIO")
     PAYMENT_BANK = os.environ.get("PAYMENT_BANK", "TODO_BANCO")
     PAYMENT_CLABE = os.environ.get("PAYMENT_CLABE", "TODO_CLABE")
+    API_FOOTBALL_KEY = os.environ.get("API_FOOTBALL_KEY", "")
+    API_FOOTBALL_BASE_URL = os.environ.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io")
+    API_FOOTBALL_WORLD_CUP_SEASON = int(os.environ.get("API_FOOTBALL_WORLD_CUP_SEASON", "2026") or "2026")
+    _league_id_raw = (os.environ.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID") or "").strip()
+    API_FOOTBALL_WORLD_CUP_LEAGUE_ID = int(_league_id_raw) if _league_id_raw else None

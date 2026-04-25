@@ -1,0 +1,105 @@
+date,time,home_team,away_team,group,stage
+11/6,1:00 p.m.,MéxicoMéxico,SudáfricaSudáfrica,Grupo A,Group Stage
+11/6,8:00 p.m.,Corea del SurCorea del Sur,ChequiaChequia,Grupo A,Group Stage
+12/6,1:00 p.m.,CanadáCanadá,Bosnia y HerzegovinaBosnia y Herzegovina,Grupo B,Group Stage
+12/6,7:00 p.m.,Estados UnidosEstados Unidos,ParaguayParaguay,Grupo D,Group Stage
+13/6,1:00 p.m.,CatarCatar,SuizaSuiza,Grupo B,Group Stage
+13/6,4:00 p.m.,BrasilBrasil,MarruecosMarruecos,Grupo C,Group Stage
+13/6,7:00 p.m.,HaitíHaití,EscociaEscocia,Grupo C,Group Stage
+13/6,10:00 p.m.,AustraliaAustralia,TurquíaTurquía,Grupo D,Group Stage
+14/6,11:00 a.m.,AlemaniaAlemania,CurazaoCurazao,Grupo E,Group Stage
+14/6,2:00 p.m.,Países BajosPaíses Bajos,JapónJapón,Grupo F,Group Stage
+14/6,5:00 p.m.,Costa de MarfilCosta de Marfil,EcuadorEcuador,Grupo E,Group Stage
+14/6,8:00 p.m.,SueciaSuecia,TúnezTúnez,Grupo F,Group Stage
+15/6,10:00 a.m.,EspañaEspaña,Cabo VerdeCabo Verde,Grupo H,Group Stage
+15/6,1:00 p.m.,BélgicaBélgica,EgiptoEgipto,Grupo G,Group Stage
+15/6,4:00 p.m.,Arabia SauditaArabia Saudita,UruguayUruguay,Grupo H,Group Stage
+15/6,7:00 p.m.,IránIrán,Nueva ZelandaNueva Zelanda,Grupo G,Group Stage
+16/6,1:00 p.m.,FranciaFrancia,SenegalSenegal,Grupo I,Group Stage
+16/6,4:00 p.m.,IrakIrak,NoruegaNoruega,Grupo I,Group Stage
+16/6,7:00 p.m.,ArgentinaArgentina,ArgeliaArgelia,Grupo J,Group Stage
+16/6,10:00 p.m.,AustriaAustria,JordaniaJordania,Grupo J,Group Stage
+17/6,11:00 a.m.,PortugalPortugal,RD CongoRD Congo,Grupo K,Group Stage
+17/6,2:00 p.m.,InglaterraInglaterra,CroaciaCroacia,Grupo L,Group Stage
+17/6,5:00 p.m.,GhanaGhana,PanamáPanamá,Grupo L,Group Stage
+17/6,8:00 p.m.,UzbekistánUzbekistán,ColombiaColombia,Grupo K,Group Stage
+18/6,10:00 a.m.,ChequiaChequia,SudáfricaSudáfrica,Grupo A,Group Stage
+18/6,1:00 p.m.,SuizaSuiza,Bosnia y HerzegovinaBosnia y Herzegovina,Grupo B,Group Stage
+18/6,4:00 p.m.,CanadáCanadá,CatarCatar,Grupo B,Group Stage
+18/6,7:00 p.m.,MéxicoMéxico,Corea del SurCorea del Sur,Grupo A,Group Stage
+19/6,1:00 p.m.,Estados UnidosEstados Unidos,AustraliaAustralia,Grupo D,Group Stage
+19/6,4:00 p.m.,EscociaEscocia,MarruecosMarruecos,Grupo C,Group Stage
+19/6,6:30 p.m.,BrasilBrasil,HaitíHaití,Grupo C,Group Stage
+19/6,9:00 p.m.,TurquíaTurquía,ParaguayParaguay,Grupo D,Group Stage
+20/6,11:00 a.m.,Países BajosPaíses Bajos,SueciaSuecia,Grupo F,Group Stage
+20/6,2:00 p.m.,AlemaniaAlemania,Costa de MarfilCosta de Marfil,Grupo E,Group Stage
+20/6,6:00 p.m.,EcuadorEcuador,CurazaoCurazao,Grupo E,Group Stage
+20/6,10:00 p.m.,TúnezTúnez,JapónJapón,Grupo F,Group Stage
+21/6,10:00 a.m.,EspañaEspaña,Arabia SauditaArabia Saudita,Grupo H,Group Stage
+21/6,1:00 p.m.,BélgicaBélgica,IránIrán,Grupo G,Group Stage
+21/6,4:00 p.m.,UruguayUruguay,Cabo VerdeCabo Verde,Grupo H,Group Stage
+21/6,7:00 p.m.,Nueva ZelandaNueva Zelanda,EgiptoEgipto,Grupo G,Group Stage
+22/6,11:00 a.m.,ArgentinaArgentina,AustriaAustria,Grupo J,Group Stage
+22/6,3:00 p.m.,FranciaFrancia,IrakIrak,Grupo I,Group Stage
+22/6,6:00 p.m.,NoruegaNoruega,SenegalSenegal,Grupo I,Group Stage
+22/6,9:00 p.m.,JordaniaJordania,ArgeliaArgelia,Grupo J,Group Stage
+23/6,11:00 a.m.,PortugalPortugal,UzbekistánUzbekistán,Grupo K,Group Stage
+23/6,2:00 p.m.,InglaterraInglaterra,GhanaGhana,Grupo L,Group Stage
+23/6,5:00 p.m.,PanamáPanamá,CroaciaCroacia,Grupo L,Group Stage
+23/6,8:00 p.m.,ColombiaColombia,RD CongoRD Congo,Grupo K,Group Stage
+24/6,1:00 p.m.,SuizaSuiza,CanadáCanadá,Grupo B,Group Stage
+24/6,1:00 p.m.,Bosnia y HerzegovinaBosnia y Herzegovina,CatarCatar,Grupo B,Group Stage
+24/6,4:00 p.m.,MarruecosMarruecos,HaitíHaití,Grupo C,Group Stage
+24/6,4:00 p.m.,EscociaEscocia,BrasilBrasil,Grupo C,Group Stage
+24/6,7:00 p.m.,SudáfricaSudáfrica,Corea del SurCorea del Sur,Grupo A,Group Stage
+24/6,7:00 p.m.,ChequiaChequia,MéxicoMéxico,Grupo A,Group Stage
+25/6,2:00 p.m.,CurazaoCurazao,Costa de MarfilCosta de Marfil,Grupo E,Group Stage
+25/6,2:00 p.m.,EcuadorEcuador,AlemaniaAlemania,Grupo E,Group Stage
+25/6,5:00 p.m.,TúnezTúnez,Países BajosPaíses Bajos,Grupo F,Group Stage
+25/6,5:00 p.m.,JapónJapón,SueciaSuecia,Grupo F,Group Stage
+25/6,8:00 p.m.,TurquíaTurquía,Estados UnidosEstados Unidos,Grupo D,Group Stage
+25/6,8:00 p.m.,ParaguayParaguay,AustraliaAustralia,Grupo D,Group Stage
+26/6,1:00 p.m.,NoruegaNoruega,FranciaFrancia,Grupo I,Group Stage
+26/6,1:00 p.m.,SenegalSenegal,IrakIrak,Grupo I,Group Stage
+26/6,6:00 p.m.,Cabo VerdeCabo Verde,Arabia SauditaArabia Saudita,Grupo H,Group Stage
+26/6,6:00 p.m.,UruguayUruguay,EspañaEspaña,Grupo H,Group Stage
+26/6,9:00 p.m.,Nueva ZelandaNueva Zelanda,BélgicaBélgica,Grupo G,Group Stage
+26/6,9:00 p.m.,EgiptoEgipto,IránIrán,Grupo G,Group Stage
+27/6,3:00 p.m.,PanamáPanamá,InglaterraInglaterra,Grupo L,Group Stage
+27/6,3:00 p.m.,CroaciaCroacia,GhanaGhana,Grupo L,Group Stage
+27/6,5:30 p.m.,ColombiaColombia,PortugalPortugal,Grupo K,Group Stage
+27/6,5:30 p.m.,RD CongoRD Congo,UzbekistánUzbekistán,Grupo K,Group Stage
+27/6,8:00 p.m.,ArgeliaArgelia,AustriaAustria,Grupo J,Group Stage
+27/6,8:00 p.m.,JordaniaJordania,ArgentinaArgentina,Grupo J,Group Stage
+28/6,1:00 p.m.,A definir,A definir,Grupo J,Round of 32
+29/6,11:00 a.m.,A definir,A definir,Grupo J,Round of 32
+29/6,2:30 p.m.,A definir,A definir,Grupo J,Round of 32
+29/6,7:00 p.m.,A definir,A definir,Grupo J,Round of 32
+30/6,11:00 a.m.,A definir,A definir,Grupo J,Round of 32
+30/6,3:00 p.m.,A definir,A definir,Grupo J,Round of 32
+30/6,7:00 p.m.,A definir,A definir,Grupo J,Round of 32
+1/7,10:00 a.m.,A definir,A definir,Grupo J,Round of 32
+1/7,2:00 p.m.,A definir,A definir,Grupo J,Round of 32
+1/7,6:00 p.m.,A definir,A definir,Grupo J,Round of 32
+2/7,1:00 p.m.,A definir,A definir,Grupo J,Round of 32
+2/7,5:00 p.m.,A definir,A definir,Grupo J,Round of 32
+2/7,9:00 p.m.,A definir,A definir,Grupo J,Round of 32
+3/7,12:00 p.m.,A definir,A definir,Grupo J,Round of 32
+3/7,4:00 p.m.,A definir,A definir,Grupo J,Round of 32
+3/7,7:30 p.m.,A definir,A definir,Grupo J,Round of 32
+4/7,11:00 a.m.,A definir,A definir,Grupo J,Round of 16
+4/7,3:00 p.m.,A definir,A definir,Grupo J,Round of 16
+5/7,2:00 p.m.,A definir,A definir,Grupo J,Round of 16
+5/7,6:00 p.m.,A definir,A definir,Grupo J,Round of 16
+6/7,1:00 p.m.,A definir,A definir,Grupo J,Round of 16
+6/7,6:00 p.m.,A definir,A definir,Grupo J,Round of 16
+7/7,10:00 a.m.,A definir,A definir,Grupo J,Round of 16
+7/7,2:00 p.m.,A definir,A definir,Grupo J,Round of 16
+9/7,2:00 p.m.,A definir,A definir,Grupo J,Quarterfinals
+10/7,1:00 p.m.,A definir,A definir,Grupo J,Quarterfinals
+11/7,3:00 p.m.,A definir,A definir,Grupo J,Quarterfinals
+11/7,7:00 p.m.,A definir,A definir,Grupo J,Quarterfinals
+14/7,1:00 p.m.,A definir,A definir,Grupo J,Semifinals
+15/7,1:00 p.m.,A definir,A definir,Grupo J,Semifinals
+18/7,3:00 p.m.,A definir,A definir,Grupo J,Semifinals
+19/7,1:00 p.m.,A definir,A definir,Grupo J,Final

@@ -51,7 +51,7 @@
         <tr>
           <td>{{ p.id }}</td>
           <td>{{ p.user.email|e }}</td>
-          <td><strong>{{ p.entry.name|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
+          <td><strong>{{ (p.user.display_name or p.user.email)|e }} - {{ entry_title(p.entry)|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
           <td class="num">{{ p.amount_mxn }}</td>
           <td><span class="entry-pay-badge entry-pay-badge--{{ p.status.value }}">{{ p.status.value }}</span></td>
           <td>{% if p.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=p.id) }}">{{ p.proof_stored_path|e }}</a>{% else %}—{% endif %}</td>

@@ -3,7 +3,7 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("admin.import.heading") }}</h1>
-  <p class="form__hint" style="margin:-0.5rem 0 1rem;">{{ t("admin.import.required_cols") }} <code class="inline-code">match_number, stage, home_team, away_team, kickoff_at</code></p>
+  <p class="form__hint" style="margin:-0.5rem 0 1rem;">{{ t("admin.import.required_cols") }} <code class="inline-code">match_number, stage, group_name, home_team, away_team, kickoff_at</code></p>
   <div class="dash-actions" style="margin-bottom:1rem;">
     <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_csv_template") }}</a>
     <a class="btn btn--sm" href="{{ url_for('admin.matches') }}">{{ t("admin.view_matches") }}</a>
@@ -16,6 +16,32 @@
     </label>
     <button class="form__submit" type="submit">{{ t("common.import") }}</button>
   </form>
+
+  <div class="card card--subtle" style="margin-top:1rem;">
+    <h2 class="card__title card__title--sm">{{ t("admin.public_import.heading") }}</h2>
+    <p class="form__hint">{{ t("admin.public_import.hint") }}</p>
+    <form class="form" method="post" action="{{ url_for('admin.import_public_fixtures') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="form__submit" type="submit">{{ t("admin.public_import.button") }}</button>
+    </form>
+  </div>
+
+  <div class="card card--subtle" style="margin-top:1rem;">
+    <h2 class="card__title card__title--sm">{{ t("admin.real_import.heading") }}</h2>
+    <p class="form__hint">{{ t("admin.real_import.hint") }}</p>
+    <form class="form" method="post" action="{{ url_for('admin.import_real_matches') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.real_import.season") }}</span>
+        <input class="form__input" type="number" name="season" min="2020" max="2100" value="2026" required>
+      </label>
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.real_import.confirm") }}</span>
+        <input type="checkbox" name="confirm_overwrite" required>
+      </label>
+      <button class="form__submit" type="submit">{{ t("admin.real_import.button") }}</button>
+    </form>
+  </div>
 
   {% if summary %}
   <div class="prize-pool" style="margin-top:1rem;">

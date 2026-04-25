@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import secrets
-from datetime import datetime
 from pathlib import Path
-from zoneinfo import ZoneInfo
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
@@ -19,25 +17,33 @@ from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
 
-MX_TZ = ZoneInfo("America/Mexico_City")
-
-
 @bp.route("/entries/new", methods=["GET", "POST"])
 @login_required
 def new():
     user = get_current_user()
     assert user is not None
     if request.method == "POST":
-        name = (request.form.get("name") or "").strip()
-        if not name or len(name) > 120:
-            flash(tr("flash.entry.name_required"), "error")
-            return render_template("entries/new.html", name=name)
-        e = Entry(user_id=user.id, name=name)
+        alias = (request.form.get("alias") or "").strip()
+        if len(alias) > 120:
+            flash(tr("flash.entry.alias_too_long"), "error")
+            return render_template("entries/new.html", alias=alias)
+        next_entry_number = (
+            db.session.scalar(
+                select(func.max(Entry.entry_number)).where(Entry.user_id == user.id),
+            )
+            or 0
+        ) + 1
+        e = Entry(
+            user_id=user.id,
+            name=alias or f"Entrada #{next_entry_number}",
+            entry_number=next_entry_number,
+            alias=alias or None,
+        )
         db.session.add(e)
         db.session.commit()
         flash(tr("flash.entry.created"), "ok")
         return redirect(url_for("main.index"))
-    return render_template("entries/new.html", name="")
+    return render_template("entries/new.html", alias="")
 
 
 @bp.route("/entries/<int:entry_id>/payment", methods=["GET", "POST"])
@@ -280,16 +286,4 @@ def _render_predictions(
         locked=locked,
         completed_predictions=completed_predictions,
         total_matches=len(matches),
-        format_kickoff=_format_kickoff,
     )
-
-
-def _format_kickoff(dt: datetime | None) -> str:
-    if dt is None:
-        return "—"
-    if dt.tzinfo is None:
-        dt_aware = dt.replace(tzinfo=ZoneInfo("UTC"))
-    else:
-        dt_aware = dt
-    local = dt_aware.astimezone(MX_TZ)
-    return f"{local.strftime('%d/%m/%Y, %H:%M')} (CDMX)"

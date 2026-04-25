@@ -15,6 +15,14 @@ from app.translations import tr
 bp = Blueprint("leaderboard", __name__, url_prefix="")
 
 
+def _entry_label(entry: Entry) -> str:
+    number = entry.entry_number or entry.id
+    alias = (entry.alias or "").strip()
+    if alias:
+        return tr("entry.label_with_alias", number=number, alias=alias)
+    return tr("entry.label", number=number)
+
+
 @bp.get("/leaderboard")
 def index():
     rows = list(
@@ -78,6 +86,7 @@ def index():
             {
                 "rank": rank,
                 "entry": entry,
+                "entry_label": _entry_label(entry),
                 "public_name": (user.display_name or "").strip() or f"{tr('leaderboard.player_fallback')} {entry.id}",
                 "n_predictions": n_pred,
                 "n_results_counted": n_done,
@@ -149,7 +158,7 @@ def export_csv():
             or 0
         )
         writer.writerow(
-            [rank, entry.name, user.email, entry.total_points, n_pred, n_done, payment.status.value],
+            [rank, _entry_label(entry), user.email, entry.total_points, n_pred, n_done, payment.status.value],
         )
     data = io.BytesIO(out.getvalue().encode("utf-8"))
     return send_file(data, mimetype="text/csv", as_attachment=True, download_name="leaderboard_export.csv")

@@ -6,7 +6,7 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import inspect, text
+from sqlalchemy import inspect, select, text
 
 from config import Config
 from app.translations import get_lang, t
@@ -46,6 +46,54 @@ def _ensure_user_display_name_column() -> None:
         return
     db.session.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(40)"))
     db.session.commit()
+
+
+def _ensure_match_group_name_column() -> None:
+    inspector = inspect(db.engine)
+    cols = {c["name"] for c in inspector.get_columns("matches")}
+    if "group_name" in cols:
+        return
+    db.session.execute(text("ALTER TABLE matches ADD COLUMN group_name VARCHAR(20)"))
+    db.session.commit()
+
+
+def _ensure_entry_columns_and_backfill() -> None:
+    inspector = inspect(db.engine)
+    cols = {c["name"] for c in inspector.get_columns("entries")}
+    if "entry_number" not in cols:
+        db.session.execute(text("ALTER TABLE entries ADD COLUMN entry_number INTEGER"))
+        db.session.commit()
+    if "alias" not in cols:
+        db.session.execute(text("ALTER TABLE entries ADD COLUMN alias VARCHAR(120)"))
+        db.session.commit()
+
+    from app.models import Entry
+
+    entry_rows = list(
+        db.session.scalars(
+            select(Entry).order_by(Entry.user_id.asc(), Entry.created_at.asc(), Entry.id.asc()),
+        ),
+    )
+    current_user_id: int | None = None
+    current_number = 0
+    changed = False
+    for row in entry_rows:
+        if row.user_id != current_user_id:
+            current_user_id = row.user_id
+            current_number = 1
+        else:
+            current_number += 1
+        if row.entry_number != current_number:
+            row.entry_number = current_number
+            changed = True
+        alias = (row.alias or "").strip()
+        if not alias:
+            legacy_name = (row.name or "").strip()
+            if legacy_name:
+                row.alias = legacy_name
+                changed = True
+    if changed:
+        db.session.commit()
 
 
 def create_app(config_object: type = Config) -> Flask:
@@ -91,16 +139,29 @@ def create_app(config_object: type = Config) -> Flask:
     @app.context_processor
     def _inject_current_user() -> dict:
         logo_path = Path(app.static_folder or "") / "img" / "logo.svg"
+
+        def entry_title(entry) -> str:
+            if entry is None:
+                return ""
+            number = entry.entry_number or entry.id
+            alias = (entry.alias or "").strip()
+            if alias:
+                return t("entry.label_with_alias", number=number, alias=alias)
+            return t("entry.label", number=number)
+
         return {
             "current_user": get_current_user(),
             "t": t,
             "lang": get_lang(),
             "has_logo": logo_path.is_file(),
+            "entry_title": entry_title,
         }
 
     with app.app_context():
         db.create_all()
         _ensure_user_display_name_column()
+        _ensure_match_group_name_column()
+        _ensure_entry_columns_and_backfill()
         _admin_bootstrap_from_env(app)
 
     return app

@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import io
 from pathlib import Path
+import re
 
 from flask import (
     Blueprint,
@@ -12,6 +13,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     send_file,
     url_for,
 )
@@ -21,10 +23,18 @@ from sqlalchemy.orm import joinedload
 from app import db
 from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState, User, utcnow
 from app.routes.auth import get_current_user, login_required
+from app.services.api_football import (
+    ApiFootballError,
+    get_world_cup_league_candidates,
+    import_fixtures_upsert,
+    sync_results_from_api,
+)
 from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_reader
 from app.prize_info import entry_financials
 from app.services.scoring import recalculate_all_points
+from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
+from app.translations import tr
 
 bp = Blueprint("admin", __name__, url_prefix="")
 
@@ -230,12 +240,12 @@ def matches_template():
     _require_admin()
     output = io.StringIO()
     w = csv.writer(output)
-    w.writerow(["match_number", "stage", "home_team", "away_team", "kickoff_at"])
-    w.writerow([1, "Fase de grupos", "Mexico", "South Africa", "2026-06-11 18:00"])
-    w.writerow([2, "Fase de grupos", "Canada", "TBD", "2026-06-12 20:00"])
-    w.writerow([3, "Fase de grupos", "USA", "TBD", "2026-06-12 22:00"])
-    w.writerow([4, "Fase de grupos", "Argentina", "TBD", "2026-06-13 18:00"])
-    w.writerow([5, "Fase de grupos", "Brazil", "TBD", "2026-06-14 18:00"])
+    w.writerow(["match_number", "stage", "group_name", "home_team", "away_team", "kickoff_at"])
+    w.writerow([1, "Fase de grupos", "Grupo A", "Mexico", "South Africa", "2026-06-11 18:00"])
+    w.writerow([2, "Fase de grupos", "Grupo A", "Canada", "TBD", "2026-06-12 20:00"])
+    w.writerow([3, "Fase de grupos", "Grupo B", "USA", "TBD", "2026-06-12 22:00"])
+    w.writerow([4, "Fase de grupos", "Grupo C", "Argentina", "TBD", "2026-06-13 18:00"])
+    w.writerow([5, "Fase de grupos", "Grupo C", "Brazil", "TBD", "2026-06-14 18:00"])
     data = io.BytesIO(output.getvalue().encode("utf-8"))
     return send_file(
         data,
@@ -259,6 +269,83 @@ def matches():
         .order_by(Match.match_number.asc(), Match.id.asc()),
     ).all()
     return render_template("admin/matches.html", rows=rows)
+
+
+@bp.post("/admin/import-public-fixtures")
+@login_required
+def import_public_fixtures():
+    _require_admin()
+    try:
+        summary = fetch_fixtures_from_public_source()
+    except WorldCupScraperError as exc:
+        flash(f"{tr('admin.public_import.failed')}: {exc}", "error")
+        return redirect(url_for("admin.matches"))
+    except Exception:
+        current_app.logger.exception("Public fixtures import failed")
+        flash(tr("admin.public_import.failed"), "error")
+        return redirect(url_for("admin.matches"))
+    flash(
+        tr(
+            "admin.public_import.success",
+            source=summary.get("source", "public"),
+            created=summary.get("created", 0),
+            updated=summary.get("updated", 0),
+            skipped=summary.get("skipped", 0),
+            errors=len(summary.get("errors") or []),
+        ),
+        "ok",
+    )
+    return redirect(url_for("admin.matches"))
+
+
+@bp.post("/admin/matches/cleanup-placeholders")
+@login_required
+def cleanup_placeholder_matches():
+    _require_admin()
+    group_slot_pattern = re.compile(r"^[A-L][1-3]$", flags=re.IGNORECASE)
+
+    def _is_placeholder_team(raw: str | None) -> bool:
+        team = (raw or "").strip()
+        if not team:
+            return False
+        low = team.casefold()
+        if team.startswith("Team "):
+            return True
+        if low in {"tbd", "a definir"}:
+            return True
+        if group_slot_pattern.fullmatch(team):
+            return True
+        if low.startswith("winner match") or low.startswith("ganador partido"):
+            return True
+        return False
+
+    placeholder_match_ids = [
+        m.id
+        for m in db.session.scalars(select(Match))
+        if _is_placeholder_team(m.home_team) or _is_placeholder_team(m.away_team)
+    ]
+    if not placeholder_match_ids:
+        flash("No se encontraron partidos de prueba Team/TBD para limpiar.", "ok")
+        return redirect(url_for("admin.matches"))
+
+    db.session.query(Prediction).filter(Prediction.match_id.in_(placeholder_match_ids)).delete(synchronize_session=False)
+    db.session.query(Result).filter(Result.match_id.in_(placeholder_match_ids)).delete(synchronize_session=False)
+    deleted_matches = db.session.query(Match).filter(Match.id.in_(placeholder_match_ids)).delete(synchronize_session=False)
+    db.session.commit()
+    flash(f"Partidos de prueba eliminados: {deleted_matches}.", "ok")
+    return redirect(url_for("admin.matches"))
+
+
+@bp.post("/admin/matches/reset-all")
+@login_required
+def reset_all_matches():
+    _require_admin()
+    db.session.query(Prediction).delete(synchronize_session=False)
+    db.session.query(Result).delete(synchronize_session=False)
+    db.session.query(Match).delete(synchronize_session=False)
+    db.session.commit()
+    flash("Todos los partidos, predicciones y resultados fueron eliminados.", "ok")
+    return redirect(url_for("admin.matches"))
 
 
 @bp.get("/admin/payments")
@@ -330,11 +417,11 @@ def payment_test_approve():
     try:
         entry_id = int(raw_entry_id)
     except ValueError:
-        flash("ID de quiniela inválido.", "error")
+        flash("ID de entrada inválido.", "error")
         return redirect(url_for("admin.payments", status=status, q=q))
     entry = db.session.get(Entry, entry_id)
     if entry is None:
-        flash(f"No existe la quiniela #{entry_id}.", "error")
+        flash(f"No existe la entrada #{entry_id}.", "error")
         return redirect(url_for("admin.payments", status=status, q=q))
     payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
     amount = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
@@ -354,7 +441,7 @@ def payment_test_approve():
         payment.admin_note = "TEST MODE: aprobación manual sin comprobante"
         payment.updated_at = utcnow()
     db.session.commit()
-    flash(f"Pago de prueba aprobado para quiniela #{entry.id}.", "ok")
+    flash(f"Pago de prueba aprobado para entrada #{entry.id}.", "ok")
     return redirect(url_for("admin.payments", status=status, q=q))
 
 
@@ -415,3 +502,163 @@ def seed_matches_admin():
     generate_world_cup_2026_matches()
     flash("Matches created", "ok")
     return redirect(url_for("admin.matches"))
+
+
+@bp.post("/admin/import-real-matches")
+@login_required
+def import_real_matches():
+    _require_admin()
+    confirm = (request.form.get("confirm_overwrite") or "").strip().lower()
+    if confirm not in {"yes", "true", "1", "on"}:
+        flash(tr("admin.real_import.confirm_required"), "error")
+        return redirect(url_for("admin.matches_import"))
+    api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
+    if not api_key:
+        flash(tr("admin.real_import.missing_key"), "error")
+        return redirect(url_for("admin.matches_import"))
+    season_raw = (request.form.get("season") or "2026").strip()
+    try:
+        season = int(season_raw)
+    except ValueError:
+        flash(tr("admin.real_import.invalid_season"), "error")
+        return redirect(url_for("admin.matches_import"))
+    league_id_raw = current_app.config.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID")
+    if league_id_raw is None:
+        flash(tr("admin.api.league_or_season_invalid"), "error")
+        return redirect(url_for("admin.matches_import"))
+    league_id = int(league_id_raw)
+    try:
+        summary = import_fixtures_upsert(
+            current_app.config.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+            api_key,
+            season=season,
+            league_id=league_id,
+        )
+    except ApiFootballError as exc:
+        flash(f"{tr('admin.real_import.failed')}: {exc}", "error")
+        return redirect(url_for("admin.matches_import"))
+    except Exception:
+        current_app.logger.exception("API-Football real import failed")
+        flash(tr("admin.real_import.failed"), "error")
+        return redirect(url_for("admin.matches_import"))
+    flash(tr("admin.real_import.success", count=summary.get("fixtures_total", 0)), "ok")
+    return redirect(url_for("admin.matches"))
+
+
+@bp.get("/admin/api-football")
+@login_required
+def api_football_panel():
+    _require_admin()
+    return render_template(
+        "admin/api_football.html",
+        api_configured=bool((current_app.config.get("API_FOOTBALL_KEY") or "").strip()),
+        base_url=current_app.config.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+        season=int(current_app.config.get("API_FOOTBALL_WORLD_CUP_SEASON", 2026)),
+        configured_league_id=current_app.config.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID"),
+        candidates=session.get("api_football_candidates") or [],
+        last_summary=session.get("api_football_last_summary") or {},
+    )
+
+
+@bp.post("/admin/api-football/search-leagues")
+@login_required
+def api_football_search_leagues():
+    _require_admin()
+    api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
+    if not api_key:
+        flash(tr("admin.real_import.missing_key"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    season_raw = (request.form.get("season") or str(current_app.config.get("API_FOOTBALL_WORLD_CUP_SEASON", 2026))).strip()
+    try:
+        season = int(season_raw)
+    except ValueError:
+        flash(tr("admin.real_import.invalid_season"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    try:
+        candidates = get_world_cup_league_candidates(
+            current_app.config.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+            api_key,
+            season=season,
+        )
+    except ApiFootballError as exc:
+        flash(f"{tr('admin.api.search_failed')}: {exc}", "error")
+        return redirect(url_for("admin.api_football_panel"))
+    session["api_football_candidates"] = candidates
+    flash(tr("admin.api.search_ok", count=len(candidates)), "ok")
+    return redirect(url_for("admin.api_football_panel"))
+
+
+@bp.post("/admin/api-football/import-fixtures")
+@login_required
+def api_football_import_fixtures():
+    _require_admin()
+    api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
+    if not api_key:
+        flash(tr("admin.real_import.missing_key"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    season_raw = (request.form.get("season") or str(current_app.config.get("API_FOOTBALL_WORLD_CUP_SEASON", 2026))).strip()
+    league_id_raw = (request.form.get("league_id") or str(current_app.config.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID") or "")).strip()
+    try:
+        season = int(season_raw)
+        league_id = int(league_id_raw)
+    except ValueError:
+        flash(tr("admin.api.league_or_season_invalid"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    try:
+        summary = import_fixtures_upsert(
+            current_app.config.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+            api_key,
+            season=season,
+            league_id=league_id,
+            allow_clear_without_predictions=True,
+        )
+    except ApiFootballError as exc:
+        flash(f"{tr('admin.api.import_failed')}: {exc}", "error")
+        return redirect(url_for("admin.api_football_panel"))
+    session["api_football_last_summary"] = {
+        "created": summary.get("created", 0),
+        "updated": summary.get("updated", 0),
+        "skipped": summary.get("skipped", 0),
+        "results_synced": 0,
+        "errors": summary.get("errors", []),
+    }
+    flash(tr("admin.api.import_ok"), "ok")
+    return redirect(url_for("admin.api_football_panel"))
+
+
+@bp.post("/admin/api-football/sync-results")
+@login_required
+def api_football_sync_results():
+    _require_admin()
+    api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
+    if not api_key:
+        flash(tr("admin.real_import.missing_key"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    season_raw = (request.form.get("season") or str(current_app.config.get("API_FOOTBALL_WORLD_CUP_SEASON", 2026))).strip()
+    league_id_raw = (request.form.get("league_id") or str(current_app.config.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID") or "")).strip()
+    try:
+        season = int(season_raw)
+        league_id = int(league_id_raw)
+    except ValueError:
+        flash(tr("admin.api.league_or_season_invalid"), "error")
+        return redirect(url_for("admin.api_football_panel"))
+    try:
+        summary = sync_results_from_api(
+            current_app.config.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io"),
+            api_key,
+            season=season,
+            league_id=league_id,
+        )
+    except ApiFootballError as exc:
+        flash(f"{tr('admin.api.sync_failed')}: {exc}", "error")
+        return redirect(url_for("admin.api_football_panel"))
+    last = session.get("api_football_last_summary") or {}
+    session["api_football_last_summary"] = {
+        "created": last.get("created", 0),
+        "updated": last.get("updated", 0),
+        "skipped": summary.get("skipped", 0),
+        "results_synced": summary.get("results_synced", 0),
+        "errors": summary.get("errors", []),
+    }
+    flash(tr("admin.api.sync_ok", count=summary.get("results_synced", 0)), "ok")
+    return redirect(url_for("admin.api_football_panel"))

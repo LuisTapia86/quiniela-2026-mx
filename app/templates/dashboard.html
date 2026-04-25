@@ -34,9 +34,9 @@
     {% for e in entries %}
     {% set pay = payments_by_entry.get(e.id) %}
     {% set pred_count = prediction_counts.get(e.id, 0) %}
-    <article class="entry-card" aria-label="{{ e.name|e }}">
+    <article class="entry-card" aria-label="{{ entry_title(e)|e }}">
       <header class="entry-card__head">
-        <h3 class="entry-card__title">{{ e.name|e }}</h3>
+        <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
         <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
       </header>
 

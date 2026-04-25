@@ -44,6 +44,8 @@ class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     name = db.Column(db.String(120), nullable=False, default="Mi quiniela")
+    entry_number = db.Column(db.Integer, nullable=True)
+    alias = db.Column(db.String(120), nullable=True)
     total_points = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -63,6 +65,7 @@ class Match(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     match_number = db.Column(db.Integer, unique=True, nullable=False)  # 1–104
     stage = db.Column(db.String(64), nullable=False)  # e.g. group, R16, QF
+    group_name = db.Column(db.String(20), nullable=True)  # e.g. Grupo A
     home_team = db.Column(db.String(100), nullable=False)
     away_team = db.Column(db.String(100), nullable=False)
     kickoff_at = db.Column(db.DateTime, nullable=True)

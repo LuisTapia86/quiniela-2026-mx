@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}{{ t("pred.heading") }}: {{ entry.name|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{{ t("pred.heading") }}: {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("pred.heading") }}: {{ entry.name|e }}</h1>
+  <h1 class="card__title">{{ t("pred.heading") }}: {{ entry_title(entry)|e }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">
     {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
   </p>
@@ -11,6 +11,7 @@
   {% else %}
   <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
 
   {% if rows|length == 0 %}
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
@@ -40,7 +41,13 @@
               <span class="pred-stage">{{ m.stage|e }}</span>
               <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
             </td>
-            <td data-label="{{ t('pred.col.kickoff') }}">{{ format_kickoff(m.kickoff_at) }}</td>
+            <td data-label="{{ t('pred.col.kickoff') }}">
+              {% if m.kickoff_at %}
+              <time class="match-time" datetime="{{ m.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ m.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
+              {% else %}
+              —
+              {% endif %}
+            </td>
             <td data-label="{{ t('pred.col.home') }}">
               {% if locked %}
               <span class="pred-readonly">{{ row.home }}</span>

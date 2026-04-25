@@ -1,0 +1,105 @@
+match_number,stage,group_name,home_team,away_team,kickoff_at
+1,Fase de grupos,Grupo A,México,Sudáfrica,2026-06-11 13:00
+2,Fase de grupos,Grupo A,Corea del Sur,Chequia,2026-06-11 20:00
+3,Fase de grupos,Grupo B,Canadá,Bosnia y Herzegovina,2026-06-12 13:00
+4,Fase de grupos,Grupo D,Estados Unidos,Paraguay,2026-06-12 19:00
+5,Fase de grupos,Grupo B,Catar,Suiza,2026-06-13 13:00
+6,Fase de grupos,Grupo C,Brasil,Marruecos,2026-06-13 16:00
+7,Fase de grupos,Grupo C,Haití,Escocia,2026-06-13 19:00
+8,Fase de grupos,Grupo D,Australia,Turquía,2026-06-13 22:00
+9,Fase de grupos,Grupo E,Alemania,Curazao,2026-06-14 11:00
+10,Fase de grupos,Grupo F,Países Bajos,Japón,2026-06-14 14:00
+11,Fase de grupos,Grupo E,Costa de Marfil,Ecuador,2026-06-14 17:00
+12,Fase de grupos,Grupo F,Suecia,Túnez,2026-06-14 20:00
+13,Fase de grupos,Grupo H,España,Cabo Verde,2026-06-15 10:00
+14,Fase de grupos,Grupo G,Bélgica,Egipto,2026-06-15 13:00
+15,Fase de grupos,Grupo H,Arabia Saudita,Uruguay,2026-06-15 16:00
+16,Fase de grupos,Grupo G,Irán,Nueva Zelanda,2026-06-15 19:00
+17,Fase de grupos,Grupo I,Francia,Senegal,2026-06-16 13:00
+18,Fase de grupos,Grupo I,Irak,Noruega,2026-06-16 16:00
+19,Fase de grupos,Grupo J,Argentina,Argelia,2026-06-16 19:00
+20,Fase de grupos,Grupo J,Austria,Jordania,2026-06-16 22:00
+21,Fase de grupos,Grupo K,Portugal,RD Congo,2026-06-17 11:00
+22,Fase de grupos,Grupo L,Inglaterra,Croacia,2026-06-17 14:00
+23,Fase de grupos,Grupo L,Ghana,Panamá,2026-06-17 17:00
+24,Fase de grupos,Grupo K,Uzbekistán,Colombia,2026-06-17 20:00
+25,Fase de grupos,Grupo A,Chequia,Sudáfrica,2026-06-18 10:00
+26,Fase de grupos,Grupo B,Suiza,Bosnia y Herzegovina,2026-06-18 13:00
+27,Fase de grupos,Grupo B,Canadá,Catar,2026-06-18 16:00
+28,Fase de grupos,Grupo A,México,Corea del Sur,2026-06-18 19:00
+29,Fase de grupos,Grupo D,Estados Unidos,Australia,2026-06-19 13:00
+30,Fase de grupos,Grupo C,Escocia,Marruecos,2026-06-19 16:00
+31,Fase de grupos,Grupo C,Brasil,Haití,2026-06-19 18:30
+32,Fase de grupos,Grupo D,Turquía,Paraguay,2026-06-19 21:00
+33,Fase de grupos,Grupo F,Países Bajos,Suecia,2026-06-20 11:00
+34,Fase de grupos,Grupo E,Alemania,Costa de Marfil,2026-06-20 14:00
+35,Fase de grupos,Grupo E,Ecuador,Curazao,2026-06-20 18:00
+36,Fase de grupos,Grupo F,Túnez,Japón,2026-06-20 22:00
+37,Fase de grupos,Grupo H,España,Arabia Saudita,2026-06-21 10:00
+38,Fase de grupos,Grupo G,Bélgica,Irán,2026-06-21 13:00
+39,Fase de grupos,Grupo H,Uruguay,Cabo Verde,2026-06-21 16:00
+40,Fase de grupos,Grupo G,Nueva Zelanda,Egipto,2026-06-21 19:00
+41,Fase de grupos,Grupo J,Argentina,Austria,2026-06-22 11:00
+42,Fase de grupos,Grupo I,Francia,Irak,2026-06-22 15:00
+43,Fase de grupos,Grupo I,Noruega,Senegal,2026-06-22 18:00
+44,Fase de grupos,Grupo J,Jordania,Argelia,2026-06-22 21:00
+45,Fase de grupos,Grupo K,Portugal,Uzbekistán,2026-06-23 11:00
+46,Fase de grupos,Grupo L,Inglaterra,Ghana,2026-06-23 14:00
+47,Fase de grupos,Grupo L,Panamá,Croacia,2026-06-23 17:00
+48,Fase de grupos,Grupo K,Colombia,RD Congo,2026-06-23 20:00
+49,Fase de grupos,Grupo B,Suiza,Canadá,2026-06-24 13:00
+50,Fase de grupos,Grupo B,Bosnia y Herzegovina,Catar,2026-06-24 13:00
+51,Fase de grupos,Grupo C,Marruecos,Haití,2026-06-24 16:00
+52,Fase de grupos,Grupo C,Escocia,Brasil,2026-06-24 16:00
+53,Fase de grupos,Grupo A,Sudáfrica,Corea del Sur,2026-06-24 19:00
+54,Fase de grupos,Grupo A,Chequia,México,2026-06-24 19:00
+55,Fase de grupos,Grupo E,Curazao,Costa de Marfil,2026-06-25 14:00
+56,Fase de grupos,Grupo E,Ecuador,Alemania,2026-06-25 14:00
+57,Fase de grupos,Grupo F,Túnez,Países Bajos,2026-06-25 17:00
+58,Fase de grupos,Grupo F,Japón,Suecia,2026-06-25 17:00
+59,Fase de grupos,Grupo D,Turquía,Estados Unidos,2026-06-25 20:00
+60,Fase de grupos,Grupo D,Paraguay,Australia,2026-06-25 20:00
+61,Fase de grupos,Grupo I,Noruega,Francia,2026-06-26 13:00
+62,Fase de grupos,Grupo I,Senegal,Irak,2026-06-26 13:00
+63,Fase de grupos,Grupo H,Cabo Verde,Arabia Saudita,2026-06-26 18:00
+64,Fase de grupos,Grupo H,Uruguay,España,2026-06-26 18:00
+65,Fase de grupos,Grupo G,Nueva Zelanda,Bélgica,2026-06-26 21:00
+66,Fase de grupos,Grupo G,Egipto,Irán,2026-06-26 21:00
+67,Fase de grupos,Grupo L,Panamá,Inglaterra,2026-06-27 15:00
+68,Fase de grupos,Grupo L,Croacia,Ghana,2026-06-27 15:00
+69,Fase de grupos,Grupo K,Colombia,Portugal,2026-06-27 17:30
+70,Fase de grupos,Grupo K,RD Congo,Uzbekistán,2026-06-27 17:30
+71,Fase de grupos,Grupo J,Argelia,Austria,2026-06-27 20:00
+72,Fase de grupos,Grupo J,Jordania,Argentina,2026-06-27 20:00
+73,Eliminatoria de 32,,A definir,A definir,2026-06-28 13:00
+74,Eliminatoria de 32,,A definir,A definir,2026-06-29 11:00
+75,Eliminatoria de 32,,A definir,A definir,2026-06-29 14:30
+76,Eliminatoria de 32,,A definir,A definir,2026-06-29 19:00
+77,Eliminatoria de 32,,A definir,A definir,2026-06-30 11:00
+78,Eliminatoria de 32,,A definir,A definir,2026-06-30 15:00
+79,Eliminatoria de 32,,A definir,A definir,2026-06-30 19:00
+80,Eliminatoria de 32,,A definir,A definir,2026-07-01 10:00
+81,Eliminatoria de 32,,A definir,A definir,2026-07-01 14:00
+82,Eliminatoria de 32,,A definir,A definir,2026-07-01 18:00
+83,Eliminatoria de 32,,A definir,A definir,2026-07-02 13:00
+84,Eliminatoria de 32,,A definir,A definir,2026-07-02 17:00
+85,Eliminatoria de 32,,A definir,A definir,2026-07-02 21:00
+86,Eliminatoria de 32,,A definir,A definir,2026-07-03 12:00
+87,Eliminatoria de 32,,A definir,A definir,2026-07-03 16:00
+88,Eliminatoria de 32,,A definir,A definir,2026-07-03 19:30
+89,Octavos de final,,A definir,A definir,2026-07-04 11:00
+90,Octavos de final,,A definir,A definir,2026-07-04 15:00
+91,Octavos de final,,A definir,A definir,2026-07-05 14:00
+92,Octavos de final,,A definir,A definir,2026-07-05 18:00
+93,Octavos de final,,A definir,A definir,2026-07-06 13:00
+94,Octavos de final,,A definir,A definir,2026-07-06 18:00
+95,Octavos de final,,A definir,A definir,2026-07-07 10:00
+96,Octavos de final,,A definir,A definir,2026-07-07 14:00
+97,Cuartos de final,,A definir,A definir,2026-07-09 14:00
+98,Cuartos de final,,A definir,A definir,2026-07-10 13:00
+99,Cuartos de final,,A definir,A definir,2026-07-11 15:00
+100,Cuartos de final,,A definir,A definir,2026-07-11 19:00
+101,Semifinales,,A definir,A definir,2026-07-14 13:00
+102,Semifinales,,A definir,A definir,2026-07-15 13:00
+103,Eliminatoria por el tercer lugar,,A definir,A definir,2026-07-18 15:00
+104,Final,,A definir,A definir,2026-07-19 13:00

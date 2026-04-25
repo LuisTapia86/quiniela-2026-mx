@@ -839,6 +839,25 @@ ol.pay-steps {
   font-size: 0.86rem;
 }
 
+.groups-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.8rem;
+}
+
+.group-card {
+  border: 1px solid #334155;
+  background: #0f172a;
+  border-radius: var(--radius);
+  padding: 0.85rem;
+}
+
+.group-card__title {
+  margin: 0 0 0.6rem;
+  font-size: 0.98rem;
+  color: var(--text);
+}
+
 @media (min-width: 32rem) {
   .container {
     padding: 1.5rem 1.25rem 2.5rem;
@@ -849,6 +868,10 @@ ol.pay-steps {
   }
 
   .entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .groups-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
