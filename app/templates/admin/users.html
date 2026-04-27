@@ -25,10 +25,13 @@
           <th scope="col" class="num">{{ t("admin.users.approved_entries_count") }}</th>
           <th scope="col" class="num">{{ t("admin.users.pending_payment_entries") }}</th>
           <th scope="col" class="num">{{ t("admin.users.rejected_entries") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.entry_status_active") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.entry_status_cancelled_user") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.entry_status_voided") }}</th>
         </tr>
       </thead>
       <tbody>
-        {% for user, entries_count, approved_entries_count, pending_payment_entries_count, rejected_entries_count in rows %}
+        {% for user, entries_count, approved_entries_count, pending_payment_entries_count, rejected_entries_count, entry_status_active_count, entry_status_cancelled_count, entry_status_voided_count in rows %}
         <tr>
           <td>{{ user.id }}</td>
           <td>{{ user.email|e }}</td>
@@ -38,6 +41,9 @@
           <td class="num">{{ approved_entries_count }}</td>
           <td class="num">{{ pending_payment_entries_count }}</td>
           <td class="num">{{ rejected_entries_count }}</td>
+          <td class="num">{{ entry_status_active_count }}</td>
+          <td class="num">{{ entry_status_cancelled_count }}</td>
+          <td class="num">{{ entry_status_voided_count }}</td>
         </tr>
         {% endfor %}
       </tbody>

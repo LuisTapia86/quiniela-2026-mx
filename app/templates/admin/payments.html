@@ -39,6 +39,7 @@
           <th scope="col">ID</th>
           <th scope="col">{{ t("leaderboard.col.email") }}</th>
           <th scope="col">{{ t("leaderboard.col.entry") }}</th>
+          <th scope="col">{{ t("admin.col.entry_status") }}</th>
           <th scope="col" class="num">$ MXN</th>
           <th scope="col">{{ t("admin.col.status") }}</th>
           <th scope="col">{{ t("admin.col.proof") }}</th>
@@ -52,6 +53,15 @@
           <td>{{ p.id }}</td>
           <td>{{ p.user.email|e }}</td>
           <td><strong>{{ (p.user.display_name or p.user.email)|e }} - {{ entry_title(p.entry)|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
+          <td>
+            {% set est = p.entry.status.value %}
+            {% if est == 'active' %}<span class="entry-pay-badge entry-pay-badge--approved">{{ t("entry.status.active") }}</span>
+            {% elif est == 'cancelled_by_user' %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.cancelled_by_user") }}</span>
+            {% else %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.voided_by_admin") }}</span>
+            {% endif %}
+            {% if p.entry.cancelled_at %}<span class="form__hint"> · {{ p.entry.cancelled_at.strftime('%Y-%m-%d %H:%M') }}</span>{% endif %}
+            {% if p.entry.cancellation_reason %}<br><span class="form__hint">{{ p.entry.cancellation_reason|e }}</span>{% endif %}
+          </td>
           <td class="num">{{ p.amount_mxn }}</td>
           <td><span class="entry-pay-badge entry-pay-badge--{{ p.status.value }}">{{ p.status.value }}</span></td>
           <td>{% if p.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=p.id) }}">{{ p.proof_stored_path|e }}</a>{% else %}—{% endif %}</td>
@@ -60,13 +70,23 @@
             <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
-              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' %}disabled{% endif %}>{{ t("common.approve") }}</button>
+              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' or p.entry.status.value != 'active' %}disabled{% endif %}>{{ t("common.approve") }}</button>
             </form>
             <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
               <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>
+            {% if p.status.value == 'approved' and p.entry.status.value == 'active' %}
+            <form method="post" action="{{ url_for('admin.void_entry', entry_id=p.entry_id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack" style="margin-top:0.5rem;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <label class="form__field" style="min-width:12rem;">
+                <span class="form__label">{{ t("admin.void_reason_label") }} *</span>
+                <input class="form__input form__input--note" type="text" name="cancellation_reason" required maxlength="500" placeholder="{{ t('admin.void_reason_placeholder') }}" autocomplete="off">
+              </label>
+              <button type="submit" class="btn btn--sm">{{ t("admin.void_entry_btn") }}</button>
+            </form>
+            {% endif %}
           </td>
         </tr>
         {% endfor %}

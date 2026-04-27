@@ -5,6 +5,7 @@
   <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fill_first_note") }}</p>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.refund_policy") }}</p>
 
   {% if not payment_banking_configured %}
   <p class="pay-gate" role="status">{{ t("payment.beta_mode_notice") }}</p>
@@ -53,6 +54,7 @@
   <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.formats", max_mb=(config.MAX_CONTENT_LENGTH // (1024*1024))) }}</p>
   {% if payment and payment.status.value == 'approved' %}
   <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("payment.approved_warn") }}</p>
+  <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("entry.approved_cancel_only_via_admin") }}</p>
   {% endif %}
   <form class="form" method="post" action="{{ url_for('entries.entry_payment', entry_id=entry.id) }}" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -63,6 +65,8 @@
     <button class="form__submit" type="submit">{% if payment_banking_configured %}{{ t("payment.send") }}{% else %}{{ t("payment.send_test") }}{% endif %}</button>
   </form>
 
+  <p class="form__hint" style="margin-top:1rem;">{{ t("rules.lock_stages") }}</p>
+  <p class="form__hint">{{ t("common.stages_simple") }}</p>
   <p class="card__footer">
     <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
     · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">{{ t("common.fill_predictions") }}</a>

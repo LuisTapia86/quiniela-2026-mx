@@ -7,8 +7,8 @@ from flask import Blueprint, abort, current_app, render_template, send_file
 from sqlalchemy import func, select
 
 from app import db
-from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, User
-from app.prize_info import entry_financials
+from app.models import Entry, EntryStatus, Match, Payment, PaymentStatus, Prediction, Result, User
+from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.routes.auth import get_current_user, login_required
 from app.translations import tr
 
@@ -29,7 +29,10 @@ def index():
         db.session.execute(
             select(Entry, User)
             .join(Payment, Payment.entry_id == Entry.id)
-            .where(Payment.status == PaymentStatus.APPROVED)
+            .where(
+                Payment.status == PaymentStatus.APPROVED,
+                Entry.status == EntryStatus.ACTIVE,
+            )
             .join(User, Entry.user_id == User.id)
             .order_by(Entry.total_points.desc(), Entry.created_at.asc(), Entry.id.asc())
         )
@@ -46,14 +49,7 @@ def index():
         )
         or 0
     )
-    n_approved = (
-        db.session.scalar(
-            select(func.count())
-            .select_from(Payment)
-            .where(Payment.status == PaymentStatus.APPROVED)
-        )
-        or 0
-    )
+    n_approved = count_prize_pool_qualifying_entries()
     fin = entry_financials(n_approved, current_app.config)
     admin_pct = int(current_app.config.get("ADMIN_FEE_PERCENT", 5))
 
@@ -133,6 +129,7 @@ def export_csv():
             "prediction_count",
             "completed_prediction_count",
             "payment_status",
+            "entry_status",
         ],
     )
     prev_points: int | None = None
@@ -158,7 +155,16 @@ def export_csv():
             or 0
         )
         writer.writerow(
-            [rank, _entry_label(entry), user.email, entry.total_points, n_pred, n_done, payment.status.value],
+            [
+                rank,
+                _entry_label(entry),
+                user.email,
+                entry.total_points,
+                n_pred,
+                n_done,
+                payment.status.value,
+                entry.status.value,
+            ],
         )
     data = io.BytesIO(out.getvalue().encode("utf-8"))
     return send_file(data, mimetype="text/csv", as_attachment=True, download_name="leaderboard_export.csv")

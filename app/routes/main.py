@@ -3,7 +3,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Entry, Match, Payment, Prediction, TournamentState, User
+from app.models import Entry, EntryStatus, Match, Payment, Prediction, TournamentState, User
 from app.routes.auth import _validate_display_name, get_current_user, login_required
 from app.translations import tr
 
@@ -23,6 +23,8 @@ def index():
             .order_by(Entry.id.desc())
         )
     )
+    active_entries = [e for e in entries if e.status == EntryStatus.ACTIVE]
+    cancelled_entries = [e for e in entries if e.status != EntryStatus.ACTIVE]
     payments_by_entry: dict[int, Payment | None] = {}
     prediction_counts: dict[int, int] = {}
     total_matches = db.session.scalar(select(func.count()).select_from(Match)) or 0
@@ -43,7 +45,8 @@ def index():
             prediction_counts.setdefault(e.id, 0)
     return render_template(
         "dashboard.html",
-        entries=entries,
+        entries=active_entries,
+        cancelled_entries=cancelled_entries,
         payments_by_entry=payments_by_entry,
         prediction_counts=prediction_counts,
         total_matches=total_matches,

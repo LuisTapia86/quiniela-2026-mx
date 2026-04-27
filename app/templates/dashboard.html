@@ -23,13 +23,17 @@
   </div>
 
   <h2 class="dash__subtitle">{{ t("dashboard.your_entries") }}</h2>
-  {% if not entries %}
+  {% if not entries and not cancelled_entries %}
   <div class="empty-state">
     <p class="empty-state__title">{{ t("dashboard.no_entries") }}</p>
     <p class="form__hint">{{ t("dashboard.no_entries_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
     <p><a class="btn btn--sm btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.create_first") }}</a></p>
   </div>
   {% else %}
+  {% if not entries and cancelled_entries %}
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("dashboard.no_active_entries") }}</p>
+  {% endif %}
+  {% if entries %}
   <div class="entry-grid">
     {% for e in entries %}
     {% set pay = payments_by_entry.get(e.id) %}
@@ -64,6 +68,17 @@
         {% endif %}
       </div>
 
+      <div class="entry-list__actions" style="margin-top:0.5rem;flex-wrap:wrap;">
+        {% if not pay or pay.status.value != 'approved' %}
+        <form method="post" action="{{ url_for('entries.cancel_entry', entry_id=e.id) }}" class="admin-inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" class="btn btn--sm">{{ t("entry.cancel_entry_btn") }}</button>
+        </form>
+        {% else %}
+        <p class="form__hint" style="margin:0;">{{ t("entry.approved_cancel_only_via_admin") }}</p>
+        {% endif %}
+      </div>
+
       {% if not pay or pay.status.value != 'approved' %}
       <p class="entry-list__msg">{{ t("entry.payment_warning") }}</p>
       {% elif predictions_locked %}
@@ -73,6 +88,35 @@
     {% endfor %}
   </div>
   {% endif %}
+
+  {% if cancelled_entries %}
+  <details class="card card--subtle" style="margin-top:1.5rem;" {% if not entries %}open{% endif %}>
+    <summary class="card__title card__title--sm" style="cursor:pointer;">{{ t("dashboard.cancelled_entries") }}</summary>
+    <div class="entry-grid" style="margin-top:0.75rem;">
+      {% for e in cancelled_entries %}
+      {% set pay = payments_by_entry.get(e.id) %}
+      <article class="entry-card entry-card--muted" aria-label="{{ entry_title(e)|e }}">
+        <header class="entry-card__head">
+          <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
+          <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
+        </header>
+        <p class="form__hint">
+          {% if e.status.value == 'voided_by_admin' %}{{ t("entry.status.voided_by_admin") }}{% else %}{{ t("entry.status.cancelled_by_user") }}{% endif %}
+          {% if e.cancelled_at %} · {{ e.cancelled_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+        </p>
+        {% if e.cancellation_reason %}
+        <p class="form__hint"><strong>{{ t("entry.cancellation_reason_label") }}</strong> {{ e.cancellation_reason|e }}</p>
+        {% endif %}
+        {% if pay %}
+        <p class="form__hint">{{ t("entry.payment_state_snapshot") }} <span class="entry-pay-badge entry-pay-badge--{{ pay.status.value }}">{{ pay.status.value }}</span></p>
+        {% endif %}
+      </article>
+      {% endfor %}
+    </div>
+  </details>
+  {% endif %}
+  {% endif %}
 </section>
-<p class="form__hint" style="margin-top: 1rem;">{{ t("common.group_lock_notice") }}</p>
+<p class="form__hint" style="margin-top: 1rem;">{{ t("rules.lock_stages") }}</p>
+<p class="form__hint">{{ t("common.stages_simple") }}</p>
 {% endblock %}

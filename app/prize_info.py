@@ -3,6 +3,25 @@ from __future__ import annotations
 from typing import Any, Mapping
 
 
+def count_prize_pool_qualifying_entries() -> int:
+    """Active entry + approved payment (excludes voided/cancelled entries from pool)."""
+    from sqlalchemy import func, select
+
+    from app import db
+    from app.models import Entry, EntryStatus, Payment, PaymentStatus
+
+    n = db.session.scalar(
+        select(func.count())
+        .select_from(Entry)
+        .join(Payment, Payment.entry_id == Entry.id)
+        .where(
+            Entry.status == EntryStatus.ACTIVE,
+            Payment.status == PaymentStatus.APPROVED,
+        ),
+    )
+    return int(n or 0)
+
+
 def entry_financials(approved_count: int, config: Mapping[str, Any]) -> dict[str, int]:
     """Gross, admin cut, net prize pool, and TOP 3 estimates in MXN (integer division)."""
     entry_fee = int(config.get("ENTRY_FEE_MXN", 1000))

@@ -9,7 +9,18 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState
+from app.models import (
+    Entry,
+    EntryStatus,
+    Match,
+    Payment,
+    PAYMENT_CANCELLED_BY_USER_NOTE,
+    PaymentStatus,
+    Prediction,
+    Result,
+    TournamentState,
+    utcnow,
+)
 from app.payment_gating import is_payment_banking_configured
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
@@ -38,12 +49,41 @@ def new():
             name=alias or f"Entrada #{next_entry_number}",
             entry_number=next_entry_number,
             alias=alias or None,
+            status=EntryStatus.ACTIVE,
         )
         db.session.add(e)
         db.session.commit()
         flash(tr("flash.entry.created"), "ok")
         return redirect(url_for("main.index"))
     return render_template("entries/new.html", alias="")
+
+
+@bp.post("/entries/<int:entry_id>/cancel")
+@login_required
+def cancel_entry(entry_id: int):
+    user = get_current_user()
+    assert user is not None
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    if entry.user_id != user.id:
+        abort(403)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.entry.already_inactive"), "error")
+        return redirect(url_for("main.index"))
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
+    if payment is not None and payment.status == PaymentStatus.APPROVED:
+        flash(tr("flash.entry.cancel_approved_forbidden"), "error")
+        return redirect(url_for("main.index"))
+    entry.status = EntryStatus.CANCELLED_BY_USER
+    entry.cancelled_at = utcnow()
+    if payment is not None and payment.status == PaymentStatus.PENDING:
+        payment.status = PaymentStatus.REJECTED
+        payment.admin_note = PAYMENT_CANCELLED_BY_USER_NOTE
+        payment.updated_at = utcnow()
+    db.session.commit()
+    flash(tr("flash.entry.cancelled_ok"), "ok")
+    return redirect(url_for("main.index"))
 
 
 @bp.route("/entries/<int:entry_id>/payment", methods=["GET", "POST"])
@@ -56,6 +96,9 @@ def entry_payment(entry_id: int):
         abort(404)
     if entry.user_id != user.id:
         abort(403)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.entry_payment.inactive"), "error")
+        return redirect(url_for("main.index"))
 
     payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
     banking_configured = is_payment_banking_configured(current_app.config)
@@ -143,6 +186,9 @@ def predictions(entry_id: int):
         abort(404)
     if entry.user_id != user.id:
         abort(403)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.predictions.entry_cancelled"), "error")
+        return redirect(url_for("main.index"))
 
     state = TournamentState.get_singleton()
     locked = state.predictions_locked

@@ -96,6 +96,28 @@ def _ensure_entry_columns_and_backfill() -> None:
         db.session.commit()
 
 
+def _ensure_entry_status_columns() -> None:
+    inspector = inspect(db.engine)
+    cols = {c["name"] for c in inspector.get_columns("entries")}
+    if "status" not in cols:
+        db.session.execute(text("ALTER TABLE entries ADD COLUMN status VARCHAR(32)"))
+        db.session.commit()
+    cols = {c["name"] for c in inspect(db.engine).get_columns("entries")}
+    if "status" in cols:
+        db.session.execute(
+            text("UPDATE entries SET status = 'active' WHERE status IS NULL OR status = ''"),
+        )
+        db.session.commit()
+    if "cancelled_at" not in cols:
+        db.session.execute(text("ALTER TABLE entries ADD COLUMN cancelled_at TIMESTAMP"))
+        db.session.commit()
+    if "cancellation_reason" not in cols:
+        db.session.execute(
+            text("ALTER TABLE entries ADD COLUMN cancellation_reason VARCHAR(500)"),
+        )
+        db.session.commit()
+
+
 def create_app(config_object: type = Config) -> Flask:
     app = Flask(
         __name__,
@@ -162,6 +184,7 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_user_display_name_column()
         _ensure_match_group_name_column()
         _ensure_entry_columns_and_backfill()
+        _ensure_entry_status_columns()
         _admin_bootstrap_from_env(app)
 
     return app

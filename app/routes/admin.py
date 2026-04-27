@@ -21,7 +21,18 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Entry, Match, Payment, PaymentStatus, Prediction, Result, TournamentState, User, utcnow
+from app.models import (
+    Entry,
+    EntryStatus,
+    Match,
+    Payment,
+    PaymentStatus,
+    Prediction,
+    Result,
+    TournamentState,
+    User,
+    utcnow,
+)
 from app.routes.auth import get_current_user, login_required
 from app.services.api_football import (
     ApiFootballError,
@@ -31,7 +42,7 @@ from app.services.api_football import (
 )
 from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_reader
-from app.prize_info import entry_financials
+from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
@@ -73,20 +84,18 @@ def _is_test_payment_mode() -> bool:
     return bool(current_app.config.get("TEST_MODE_PAYMENTS", False))
 
 
+def _append_payment_admin_note(p: Payment, line: str) -> None:
+    base = (p.admin_note or "").strip()
+    p.admin_note = f"{base}\n{line}" if base else line
+
+
 @bp.get("/admin")
 @login_required
 def dashboard():
     _require_admin()
     total_users = db.session.scalar(select(func.count()).select_from(User)) or 0
     total_entries = db.session.scalar(select(func.count()).select_from(Entry)) or 0
-    approved_entries = (
-        db.session.scalar(
-            select(func.count())
-            .select_from(Payment)
-            .where(Payment.status == PaymentStatus.APPROVED),
-        )
-        or 0
-    )
+    approved_entries = count_prize_pool_qualifying_entries()
     pending_payments = (
         db.session.scalar(
             select(func.count())
@@ -149,7 +158,10 @@ def users():
             func.count(Entry.id).label("approved_entries_count"),
         )
         .join(Payment, Payment.entry_id == Entry.id)
-        .where(Payment.status == PaymentStatus.APPROVED)
+        .where(
+            Payment.status == PaymentStatus.APPROVED,
+            Entry.status == EntryStatus.ACTIVE,
+        )
         .group_by(Entry.user_id)
         .subquery()
     )
@@ -161,7 +173,10 @@ def users():
         )
         .select_from(Entry)
         .outerjoin(Payment, Payment.entry_id == Entry.id)
-        .where(or_(Payment.id.is_(None), Payment.status == PaymentStatus.PENDING))
+        .where(
+            Entry.status == EntryStatus.ACTIVE,
+            or_(Payment.id.is_(None), Payment.status == PaymentStatus.PENDING),
+        )
         .group_by(Entry.user_id)
         .subquery()
     )
@@ -172,7 +187,25 @@ def users():
         )
         .select_from(Entry)
         .join(Payment, Payment.entry_id == Entry.id)
-        .where(Payment.status == PaymentStatus.REJECTED)
+        .where(Entry.status == EntryStatus.ACTIVE, Payment.status == PaymentStatus.REJECTED)
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    entry_status_active_sq = (
+        select(Entry.user_id, func.count(Entry.id).label("entry_status_active_count"))
+        .where(Entry.status == EntryStatus.ACTIVE)
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    entry_status_cancelled_sq = (
+        select(Entry.user_id, func.count(Entry.id).label("entry_status_cancelled_count"))
+        .where(Entry.status == EntryStatus.CANCELLED_BY_USER)
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    entry_status_voided_sq = (
+        select(Entry.user_id, func.count(Entry.id).label("entry_status_voided_count"))
+        .where(Entry.status == EntryStatus.VOIDED_BY_ADMIN)
         .group_by(Entry.user_id)
         .subquery()
     )
@@ -186,11 +219,19 @@ def users():
                 "pending_payment_entries_count",
             ),
             func.coalesce(rejected_entries_sq.c.rejected_entries_count, 0).label("rejected_entries_count"),
+            func.coalesce(entry_status_active_sq.c.entry_status_active_count, 0).label("entry_status_active_count"),
+            func.coalesce(entry_status_cancelled_sq.c.entry_status_cancelled_count, 0).label(
+                "entry_status_cancelled_count",
+            ),
+            func.coalesce(entry_status_voided_sq.c.entry_status_voided_count, 0).label("entry_status_voided_count"),
         )
         .outerjoin(entries_count_sq, entries_count_sq.c.user_id == User.id)
         .outerjoin(approved_entries_sq, approved_entries_sq.c.user_id == User.id)
         .outerjoin(pending_payment_entries_sq, pending_payment_entries_sq.c.user_id == User.id)
         .outerjoin(rejected_entries_sq, rejected_entries_sq.c.user_id == User.id)
+        .outerjoin(entry_status_active_sq, entry_status_active_sq.c.user_id == User.id)
+        .outerjoin(entry_status_cancelled_sq, entry_status_cancelled_sq.c.user_id == User.id)
+        .outerjoin(entry_status_voided_sq, entry_status_voided_sq.c.user_id == User.id)
         .order_by(User.created_at.desc(), User.id.desc())
     )
     if q:
@@ -500,6 +541,9 @@ def payment_test_approve():
     if entry is None:
         flash(f"No existe la entrada #{entry_id}.", "error")
         return redirect(url_for("admin.payments", status=status, q=q))
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
+        return redirect(url_for("admin.payments", status=status, q=q))
     payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
     amount = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
     if payment is None:
@@ -529,6 +573,12 @@ def payment_approve(payment_id: int):
     p = db.session.get(Payment, payment_id)
     if p is None:
         abort(404)
+    entry = db.session.get(Entry, p.entry_id)
+    if entry is None or entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
+        return redirect(
+            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+        )
     note = (request.form.get("admin_note") or "").strip() or None
     p.status = PaymentStatus.APPROVED
     p.admin_note = note
@@ -552,6 +602,42 @@ def payment_reject(payment_id: int):
     db.session.commit()
     flash(f"Pago #{p.id} rechazado.", "ok")
     return redirect(url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")))
+
+
+@bp.post("/admin/entries/<int:entry_id>/void")
+@login_required
+def void_entry(entry_id: int):
+    _require_admin()
+    reason = (request.form.get("cancellation_reason") or "").strip()
+    if not reason:
+        flash(tr("flash.admin.void_reason_required"), "error")
+        return redirect(
+            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+        )
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.admin.entry_not_voidable"), "error")
+        return redirect(
+            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+        )
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry_id))
+    if not payment or payment.status != PaymentStatus.APPROVED:
+        flash(tr("flash.admin.void_needs_approved"), "error")
+        return redirect(
+            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+        )
+    entry.status = EntryStatus.VOIDED_BY_ADMIN
+    entry.cancelled_at = utcnow()
+    entry.cancellation_reason = reason
+    _append_payment_admin_note(payment, tr("admin.void_entry_note", reason=reason))
+    payment.updated_at = utcnow()
+    db.session.commit()
+    flash(tr("flash.admin.void_ok"), "ok")
+    return redirect(
+        url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+    )
 
 
 @bp.get("/admin/payments/<int:payment_id>/proof")

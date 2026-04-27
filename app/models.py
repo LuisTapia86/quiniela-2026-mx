@@ -16,6 +16,16 @@ class PaymentStatus(str, enum.Enum):
     REJECTED = "rejected"
 
 
+class EntryStatus(str, enum.Enum):
+    ACTIVE = "active"
+    CANCELLED_BY_USER = "cancelled_by_user"
+    VOIDED_BY_ADMIN = "voided_by_admin"
+
+
+# Note stored when user cancels while payment was still pending
+PAYMENT_CANCELLED_BY_USER_NOTE = "Cancelada por el usuario antes de aprobación."
+
+
 class User(db.Model):
     __tablename__ = "users"
 
@@ -48,6 +58,13 @@ class Entry(db.Model):
     alias = db.Column(db.String(120), nullable=True)
     total_points = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    status = db.Column(
+        db.Enum(EntryStatus, name="entry_status", native_enum=False),
+        default=EntryStatus.ACTIVE,
+        nullable=False,
+    )
+    cancelled_at = db.Column(db.DateTime, nullable=True)
+    cancellation_reason = db.Column(db.String(500), nullable=True)
 
     user = db.relationship("User", back_populates="entries")
     payment = db.relationship("Payment", back_populates="entry", uselist=False)

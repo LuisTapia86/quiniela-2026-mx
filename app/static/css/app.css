@@ -628,6 +628,11 @@ button.btn:disabled {
   padding: 0.9rem;
 }
 
+.entry-card--muted {
+  opacity: 0.92;
+  border-style: dashed;
+}
+
 .entry-card__head {
   display: flex;
   justify-content: space-between;
