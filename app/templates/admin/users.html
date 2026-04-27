@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.admin_users") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("admin.users") }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("admin.users.hint") }}</p>
+
+  <form method="get" action="{{ url_for('admin.users') }}" class="filter-search" style="margin: 0 0 1rem;">
+    <input class="form__input" type="search" name="q" value="{{ q|e }}" placeholder="{{ t('admin.users.search_placeholder') }}">
+    <button class="btn btn--sm" type="submit">{{ t("common.search") }}</button>
+  </form>
+
+  {% if not rows %}
+  <p class="form__hint">{{ t("admin.users.empty") }}</p>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data-table" aria-label="{{ t('admin.users.table_aria') }}">
+      <thead>
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">{{ t("leaderboard.col.email") }}</th>
+          <th scope="col">{{ t("admin.users.alias") }}</th>
+          <th scope="col">{{ t("admin.col.created") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.entries_count") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.approved_entries_count") }}</th>
+          <th scope="col" class="num">{{ t("admin.users.pending_payments_count") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user, entries_count, approved_entries_count, pending_payments_count in rows %}
+        <tr>
+          <td>{{ user.id }}</td>
+          <td>{{ user.email|e }}</td>
+          <td>{{ (user.display_name or "—")|e }}</td>
+          <td class="pay-cell-date">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</td>
+          <td class="num">{{ entries_count }}</td>
+          <td class="num">{{ approved_entries_count }}</td>
+          <td class="num">{{ pending_payments_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <p class="card__footer">
+    <a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a>
+  </p>
+</section>
+{% endblock %}

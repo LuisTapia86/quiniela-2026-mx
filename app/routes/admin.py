@@ -129,6 +129,65 @@ def dashboard():
     )
 
 
+@bp.get("/admin/users")
+@login_required
+def users():
+    _require_admin()
+    q = (request.args.get("q") or "").strip()
+
+    entries_count_sq = (
+        select(
+            Entry.user_id.label("user_id"),
+            func.count(Entry.id).label("entries_count"),
+        )
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    approved_entries_sq = (
+        select(
+            Entry.user_id.label("user_id"),
+            func.count(Entry.id).label("approved_entries_count"),
+        )
+        .join(Payment, Payment.entry_id == Entry.id)
+        .where(Payment.status == PaymentStatus.APPROVED)
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    pending_payments_sq = (
+        select(
+            Payment.user_id.label("user_id"),
+            func.count(Payment.id).label("pending_payments_count"),
+        )
+        .where(Payment.status == PaymentStatus.PENDING)
+        .group_by(Payment.user_id)
+        .subquery()
+    )
+
+    stmt = (
+        select(
+            User,
+            func.coalesce(entries_count_sq.c.entries_count, 0).label("entries_count"),
+            func.coalesce(approved_entries_sq.c.approved_entries_count, 0).label("approved_entries_count"),
+            func.coalesce(pending_payments_sq.c.pending_payments_count, 0).label("pending_payments_count"),
+        )
+        .outerjoin(entries_count_sq, entries_count_sq.c.user_id == User.id)
+        .outerjoin(approved_entries_sq, approved_entries_sq.c.user_id == User.id)
+        .outerjoin(pending_payments_sq, pending_payments_sq.c.user_id == User.id)
+        .order_by(User.created_at.desc(), User.id.desc())
+    )
+    if q:
+        search = f"%{q.lower()}%"
+        stmt = stmt.where(
+            or_(
+                func.lower(User.email).like(search),
+                func.lower(func.coalesce(User.display_name, "")).like(search),
+            ),
+        )
+
+    rows = list(db.session.execute(stmt))
+    return render_template("admin/users.html", rows=rows, q=q)
+
+
 @bp.post("/admin/tournament/lock")
 @login_required
 def tournament_lock():

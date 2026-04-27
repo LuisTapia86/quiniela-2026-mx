@@ -49,6 +49,7 @@
       <button class="btn" type="submit">{{ t("admin.public_import.button") }}</button>
     </form>
     <a class="btn" href="{{ url_for('admin.api_football_panel') }}">{{ t("admin.api.heading") }}</a>
+    <a class="btn" href="{{ url_for('admin.users') }}">{{ t("admin.users") }}</a>
     <a class="btn" href="{{ url_for('admin.payments') }}">{{ t("admin.payments") }}</a>
     <a class="btn" href="{{ url_for('admin.results') }}">{{ t("admin.results") }}</a>
     <form method="post" action="{{ url_for('admin.recalculate') }}" style="display:inline;">
