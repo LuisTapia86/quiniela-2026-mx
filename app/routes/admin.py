@@ -153,13 +153,27 @@ def users():
         .group_by(Entry.user_id)
         .subquery()
     )
-    pending_payments_sq = (
+    # Entries with no payment row OR payment still pending (not approved/rejected-only path)
+    pending_payment_entries_sq = (
         select(
-            Payment.user_id.label("user_id"),
-            func.count(Payment.id).label("pending_payments_count"),
+            Entry.user_id.label("user_id"),
+            func.count(Entry.id).label("pending_payment_entries_count"),
         )
-        .where(Payment.status == PaymentStatus.PENDING)
-        .group_by(Payment.user_id)
+        .select_from(Entry)
+        .outerjoin(Payment, Payment.entry_id == Entry.id)
+        .where(or_(Payment.id.is_(None), Payment.status == PaymentStatus.PENDING))
+        .group_by(Entry.user_id)
+        .subquery()
+    )
+    rejected_entries_sq = (
+        select(
+            Entry.user_id.label("user_id"),
+            func.count(Entry.id).label("rejected_entries_count"),
+        )
+        .select_from(Entry)
+        .join(Payment, Payment.entry_id == Entry.id)
+        .where(Payment.status == PaymentStatus.REJECTED)
+        .group_by(Entry.user_id)
         .subquery()
     )
 
@@ -168,11 +182,15 @@ def users():
             User,
             func.coalesce(entries_count_sq.c.entries_count, 0).label("entries_count"),
             func.coalesce(approved_entries_sq.c.approved_entries_count, 0).label("approved_entries_count"),
-            func.coalesce(pending_payments_sq.c.pending_payments_count, 0).label("pending_payments_count"),
+            func.coalesce(pending_payment_entries_sq.c.pending_payment_entries_count, 0).label(
+                "pending_payment_entries_count",
+            ),
+            func.coalesce(rejected_entries_sq.c.rejected_entries_count, 0).label("rejected_entries_count"),
         )
         .outerjoin(entries_count_sq, entries_count_sq.c.user_id == User.id)
         .outerjoin(approved_entries_sq, approved_entries_sq.c.user_id == User.id)
-        .outerjoin(pending_payments_sq, pending_payments_sq.c.user_id == User.id)
+        .outerjoin(pending_payment_entries_sq, pending_payment_entries_sq.c.user_id == User.id)
+        .outerjoin(rejected_entries_sq, rejected_entries_sq.c.user_id == User.id)
         .order_by(User.created_at.desc(), User.id.desc())
     )
     if q:
