@@ -17,6 +17,8 @@
       </div>
     </div>
     <p class="landing-hero__subtitle">{{ t("landing.hero.subtitle") }}</p>
+    <p class="landing-note">{{ t("landing.payment_validity_note") }}</p>
+    <p class="landing-note">{{ t("common.group_lock_notice") }}</p>
     <div class="landing-hero__ctas">
       <a class="btn btn--primary" href="{{ url_for('auth.register') }}">{{ t("landing.cta.create") }}</a>
       <a class="btn" href="{{ url_for('rules.index') }}">{{ t("landing.cta.rules") }}</a>

@@ -4,6 +4,7 @@
 <section class="card">
   <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fill_first_note") }}</p>
 
   {% if not payment_banking_configured %}
   <p class="pay-gate" role="status">{{ t("payment.beta_mode_notice") }}</p>
@@ -64,9 +65,7 @@
 
   <p class="card__footer">
     <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
-    {% if payment and payment.status.value == 'approved' %}
     · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">{{ t("common.fill_predictions") }}</a>
-    {% endif %}
   </p>
 </section>
 {% endblock %}

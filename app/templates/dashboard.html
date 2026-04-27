@@ -44,10 +44,8 @@
         <span class="entry-pay-badge entry-pay-badge--{{ pay.status.value if pay else 'none' }}">
           {% if not pay %}{{ t("entry.payment.none") }}{% elif pay.status.value == 'pending' %}{{ t("entry.payment.pending") }}{% elif pay.status.value == 'approved' %}{{ t("entry.payment.approved") }}{% else %}{{ t("entry.payment.rejected") }}{% endif %}
         </span>
-        <span class="entry-pred-badge entry-pred-badge--{% if not pay or pay.status.value != 'approved' %}blocked{% elif pred_count < total_matches %}pending{% else %}done{% endif %}">
-          {% if not pay or pay.status.value != 'approved' %}
-            {{ t("entry.pred.unavailable") }}
-          {% elif pred_count == 0 %}
+        <span class="entry-pred-badge entry-pred-badge--{% if pred_count < total_matches %}pending{% else %}done{% endif %}">
+          {% if pred_count == 0 %}
             {{ t("entry.pred.pending") }}
           {% elif pred_count < total_matches %}
             {{ t("entry.pred.progress", done=pred_count, total=total_matches) }}
@@ -59,19 +57,15 @@
 
       <div class="entry-list__actions">
         <a class="btn btn--sm" href="{{ url_for('entries.entry_payment', entry_id=e.id) }}">{{ t("entry.upload_payment") }}</a>
-        {% if pay and pay.status.value == 'approved' %}
-          {% if predictions_locked %}
-          <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.view_predictions") }}</a>
-          {% else %}
-          <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.fill_predictions") }}</a>
-          {% endif %}
+        {% if predictions_locked %}
+        <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.view_predictions") }}</a>
         {% else %}
-        <span class="btn btn--sm btn--disabled" aria-disabled="true">{{ t("entry.fill_predictions") }}</span>
+        <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.fill_predictions") }}</a>
         {% endif %}
       </div>
 
       {% if not pay or pay.status.value != 'approved' %}
-      <p class="entry-list__msg">{{ t("entry.payment_required") }}</p>
+      <p class="entry-list__msg">{{ t("entry.payment_warning") }}</p>
       {% elif predictions_locked %}
       <p class="entry-list__msg">{{ t("entry.pred.locked_msg") }}</p>
       {% endif %}
@@ -80,4 +74,5 @@
   </div>
   {% endif %}
 </section>
+<p class="form__hint" style="margin-top: 1rem;">{{ t("common.group_lock_notice") }}</p>
 {% endblock %}
