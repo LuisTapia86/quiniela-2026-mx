@@ -57,16 +57,51 @@ def _ensure_match_group_name_column() -> None:
     db.session.commit()
 
 
-def _ensure_entry_columns_and_backfill() -> None:
-    inspector = inspect(db.engine)
-    cols = {c["name"] for c in inspector.get_columns("entries")}
+def _entry_table_column_names() -> set[str]:
+    return {c["name"] for c in inspect(db.engine).get_columns("entries")}
+
+
+def _ensure_entry_table_columns() -> None:
+    """Add missing columns to ``entries`` using raw SQL only (no ORM on Entry).
+
+    Must run before any ORM query that maps to ``entries``, so PostgreSQL
+    and older databases that predate the soft-delete/cancellation columns
+    do not throw UndefinedColumn.
+    """
+    cols = _entry_table_column_names()
     if "entry_number" not in cols:
         db.session.execute(text("ALTER TABLE entries ADD COLUMN entry_number INTEGER"))
         db.session.commit()
+        cols = _entry_table_column_names()
     if "alias" not in cols:
         db.session.execute(text("ALTER TABLE entries ADD COLUMN alias VARCHAR(120)"))
         db.session.commit()
+        cols = _entry_table_column_names()
+    if "status" not in cols:
+        # VARCHAR(40) + default: existing rows become 'active' (PG + SQLite3).
+        # Avoid NOT NULL on ADD to stay compatible with older SQLite.
+        db.session.execute(
+            text("ALTER TABLE entries ADD COLUMN status VARCHAR(40) DEFAULT 'active'"),
+        )
+        db.session.commit()
+        cols = _entry_table_column_names()
+    if "status" in cols:
+        db.session.execute(
+            text("UPDATE entries SET status = 'active' WHERE status IS NULL OR status = ''"),
+        )
+        db.session.commit()
+    if "cancelled_at" not in _entry_table_column_names():
+        db.session.execute(text("ALTER TABLE entries ADD COLUMN cancelled_at TIMESTAMP NULL"))
+        db.session.commit()
+    if "cancellation_reason" not in _entry_table_column_names():
+        db.session.execute(
+            text("ALTER TABLE entries ADD COLUMN cancellation_reason TEXT NULL"),
+        )
+        db.session.commit()
 
+
+def _backfill_entry_number_and_alias() -> None:
+    """ORM backfill: run only after ``_ensure_entry_table_columns()`` (all columns present)."""
     from app.models import Entry
 
     entry_rows = list(
@@ -93,28 +128,6 @@ def _ensure_entry_columns_and_backfill() -> None:
                 row.alias = legacy_name
                 changed = True
     if changed:
-        db.session.commit()
-
-
-def _ensure_entry_status_columns() -> None:
-    inspector = inspect(db.engine)
-    cols = {c["name"] for c in inspector.get_columns("entries")}
-    if "status" not in cols:
-        db.session.execute(text("ALTER TABLE entries ADD COLUMN status VARCHAR(32)"))
-        db.session.commit()
-    cols = {c["name"] for c in inspect(db.engine).get_columns("entries")}
-    if "status" in cols:
-        db.session.execute(
-            text("UPDATE entries SET status = 'active' WHERE status IS NULL OR status = ''"),
-        )
-        db.session.commit()
-    if "cancelled_at" not in cols:
-        db.session.execute(text("ALTER TABLE entries ADD COLUMN cancelled_at TIMESTAMP"))
-        db.session.commit()
-    if "cancellation_reason" not in cols:
-        db.session.execute(
-            text("ALTER TABLE entries ADD COLUMN cancellation_reason VARCHAR(500)"),
-        )
         db.session.commit()
 
 
@@ -183,8 +196,8 @@ def create_app(config_object: type = Config) -> Flask:
         db.create_all()
         _ensure_user_display_name_column()
         _ensure_match_group_name_column()
-        _ensure_entry_columns_and_backfill()
-        _ensure_entry_status_columns()
+        _ensure_entry_table_columns()
+        _backfill_entry_number_and_alias()
         _admin_bootstrap_from_env(app)
 
     return app
