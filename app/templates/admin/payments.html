@@ -55,8 +55,8 @@
           <td><strong>{{ (p.user.display_name or p.user.email)|e }} - {{ entry_title(p.entry)|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
           <td>
             {% set est = p.entry.status.value %}
-            {% if est == 'active' %}<span class="entry-pay-badge entry-pay-badge--approved">{{ t("entry.status.active") }}</span>
-            {% elif est == 'cancelled_by_user' %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.cancelled_by_user") }}</span>
+            {% if est == 'ACTIVE' %}<span class="entry-pay-badge entry-pay-badge--approved">{{ t("entry.status.active") }}</span>
+            {% elif est == 'CANCELLED_BY_USER' %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.cancelled_by_user") }}</span>
             {% else %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.voided_by_admin") }}</span>
             {% endif %}
             {% if p.entry.cancelled_at %}<span class="form__hint"> · {{ p.entry.cancelled_at.strftime('%Y-%m-%d %H:%M') }}</span>{% endif %}
@@ -70,14 +70,14 @@
             <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
-              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' or p.entry.status.value != 'active' %}disabled{% endif %}>{{ t("common.approve") }}</button>
+              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' or p.entry.status.value != 'ACTIVE' %}disabled{% endif %}>{{ t("common.approve") }}</button>
             </form>
             <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
               <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>
-            {% if p.status.value == 'approved' and p.entry.status.value == 'active' %}
+            {% if p.status.value == 'approved' and p.entry.status.value == 'ACTIVE' %}
             <form method="post" action="{{ url_for('admin.void_entry', entry_id=p.entry_id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack" style="margin-top:0.5rem;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <label class="form__field" style="min-width:12rem;">

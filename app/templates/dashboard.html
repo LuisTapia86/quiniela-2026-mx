@@ -101,7 +101,7 @@
           <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
         </header>
         <p class="form__hint">
-          {% if e.status.value == 'voided_by_admin' %}{{ t("entry.status.voided_by_admin") }}{% else %}{{ t("entry.status.cancelled_by_user") }}{% endif %}
+          {% if e.status.value == 'VOIDED_BY_ADMIN' %}{{ t("entry.status.voided_by_admin") }}{% else %}{{ t("entry.status.cancelled_by_user") }}{% endif %}
           {% if e.cancelled_at %} · {{ e.cancelled_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
         </p>
         {% if e.cancellation_reason %}

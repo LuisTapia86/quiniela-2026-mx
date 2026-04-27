@@ -17,9 +17,10 @@ class PaymentStatus(str, enum.Enum):
 
 
 class EntryStatus(str, enum.Enum):
-    ACTIVE = "active"
-    CANCELLED_BY_USER = "cancelled_by_user"
-    VOIDED_BY_ADMIN = "voided_by_admin"
+    # Persisted in DB as these uppercase strings (Postgres + SQLite; matches SQLAlchemy Enum)
+    ACTIVE = "ACTIVE"
+    CANCELLED_BY_USER = "CANCELLED_BY_USER"
+    VOIDED_BY_ADMIN = "VOIDED_BY_ADMIN"
 
 
 # Note stored when user cancels while payment was still pending

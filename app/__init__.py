@@ -78,16 +78,9 @@ def _ensure_entry_table_columns() -> None:
         db.session.commit()
         cols = _entry_table_column_names()
     if "status" not in cols:
-        # VARCHAR(40) + default: existing rows become 'active' (PG + SQLite3).
-        # Avoid NOT NULL on ADD to stay compatible with older SQLite.
+        # Default must match EntryStatus value strings (UPPERCASE) for the ORM.
         db.session.execute(
-            text("ALTER TABLE entries ADD COLUMN status VARCHAR(40) DEFAULT 'active'"),
-        )
-        db.session.commit()
-        cols = _entry_table_column_names()
-    if "status" in cols:
-        db.session.execute(
-            text("UPDATE entries SET status = 'active' WHERE status IS NULL OR status = ''"),
+            text("ALTER TABLE entries ADD COLUMN status VARCHAR(40) DEFAULT 'ACTIVE'"),
         )
         db.session.commit()
     if "cancelled_at" not in _entry_table_column_names():
@@ -98,6 +91,30 @@ def _ensure_entry_table_columns() -> None:
             text("ALTER TABLE entries ADD COLUMN cancellation_reason TEXT NULL"),
         )
         db.session.commit()
+
+    _normalize_entry_status_values_raw_sql()
+
+
+def _normalize_entry_status_values_raw_sql() -> None:
+    """Map legacy lowercase / mixed case status strings to UPPER EntryStatus values.
+
+    Run only with raw SQL (no Entry ORM) so loads never raise LookupError.
+    """
+    if "status" not in _entry_table_column_names():
+        return
+    # Order: most specific first; idempotent re-applies to already-upper values.
+    stmts = [
+        "UPDATE entries SET status = 'VOIDED_BY_ADMIN' "
+        "WHERE LOWER(TRIM(COALESCE(status, ''))) = 'voided_by_admin'",
+        "UPDATE entries SET status = 'CANCELLED_BY_USER' "
+        "WHERE LOWER(TRIM(COALESCE(status, ''))) = 'cancelled_by_user'",
+        "UPDATE entries SET status = 'ACTIVE' "
+        "WHERE status IS NULL OR TRIM(COALESCE(status, '')) = '' "
+        "OR LOWER(TRIM(COALESCE(status, ''))) = 'active'",
+    ]
+    for s in stmts:
+        db.session.execute(text(s))
+    db.session.commit()
 
 
 def _backfill_entry_number_and_alias() -> None:
