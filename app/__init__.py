@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
 
-from flask import Flask
+from flask import Flask, Response, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import inspect, select, text
+from sqlalchemy import delete, func, inspect, select, text
 
 from config import Config
 from app.translations import get_lang, t
@@ -232,7 +232,6 @@ def create_app(config_object: type = Config) -> Flask:
         admin_bp,
         api_bp,
         auth_bp,
-        emergency_reset_bp,
         entries_bp,
         leaderboard_bp,
         main_bp,
@@ -244,11 +243,58 @@ def create_app(config_object: type = Config) -> Flask:
     app.register_blueprint(entries_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
-    app.register_blueprint(emergency_reset_bp)
     app.register_blueprint(leaderboard_bp)
     app.register_blueprint(rules_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     register_cli(app)
+    app.logger.warning("Emergency reset route registered")
+
+    @app.get("/emergency-reset-users")
+    def emergency_reset_users() -> Response | tuple[str, int]:
+        token = request.args.get("token") or ""
+        expected_token = (os.getenv("EMERGENCY_RESET_TOKEN") or "").strip()
+        if not expected_token or token != expected_token:
+            return "Not found", 404
+
+        from app.models import Entry, Match, Payment, Prediction, Result, TournamentState, User, utcnow
+
+        _ = Match  # keep Match model imported intentionally; matches are preserved.
+
+        def _count_rows(model) -> int:
+            return db.session.scalar(select(func.count()).select_from(model)) or 0
+
+        summary = {
+            "users_deleted": _count_rows(User),
+            "entries_deleted": _count_rows(Entry),
+            "payments_deleted": _count_rows(Payment),
+            "predictions_deleted": _count_rows(Prediction),
+            "results_deleted": _count_rows(Result),
+        }
+        try:
+            db.session.execute(delete(Prediction))
+            db.session.execute(delete(Result))
+            db.session.execute(delete(Payment))
+            db.session.execute(delete(Entry))
+            db.session.execute(delete(User))
+            row = db.session.get(TournamentState, 1)
+            if row is None:
+                db.session.add(TournamentState(id=1, predictions_locked=False))
+            else:
+                row.predictions_locked = False
+                row.updated_at = utcnow()
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
+            raise
+
+        body = (
+            f"users_deleted={summary['users_deleted']}\n"
+            f"entries_deleted={summary['entries_deleted']}\n"
+            f"payments_deleted={summary['payments_deleted']}\n"
+            f"predictions_deleted={summary['predictions_deleted']}\n"
+            f"results_deleted={summary['results_deleted']}\n"
+        )
+        return Response(body, mimetype="text/plain; charset=utf-8")
 
     @app.context_processor
     def _inject_current_user() -> dict:
