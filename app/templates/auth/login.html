@@ -16,6 +16,13 @@
     </label>
     <button class="form__submit" type="submit">{{ t("form.submit.login") }}</button>
   </form>
+  <p class="form__hint" style="margin: -0.35rem 0 0;"><a href="{{ url_for('auth.forgot_password') }}">{{ t("login.forgot_password") }}</a></p>
+  {% if show_verify_help | default(False) %}
+  <div class="empty-state verify-help" style="margin-top: 1rem;">
+    <p class="form__hint">{{ t("verify_resend.need_verify_help") }}</p>
+    <p><a href="{{ url_for('auth.resend_verification') }}">{{ t("verify_resend.cta_login") }}</a></p>
+  </div>
+  {% endif %}
   <p class="card__footer">{{ t("login.no_account") }} <a href="{{ url_for('auth.register') }}">{{ t("login.signup") }}</a></p>
 </section>
 {% endblock %}

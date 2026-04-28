@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import io
 
-from flask import Blueprint, abort, current_app, render_template, send_file
+from flask import Blueprint, abort, current_app, make_response, render_template, send_file
 from sqlalchemy import func, select
 
 from app import db
@@ -88,7 +88,7 @@ def index():
                 "n_results_counted": n_done,
             }
         )
-    return render_template(
+    html = render_template(
         "leaderboard/index.html",
         rows=leaderboard_rows,
         n_matches=n_matches,
@@ -102,6 +102,10 @@ def index():
         estimate_2nd=fin["estimate_2nd"],
         estimate_3rd=fin["estimate_3rd"],
     )
+    resp = make_response(html)
+    resp.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    resp.headers["Pragma"] = "no-cache"
+    return resp
 
 
 @bp.get("/leaderboard/export.csv")

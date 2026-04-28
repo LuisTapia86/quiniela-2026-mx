@@ -5,6 +5,7 @@
   <h1 class="card__title">{{ t("register.heading") }}</h1>
   <form method="post" action="{{ url_for('auth.register') }}" class="form" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <p class="form__hint">{{ t("register.verify_hint") }}</p>
     <label class="form__field">
       <span class="form__label">{{ t("form.email") }}</span>
       <input class="form__input" type="email" name="email" autocomplete="email" required value="{{ email|e }}">

@@ -36,6 +36,11 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    email_verified = db.Column(db.Boolean, default=False, nullable=False)
+    email_verification_token = db.Column(db.String(128), nullable=True, unique=True, index=True)
+    email_verification_sent_at = db.Column(db.DateTime, nullable=True)
+    password_reset_token = db.Column(db.String(128), nullable=True, unique=True, index=True)
+    password_reset_sent_at = db.Column(db.DateTime, nullable=True)
 
     entries = db.relationship("Entry", back_populates="user", lazy="dynamic")
     payments = db.relationship("Payment", back_populates="user", lazy="dynamic")

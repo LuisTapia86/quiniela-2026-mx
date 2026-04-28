@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.email_sent") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("verify_sent.heading") }}</h1>
+  <p class="form__hint">{{ t("verify_sent.body") }}</p>
+  {% if dev_verify_url %}
+  <div class="empty-state verify-dev-hint">
+    <p class="empty-state__title">{{ t("verify_sent.dev_title") }}</p>
+    <p class="form__hint">{{ t("verify_sent.dev_body") }}</p>
+    <p class="mono" style="word-break: break-all; font-size: 0.85rem;"><a href="{{ dev_verify_url|e }}">{{ dev_verify_url|e }}</a></p>
+  </div>
+  {% endif %}
+  <p class="card__footer">
+    <a href="{{ url_for('auth.login') }}">{{ t("verify_sent.go_login") }}</a>
+    · <a href="{{ url_for('auth.resend_verification') }}">{{ t("verify_sent.resend") }}</a>
+  </p>
+</section>
+{% endblock %}

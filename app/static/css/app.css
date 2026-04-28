@@ -325,6 +325,28 @@ a:focus-visible {
   color: #0f172a;
 }
 
+.admin-reset-zone {
+  margin-top: 1.75rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgb(239 68 68 / 0.35);
+  border-radius: var(--radius);
+  background: rgb(127 29 29 / 0.12);
+}
+
+.btn--destructive {
+  margin-top: 0.65rem;
+  border-color: #991b1b;
+  background: #7f1d1d;
+  color: #fef2f2;
+}
+
+.btn--destructive:hover,
+.btn--destructive:focus-visible {
+  background: #991b1b;
+  border-color: #b91c1c;
+  color: #fff;
+}
+
 .btn:disabled,
 .btn[aria-disabled="true"],
 .btn--disabled,

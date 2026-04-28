@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ t("title.resend_verification") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("verify_resend.heading") }}</h1>
+  <p class="form__hint">{{ t("verify_resend.intro") }}</p>
+  <form method="post" action="{{ url_for('auth.resend_verification') }}" class="form" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label class="form__field">
+      <span class="form__label">{{ t("form.email") }}</span>
+      <input class="form__input" type="email" name="email" autocomplete="email" required placeholder="you@example.com">
+    </label>
+    <button class="form__submit" type="submit">{{ t("verify_resend.submit") }}</button>
+  </form>
+  <p class="card__footer"><a href="{{ url_for('auth.login') }}">{{ t("register.signin") }}</a></p>
+</section>
+{% endblock %}

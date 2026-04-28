@@ -17,7 +17,7 @@ from flask import (
     send_file,
     url_for,
 )
-from sqlalchemy import func, or_, select
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app import db
@@ -48,6 +48,21 @@ from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_f
 from app.translations import tr
 
 bp = Blueprint("admin", __name__, url_prefix="")
+
+_LAUNCH_RESET_CONFIRM_PHRASE = "RESET ALL USERS"
+
+
+def _clear_payment_proof_files() -> None:
+    folder = Path(current_app.config["PAYMENT_PROOFS_FOLDER"]).resolve()
+    if not folder.is_dir():
+        return
+    for p in folder.iterdir():
+        if not p.is_file():
+            continue
+        try:
+            p.unlink()
+        except OSError as exc:
+            current_app.logger.warning("Launch reset: could not delete proof file %s (%s)", p.name, exc)
 
 
 def _require_admin() -> None:
@@ -136,6 +151,52 @@ def dashboard():
         completed_matches=completed_matches,
         predictions_locked=state.predictions_locked,
     )
+
+
+def _count_rows(model) -> int:
+    return db.session.scalar(select(func.count()).select_from(model)) or 0
+
+
+@bp.post("/admin/reset-all-user-data")
+@login_required
+def reset_all_user_data():
+    _require_admin()
+    if (request.form.get("confirmation") or "").strip() != _LAUNCH_RESET_CONFIRM_PHRASE:
+        flash(tr("flash.admin.reset_bad_confirm"), "error")
+        return redirect(url_for("admin.dashboard"))
+    summary: dict[str, int] = {}
+    try:
+        summary = {
+            "predictions_deleted": _count_rows(Prediction),
+            "results_deleted": _count_rows(Result),
+            "payments_deleted": _count_rows(Payment),
+            "entries_deleted": _count_rows(Entry),
+            "users_deleted": _count_rows(User),
+        }
+        # Order: Prediction → Result → Payment → Entry → User (FK-safe). All rows, any status.
+        db.session.execute(delete(Prediction))
+        db.session.execute(delete(Result))
+        db.session.execute(delete(Payment))
+        db.session.execute(delete(Entry))
+        db.session.execute(delete(User))
+        row = db.session.get(TournamentState, 1)
+        if row is None:
+            db.session.add(TournamentState(id=1, predictions_locked=False))
+        else:
+            row.predictions_locked = False
+            row.updated_at = utcnow()
+        db.session.commit()
+        db.session.expire_all()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("reset_all_user_data failed")
+        flash(tr("flash.admin.reset_failed"), "error")
+        return redirect(url_for("admin.dashboard"))
+    current_app.logger.info("reset_all_user_data completed: %s", summary)
+    _clear_payment_proof_files()
+    session.clear()
+    flash(tr("flash.admin.reset_done", **summary), "ok")
+    return redirect(url_for("auth.register"))
 
 
 @bp.get("/admin/users")

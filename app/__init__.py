@@ -4,6 +4,7 @@ from pathlib import Path
 from flask import Flask
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from flask_mail import Mail
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import inspect, select, text
@@ -12,6 +13,7 @@ from config import Config
 from app.translations import get_lang, t
 
 db = SQLAlchemy()
+mail = Mail()
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 csrf = CSRFProtect()
 
@@ -33,6 +35,7 @@ def _admin_bootstrap_from_env(app: Flask) -> None:
     if u.is_admin:
         return
     u.is_admin = True
+    u.email_verified = True
     db.session.commit()
     app.logger.info(
         "Admin bootstrap: admin access granted to existing user; clear ADMIN_BOOTSTRAP_EMAIL in production when finished",
@@ -46,6 +49,62 @@ def _ensure_user_display_name_column() -> None:
         return
     db.session.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(40)"))
     db.session.commit()
+
+
+def _ensure_user_email_verification_columns() -> None:
+    """Add email verification columns; existing accounts are treated as verified (launch safety)."""
+    cols = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    dialect = db.engine.dialect.name
+    if "email_verified" not in cols:
+        if dialect == "postgresql":
+            db.session.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT TRUE",
+                ),
+            )
+        else:
+            db.session.execute(
+                text(
+                    "ALTER TABLE users ADD COLUMN email_verified BOOLEAN DEFAULT 1",
+                ),
+            )
+        db.session.commit()
+        cols = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    if "email_verification_token" not in cols:
+        db.session.execute(
+            text("ALTER TABLE users ADD COLUMN email_verification_token VARCHAR(128)"),
+        )
+        db.session.commit()
+        cols = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    if "email_verification_sent_at" not in cols:
+        db.session.execute(
+            text("ALTER TABLE users ADD COLUMN email_verification_sent_at TIMESTAMP"),
+        )
+        db.session.commit()
+    # Legacy NULL = already registered before verification existed → keep access
+    if dialect == "postgresql":
+        db.session.execute(
+            text("UPDATE users SET email_verified = TRUE WHERE email_verified IS NULL"),
+        )
+    else:
+        db.session.execute(
+            text("UPDATE users SET email_verified = 1 WHERE email_verified IS NULL"),
+        )
+    db.session.commit()
+
+
+def _ensure_user_password_reset_columns() -> None:
+    cols = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    if "password_reset_token" not in cols:
+        db.session.execute(
+            text("ALTER TABLE users ADD COLUMN password_reset_token VARCHAR(128)"),
+        )
+        db.session.commit()
+    if "password_reset_sent_at" not in cols:
+        db.session.execute(
+            text("ALTER TABLE users ADD COLUMN password_reset_sent_at TIMESTAMP"),
+        )
+        db.session.commit()
 
 
 def _ensure_match_group_name_column() -> None:
@@ -163,6 +222,7 @@ def create_app(config_object: type = Config) -> Flask:
     config_object.PAYMENT_PROOFS_FOLDER.mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
+    mail.init_app(app)
     limiter.init_app(app)
     csrf.init_app(app)
 
@@ -172,6 +232,7 @@ def create_app(config_object: type = Config) -> Flask:
         admin_bp,
         api_bp,
         auth_bp,
+        emergency_reset_bp,
         entries_bp,
         leaderboard_bp,
         main_bp,
@@ -183,6 +244,7 @@ def create_app(config_object: type = Config) -> Flask:
     app.register_blueprint(entries_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
+    app.register_blueprint(emergency_reset_bp)
     app.register_blueprint(leaderboard_bp)
     app.register_blueprint(rules_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
@@ -212,6 +274,8 @@ def create_app(config_object: type = Config) -> Flask:
     with app.app_context():
         db.create_all()
         _ensure_user_display_name_column()
+        _ensure_user_email_verification_columns()
+        _ensure_user_password_reset_columns()
         _ensure_match_group_name_column()
         _ensure_entry_table_columns()
         _backfill_entry_number_and_alias()
