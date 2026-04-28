@@ -59,27 +59,5 @@
     <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
   </div>
 
-  <section class="admin-reset-zone card card--subtle" aria-labelledby="admin-reset-title">
-    <h2 id="admin-reset-title" class="card__title card__title--sm">{{ t("admin.reset_zone_title") }}</h2>
-    <p class="form__hint" style="margin: -0.25rem 0 0;">{{ t("admin.reset_zone_warn") }}</p>
-    <form method="post" action="{{ url_for('admin.reset_all_user_data') }}" class="form" style="margin-top: 0.75rem;">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <label class="form__field">
-        <span class="form__label">{{ t("admin.reset_confirm_label") }}</span>
-        <input
-          class="form__input"
-          type="text"
-          name="confirmation"
-          autocomplete="off"
-          spellcheck="false"
-          maxlength="128"
-          placeholder="{{ t('admin.reset_confirm_placeholder') }}"
-          aria-describedby="admin-reset-hint"
-        >
-      </label>
-      <p id="admin-reset-hint" class="form__hint">{{ t("admin.reset_confirm_placeholder") }}</p>
-      <button type="submit" class="btn btn--destructive">{{ t("admin.reset_submit") }}</button>
-    </form>
-  </section>
 </section>
 {% endblock %}
