@@ -3,8 +3,6 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("rules.heading") }}</h1>
-  <p class="form__hint" style="margin-top: -0.5rem;">{{ t("rules.lock_stages") }}</p>
-  <p class="form__hint">{{ t("common.stages_simple") }}</p>
 
   <h2 class="card__title card__title--sm" style="margin-top:0;">{{ t("rules.how_title") }}</h2>
   <ol class="rules-list">
@@ -22,6 +20,14 @@
     <li>{{ t("rules.fee.2", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
     <li>{{ t("rules.fee.3", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
     <li>{{ t("rules.refund_policy") }}</li>
+  </ul>
+
+  <h2 class="card__title card__title--sm">{{ t("rules.schedule_title") }}</h2>
+  <ul class="prize-pool__list">
+    <li>{{ t("rules.schedule.group_lock") }}</li>
+    <li>{{ t("rules.schedule.later_stages") }}</li>
+    <li>{{ t("rules.schedule.admin_capture") }}</li>
+    <li>{{ t("common.stages_simple") }}</li>
   </ul>
 
   <h2 class="card__title card__title--sm">{{ t("rules.prizes_title") }}</h2>

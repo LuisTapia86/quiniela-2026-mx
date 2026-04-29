@@ -42,6 +42,7 @@ from app.services.api_football import (
 )
 from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_reader
+from app.dev_tools import flask_debug_truthy
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
@@ -386,7 +387,11 @@ def matches():
         .group_by(Match.id)
         .order_by(Match.match_number.asc(), Match.id.asc()),
     ).all()
-    return render_template("admin/matches.html", rows=rows)
+    return render_template(
+        "admin/matches.html",
+        rows=rows,
+        show_match_destroy_tools=flask_debug_truthy(),
+    )
 
 
 @bp.post("/admin/import-public-fixtures")
@@ -420,6 +425,8 @@ def import_public_fixtures():
 @login_required
 def cleanup_placeholder_matches():
     _require_admin()
+    if not flask_debug_truthy():
+        abort(404)
     group_slot_pattern = re.compile(r"^[A-L][1-3]$", flags=re.IGNORECASE)
 
     def _is_placeholder_team(raw: str | None) -> bool:
@@ -458,6 +465,8 @@ def cleanup_placeholder_matches():
 @login_required
 def reset_all_matches():
     _require_admin()
+    if not flask_debug_truthy():
+        abort(404)
     db.session.query(Prediction).delete(synchronize_session=False)
     db.session.query(Result).delete(synchronize_session=False)
     db.session.query(Match).delete(synchronize_session=False)
@@ -662,6 +671,8 @@ def payment_proof(payment_id: int):
 @login_required
 def seed_matches_admin():
     _require_admin()
+    if not flask_debug_truthy():
+        abort(404)
     generate_world_cup_2026_matches()
     flash("Matches created", "ok")
     return redirect(url_for("admin.matches"))

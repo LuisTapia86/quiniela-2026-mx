@@ -3,7 +3,20 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
+
+  {% if payment_banking_configured %}
+  <div class="pay-instructions pay-instructions--hero" role="region" aria-labelledby="pay-copy-title">
+    <h2 id="pay-copy-title" class="pay-instructions__title">{{ t("payment.official_title") }}</h2>
+    <ul class="pay-instructions__list pay-instructions__list--bullets">
+      <li>{{ t("payment.hero.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+      <li>{{ t("payment.hero.2") }}</li>
+      <li>{{ t("payment.hero.3") }}</li>
+      <li>{{ t("payment.hero.4") }}</li>
+    </ul>
+  </div>
+  {% endif %}
+
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fill_first_note") }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.refund_policy") }}</p>
 
@@ -26,10 +39,11 @@
   <div class="pay-instructions">
     <h2 class="pay-instructions__title">{{ t("payment.transfer_title") }}</h2>
     <ul class="pay-instructions__list">
-      <li><strong>{{ t("payment.beneficiary") }}</strong> {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
       <li><strong>{{ t("payment.bank") }}</strong> {{ config.PAYMENT_BANK|e }}</li>
+      <li><strong>{{ t("payment.beneficiary") }}</strong> {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
       <li><strong>{{ t("payment.clabe") }}</strong> <span class="mono">{{ config.PAYMENT_CLABE|e }}</span></li>
-      <li><strong>{{ t("payment.reference") }}</strong> <span class="mono">{{ entry.id }} {{ user.email|e }}</span></li>
+      <li><strong>{{ t("payment.account") }}</strong> <span class="mono">{{ config.PAYMENT_ACCOUNT|e }}</span></li>
+      <li><strong>{{ t("payment.reference") }}</strong> {{ t("payment.concept_hint") }}</li>
     </ul>
   </div>
   {% endif %}

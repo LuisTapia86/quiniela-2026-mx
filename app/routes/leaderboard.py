@@ -118,6 +118,10 @@ def export_csv():
         db.session.execute(
             select(Entry, User, Payment)
             .join(Payment, Payment.entry_id == Entry.id)
+            .where(
+                Payment.status == PaymentStatus.APPROVED,
+                Entry.status == EntryStatus.ACTIVE,
+            )
             .join(User, Entry.user_id == User.id)
             .order_by(Entry.total_points.desc(), Entry.created_at.asc(), Entry.id.asc()),
         ),

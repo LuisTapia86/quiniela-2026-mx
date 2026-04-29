@@ -55,6 +55,13 @@ class User(db.Model):
 
 
 class Entry(db.Model):
+    """Pool entry tied to predictions and payment.
+
+    Smart bracket (future): must be shipped as an additive optional module — if a design ever
+    requires deleting or overwriting historical predictions/entries across schema migration, stop:
+    refuse to implement until a safe additive path exists.
+    """
+
     __tablename__ = "entries"
 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import secrets
 import time
@@ -25,6 +26,16 @@ bp = Blueprint("auth", __name__)
 F = TypeVar("F", bound=Callable[..., Any])
 
 _EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+
+
+def _allow_dev_secret_auth_links() -> bool:
+    """Reveal one-time localhost verification/password links when MAIL_* isn't set — never in production."""
+    env = (os.environ.get("FLASK_ENV") or os.environ.get("APP_ENV") or "").strip().lower()
+    if env == "production":
+        return False
+    return bool(current_app.debug) and not mail_is_configured()
+
+
 _DISPLAY_NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{3,40}$")
 _ADMIN_SESSION_TIMEOUT_SECONDS = 30 * 60
 _PASSWORD_RESET_MAX_AGE = timedelta(hours=1)
@@ -160,7 +171,7 @@ def register():
         db.session.add(user)
         db.session.commit()
         verify_url = send_verification_email(user.email, tok, lang=get_lang())
-        if current_app.debug and not mail_is_configured():
+        if _allow_dev_secret_auth_links():
             session["dev_verify_url_once"] = verify_url
         return redirect(url_for("auth.email_verification_sent"))
     return render_template("auth/register.html", email="", display_name="")
@@ -169,9 +180,7 @@ def register():
 @bp.get("/register/email-sent")
 def email_verification_sent():
     verify_url = session.pop("dev_verify_url_once", None)
-    dev_verify_url = (
-        verify_url if (current_app.debug and verify_url and not mail_is_configured()) else None
-    )
+    dev_verify_url = verify_url if (verify_url and _allow_dev_secret_auth_links()) else None
     return render_template("auth/email_verification_sent.html", dev_verify_url=dev_verify_url)
 
 
@@ -226,17 +235,13 @@ def forgot_password():
                 u.password_reset_sent_at = utcnow()
                 db.session.commit()
                 reset_url = send_password_reset_email(u.email, tok, lang=get_lang())
-                if current_app.debug and not mail_is_configured():
+                if _allow_dev_secret_auth_links():
                     session["dev_pw_reset_once"] = reset_url
         # Same message regardless of whether the address exists or is valid (no enumeration).
         flash(tr("flash.auth.forgot_generic"), "ok")
         return redirect(url_for("auth.forgot_password"))
     dev_reset_url = session.pop("dev_pw_reset_once", None)
-    dev_link = (
-        dev_reset_url
-        if current_app.debug and dev_reset_url and not mail_is_configured()
-        else None
-    )
+    dev_link = dev_reset_url if (dev_reset_url and _allow_dev_secret_auth_links()) else None
     return render_template("auth/forgot_password.html", dev_reset_url=dev_link)
 
 

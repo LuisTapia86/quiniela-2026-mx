@@ -39,9 +39,10 @@ class Config:
     PAYMENT_PROOFS_FOLDER = BASE_DIR / "instance" / "uploads" / "payment_proofs"
     # Extensions without leading dot; lowercased on validation
     ALLOWED_PAYMENT_EXTENSIONS = frozenset({"jpg", "jpeg", "png", "webp", "pdf"})
-    PAYMENT_BENEFICIARY_NAME = os.environ.get("PAYMENT_BENEFICIARY_NAME", "TODO_NOMBRE_BENEFICIARIO")
-    PAYMENT_BANK = os.environ.get("PAYMENT_BANK", "TODO_BANCO")
-    PAYMENT_CLABE = os.environ.get("PAYMENT_CLABE", "TODO_CLABE")
+    PAYMENT_BENEFICIARY_NAME = os.environ.get("PAYMENT_BENEFICIARY_NAME", "Luis Javier Tapia Lara")
+    PAYMENT_BANK = os.environ.get("PAYMENT_BANK", "Banamex")
+    PAYMENT_CLABE = os.environ.get("PAYMENT_CLABE", "002580904146344260")
+    PAYMENT_ACCOUNT = os.environ.get("PAYMENT_ACCOUNT", "4634426")
     API_FOOTBALL_KEY = os.environ.get("API_FOOTBALL_KEY", "")
     API_FOOTBALL_BASE_URL = os.environ.get("API_FOOTBALL_BASE_URL", "https://v3.football.api-sports.io")
     API_FOOTBALL_WORLD_CUP_SEASON = int(os.environ.get("API_FOOTBALL_WORLD_CUP_SEASON", "2026") or "2026")
@@ -61,5 +62,3 @@ class Config:
 
     # Public site URL for verification links when building emails (e.g. https://your-app.onrender.com)
     SITE_URL = (os.environ.get("SITE_URL") or "").strip().rstrip("/")
-    # TEMPORARY: GET /emergency-reset-users — remove route after production reset. Empty = route always 404.
-    EMERGENCY_RESET_TOKEN = (os.environ.get("EMERGENCY_RESET_TOKEN") or "").strip()
