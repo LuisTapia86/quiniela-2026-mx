@@ -23,7 +23,7 @@
     <div class="table-wrap">
       <table class="data-table" role="grid" aria-label="{{ t('pred.table_aria') }}">
         <thead>
-          <tr class="{% if row.group_break %}pred-group-break{% endif %}">
+          <tr>
             <th scope="col">#</th>
             <th scope="col">{{ t("pred.col.match") }}</th>
             <th scope="col">{{ t("pred.col.kickoff") }}</th>
@@ -37,7 +37,7 @@
         <tbody>
           {% for row in rows %}
           {% set m = row.match %}
-          <tr>
+          <tr class="{% if row.group_break|default(false) %}pred-group-break{% endif %}">
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
               {% if row.is_group_stage %}
