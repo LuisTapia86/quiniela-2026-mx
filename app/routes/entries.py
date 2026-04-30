@@ -395,7 +395,7 @@ def predictions(entry_id: int):
 
 def _parse_score(val: str | None) -> int | None:
     if val is None or (isinstance(val, str) and val.strip() == ""):
-        return 0
+        return None
     try:
         n = int(str(val).strip())
     except ValueError:
@@ -408,8 +408,13 @@ def _parse_score(val: str | None) -> int | None:
 def _save_predictions(entry: Entry, matches: list[Match]) -> bool:
     parsed: list[tuple[Match, int, int]] = []
     for m in matches:
-        raw_h = request.form.get(f"home_{m.id}")
-        raw_a = request.form.get(f"away_{m.id}")
+        raw_h = (request.form.get(f"home_{m.id}") or "").strip()
+        raw_a = (request.form.get(f"away_{m.id}") or "").strip()
+        if raw_h == "" and raw_a == "":
+            continue
+        if raw_h == "" or raw_a == "":
+            flash(tr("flash.predictions.complete_pair"), "error")
+            return False
         h, a = _parse_score(raw_h), _parse_score(raw_a)
         if h is None or a is None:
             flash(tr("flash.predictions.integer_goals"), "error")
@@ -530,8 +535,8 @@ def _render_predictions(
                 "slot_subtitle": slot_subtitle,
                 "date_break": date_break,
                 "date_label": date_label,
-                "home": p.home_goals if p else 0,
-                "away": p.away_goals if p else 0,
+                "home": p.home_goals if p else "",
+                "away": p.away_goals if p else "",
                 "has_prediction": p is not None,
                 "prediction_text": f"{p.home_goals}-{p.away_goals}" if p is not None else "—",
                 "result_text": f"{result.home_score}-{result.away_score}" if result is not None else tr("pred.pending_result"),

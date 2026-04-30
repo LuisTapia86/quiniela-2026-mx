@@ -102,14 +102,14 @@
               {% if locked %}
               <span class="pred-readonly">{{ row.home }}</span>
               {% else %}
-              <input class="form__input form__input--num" type="number" name="home_{{ m.id }}" min="0" step="1" required value="{{ row.home }}">
+              <input class="form__input form__input--num js-score-input" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ row.home }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.away') }}">
               {% if locked %}
               <span class="pred-readonly">{{ row.away }}</span>
               {% else %}
-              <input class="form__input form__input--num" type="number" name="away_{{ m.id }}" min="0" step="1" required value="{{ row.away }}">
+              <input class="form__input form__input--num js-score-input" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ row.away }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.result') }}">
@@ -185,6 +185,13 @@
       btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
       btn.textContent = isOpen ? btn.dataset.openText : btn.dataset.closeText;
       row.hidden = isOpen;
+    });
+  });
+  document.querySelectorAll('.js-score-input').forEach(function (input) {
+    input.addEventListener('focus', function () {
+      if (input.value === '0' && input.dataset.existingPrediction !== '1') {
+        input.value = '';
+      }
     });
   });
 </script>
