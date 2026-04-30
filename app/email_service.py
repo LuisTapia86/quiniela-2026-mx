@@ -1,13 +1,73 @@
 from __future__ import annotations
 
+import os
+from html import escape
+from typing import NamedTuple
+
+import requests
 from flask import current_app, url_for
-from flask_mail import Message
 
-from app import mail
+RESEND_API_ENDPOINT = "https://api.resend.com/emails"
 
 
-def mail_is_configured() -> bool:
-    return bool(current_app.config.get("MAIL_SERVER") and current_app.config.get("MAIL_DEFAULT_SENDER"))
+class EmailSendResult(NamedTuple):
+    """Returned by verification and password-reset helpers for routing/flash UX."""
+
+    url: str
+    delivered: bool  # True when Resend accepted the message (2xx).
+
+
+def transactional_email_configured() -> bool:
+    """Transactional mail uses Resend over HTTPS — requires API key + from address."""
+    key = (current_app.config.get("RESEND_API_KEY") or "").strip()
+    sender = (current_app.config.get("MAIL_DEFAULT_SENDER") or "").strip()
+    return bool(key and sender)
+
+
+def _production_env() -> bool:
+    return (
+        os.environ.get("FLASK_ENV") or os.environ.get("APP_ENV") or ""
+    ).strip().lower() == "production"
+
+
+def send_email_via_resend(to_email: str, subject: str, html_body: str) -> bool:
+    """POST to Resend HTTP API — no Flask-Mail / SMTP."""
+    api_key = (current_app.config.get("RESEND_API_KEY") or "").strip()
+    sender = (current_app.config.get("MAIL_DEFAULT_SENDER") or "").strip()
+
+    if not api_key:
+        current_app.logger.error("RESEND_API_KEY missing")
+        return False
+
+    if not sender:
+        current_app.logger.error("MAIL_DEFAULT_SENDER missing")
+        return False
+
+    try:
+        response = requests.post(
+            RESEND_API_ENDPOINT,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            json={
+                "from": sender,
+                "to": [to_email],
+                "subject": subject,
+                "html": html_body,
+            },
+            timeout=10,
+        )
+
+        if response.status_code >= 400:
+            current_app.logger.error(f"Resend error: {response.text}")
+            return False
+
+        return True
+
+    except Exception as exc:  # pragma: no cover - network variability
+        current_app.logger.error(f"Resend exception: {exc}")
+        return False
 
 
 def verification_absolute_url(token: str) -> str:
@@ -22,36 +82,42 @@ def verification_absolute_url(token: str) -> str:
         return path
 
 
-def send_verification_email(to_email: str, token: str, *, lang: str | None = None) -> str:
-    """Send verification mail if SMTP is configured; always return the link for logging/UI.
-
-    *lang*: optional locale hint ('es' / 'en') for email body wording.
-    """
+def send_verification_email(
+    to_email: str,
+    token: str,
+    *,
+    lang: str | None = None,
+) -> EmailSendResult:
     verify_url = verification_absolute_url(token)
     lng = (lang or "es").strip().lower()[:2]
 
-    body = (
-        f"{'Verifica tu correo:' if lng == 'es' else 'Verify your email:'}\n{verify_url}\n\n"
-        f"{'En / If the link breaks, copy it into your browser.' if lng != 'es' else 'Si el enlace falla, cópialo en el navegador.'}\n"
-        f"If you did not register, ignore this message. / Si no registraste cuenta, ignora este mensaje.\n"
-    )
-    subject = (
-        "[Quiniela] Confirma tu correo"
+    plain_lines = (
+        ("Verifica tu correo:", "Si el enlace falla, cópialo en el navegador.", "Si no registraste cuenta, ignora este mensaje.")
         if lng == "es"
-        else "[Quiniela] Confirm your email"
+        else ("Verify your email:", "If the link breaks, paste it into your browser.", "If you did not register, ignore this message.")
     )
 
-    if mail_is_configured():
-        sender = current_app.config.get("MAIL_DEFAULT_SENDER")
-        msg = Message(subject=subject, recipients=[to_email], body=body, sender=sender)
-        try:
-            mail.send(msg)
-        except Exception:
-            current_app.logger.exception("Flask-Mail send failed for verification to %s", to_email)
+    subject = "[Quiniela] Confirma tu correo" if lng == "es" else "[Quiniela] Confirm your email"
+    safe_link = escape(verify_url)
 
-    current_app.logger.info("Email verification URL for %s: %s", to_email, verify_url)
+    html_body = (
+        f"<p>{plain_lines[0]}</p>"
+        f"<p><a href=\"{safe_link}\">{safe_link}</a></p>"
+        f"<p>{plain_lines[1]}</p>"
+        f"<p>{plain_lines[2]}</p>"
+    )
 
-    return verify_url
+    delivered = False
+    if transactional_email_configured():
+        delivered = send_email_via_resend(to_email, subject, html_body)
+    elif _production_env():
+        current_app.logger.error(
+            "RESEND_API_KEY or MAIL_DEFAULT_SENDER missing; skipping verification send to %s",
+            to_email,
+        )
+
+    current_app.logger.info("Email verification link for %s: %s", to_email, verify_url)
+    return EmailSendResult(verify_url, delivered)
 
 
 def reset_password_absolute_url(token: str) -> str:
@@ -65,24 +131,50 @@ def reset_password_absolute_url(token: str) -> str:
         return path
 
 
-def send_password_reset_email(to_email: str, token: str, *, lang: str | None = None) -> str:
-    """Send password reset mail; always return the link for logging (no SMTP crash)."""
+def send_password_reset_email(
+    to_email: str,
+    token: str,
+    *,
+    lang: str | None = None,
+) -> EmailSendResult:
     reset_url = reset_password_absolute_url(token)
     lng = (lang or "es").strip().lower()[:2]
-    body = (
-        f"{'Restablece tu contraseña:' if lng == 'es' else 'Reset your password:'}\n{reset_url}\n\n"
-        f"{ 'El enlace caduca en 1 hora. / Expires in 1 hour.' if lng == 'es' else 'This link expires in 1 hour. / Caduca en 1 hora.'}\n\n"
-        f"If you did not ask for this, ignore. / Si no lo pediste, ignora este mensaje.\n"
+
+    expiry = (
+        "El enlace caduca en 1 hora. Si no pediste este correo, ignora este mensaje."
+        if lng == "es"
+        else "This link expires in 1 hour. If you did not request this, ignore this message."
     )
+    btn = (
+        "Restablecer contraseña" if lng == "es" else "Reset password"
+    )
+    intro = (
+        "Restablece tu contraseña usando el enlace de abajo."
+        if lng == "es"
+        else "Reset your password using the link below."
+    )
+
     subject = "[Quiniela] Restablecer contraseña" if lng == "es" else "[Quiniela] Reset password"
+    safe_link = escape(reset_url)
 
-    if mail_is_configured():
-        sender = current_app.config.get("MAIL_DEFAULT_SENDER")
-        msg = Message(subject=subject, recipients=[to_email], body=body, sender=sender)
-        try:
-            mail.send(msg)
-        except Exception:
-            current_app.logger.exception("Flask-Mail send failed for password reset to %s", to_email)
+    html_body = (
+        f"<p>{intro}</p>"
+        f"<p><a href=\"{safe_link}\">{escape(btn)}</a></p>"
+        f"<p>{escape(expiry)}</p>"
+    )
 
-    current_app.logger.info("Password reset URL for %s: %s", to_email, reset_url)
-    return reset_url
+    delivered = False
+    if transactional_email_configured():
+        delivered = send_email_via_resend(to_email, subject, html_body)
+    elif _production_env():
+        current_app.logger.error(
+            "RESEND_API_KEY or MAIL_DEFAULT_SENDER missing; skipping password reset send to %s",
+            to_email,
+        )
+
+    current_app.logger.info("Password reset link for %s: %s", to_email, reset_url)
+    return EmailSendResult(reset_url, delivered)
+
+
+# Deprecated name — Resend replaces SMTP-only checks.
+mail_is_configured = transactional_email_configured

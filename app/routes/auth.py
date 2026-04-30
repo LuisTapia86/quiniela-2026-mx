@@ -8,15 +8,16 @@ from datetime import datetime, timedelta, timezone
 from functools import wraps
 from typing import Any, Callable, TypeVar
 
-from flask import Blueprint, current_app, flash, redirect, render_template, request, session, url_for
+from flask import Blueprint, flash, redirect, render_template, request, session, url_for
 from sqlalchemy import func, select
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db, limiter
+from app.dev_tools import flask_debug_truthy
 from app.email_service import (
-    mail_is_configured,
     send_password_reset_email,
     send_verification_email,
+    transactional_email_configured,
 )
 from app.models import User, utcnow
 from app.translations import get_lang, tr
@@ -29,11 +30,11 @@ _EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
 
 
 def _allow_dev_secret_auth_links() -> bool:
-    """Reveal one-time localhost verification/password links when MAIL_* isn't set — never in production."""
+    """Show in-page verification/reset links when Resend isn't configured — only FLASK_DEBUG, never production."""
     env = (os.environ.get("FLASK_ENV") or os.environ.get("APP_ENV") or "").strip().lower()
     if env == "production":
         return False
-    return bool(current_app.debug) and not mail_is_configured()
+    return flask_debug_truthy() and not transactional_email_configured()
 
 
 _DISPLAY_NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{3,40}$")
@@ -170,9 +171,11 @@ def register():
         )
         db.session.add(user)
         db.session.commit()
-        verify_url = send_verification_email(user.email, tok, lang=get_lang())
+        verification = send_verification_email(user.email, tok, lang=get_lang())
         if _allow_dev_secret_auth_links():
-            session["dev_verify_url_once"] = verify_url
+            session["dev_verify_url_once"] = verification.url
+        if not verification.delivered and not _allow_dev_secret_auth_links():
+            flash(tr("flash.auth.email_send_failed"), "error")
         return redirect(url_for("auth.email_verification_sent"))
     return render_template("auth/register.html", email="", display_name="")
 
@@ -214,7 +217,10 @@ def resend_verification():
                 u.email_verification_token = tok
                 u.email_verification_sent_at = utcnow()
                 db.session.commit()
-                send_verification_email(u.email, tok, lang=get_lang())
+                resent = send_verification_email(u.email, tok, lang=get_lang())
+                if not resent.delivered and not _allow_dev_secret_auth_links():
+                    flash(tr("flash.auth.email_send_failed"), "error")
+                    return redirect(url_for("auth.resend_verification"))
         flash(tr("flash.auth.resend_generic"), "ok")
         return redirect(url_for("auth.resend_verification"))
     return render_template("auth/resend_verification.html")
@@ -234,10 +240,14 @@ def forgot_password():
                 u.password_reset_token = tok
                 u.password_reset_sent_at = utcnow()
                 db.session.commit()
-                reset_url = send_password_reset_email(u.email, tok, lang=get_lang())
+                reset_mail = send_password_reset_email(u.email, tok, lang=get_lang())
                 if _allow_dev_secret_auth_links():
-                    session["dev_pw_reset_once"] = reset_url
-        # Same message regardless of whether the address exists or is valid (no enumeration).
+                    session["dev_pw_reset_once"] = reset_mail.url
+                if not reset_mail.delivered and not _allow_dev_secret_auth_links():
+                    flash(tr("flash.auth.email_send_failed"), "error")
+                    return redirect(url_for("auth.forgot_password"))
+                flash(tr("flash.auth.forgot_generic"), "ok")
+                return redirect(url_for("auth.forgot_password"))
         flash(tr("flash.auth.forgot_generic"), "ok")
         return redirect(url_for("auth.forgot_password"))
     dev_reset_url = session.pop("dev_pw_reset_once", None)

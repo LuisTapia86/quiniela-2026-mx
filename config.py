@@ -49,16 +49,20 @@ class Config:
     _league_id_raw = (os.environ.get("API_FOOTBALL_WORLD_CUP_LEAGUE_ID") or "").strip()
     API_FOOTBALL_WORLD_CUP_LEAGUE_ID = int(_league_id_raw) if _league_id_raw else None
 
-    # Email (verification, etc.) — Flask-Mail uses MAIL_* variables
+    # Transactional email: Resend API (HTTPS); no SMTP ports required — see app/email_service.py
+    RESEND_API_KEY = (os.environ.get("RESEND_API_KEY") or "").strip()
+
+    _mail_sender = (os.environ.get("MAIL_DEFAULT_SENDER") or "").strip()
+    MAIL_DEFAULT_SENDER = _mail_sender or None
+
+    # Legacy MAIL_* retained for compatibility; Flask-Mail is not used for sending.
     MAIL_SERVER = (os.environ.get("MAIL_SERVER") or "").strip() or None
     _mail_port = (os.environ.get("MAIL_PORT") or "587").strip()
     MAIL_PORT = int(_mail_port) if _mail_port.isdigit() else 587
     MAIL_USE_TLS = (os.environ.get("MAIL_USE_TLS") or "true").strip().lower() in {"1", "true", "yes", "on"}
     MAIL_USE_SSL = (os.environ.get("MAIL_USE_SSL") or "false").strip().lower() in {"1", "true", "yes", "on"}
     MAIL_USERNAME = (os.environ.get("MAIL_USERNAME") or "").strip() or None
-    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")  # intentionally may be unset
-    _mail_sender = (os.environ.get("MAIL_DEFAULT_SENDER") or "").strip()
-    MAIL_DEFAULT_SENDER = _mail_sender or None
+    MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
 
-    # Public site URL for verification links when building emails (e.g. https://your-app.onrender.com)
+    # Public site URL for links in transactional mail (e.g. https://your-app.onrender.com)
     SITE_URL = (os.environ.get("SITE_URL") or "").strip().rstrip("/")
