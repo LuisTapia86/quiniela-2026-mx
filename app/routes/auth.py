@@ -160,23 +160,23 @@ def register():
         if db.session.query(User.id).filter(func.lower(User.display_name) == display_name.lower()).first() is not None:
             flash(tr("flash.auth.alias_exists"), "error")
             return render_template("auth/register.html", email=email, display_name=display_name)
-        tok = secrets.token_urlsafe(32)
         user = User(
             email=email,
             display_name=display_name,
             password_hash=generate_password_hash(password),
-            email_verified=False,
-            email_verification_token=tok,
-            email_verification_sent_at=utcnow(),
+            email_verified=True,
+            email_verification_token=None,
+            email_verification_sent_at=None,
         )
         db.session.add(user)
         db.session.commit()
-        verification = send_verification_email(user.email, tok, lang=get_lang())
-        if _allow_dev_secret_auth_links():
-            session["dev_verify_url_once"] = verification.url
-        if not verification.delivered and not _allow_dev_secret_auth_links():
-            flash(tr("flash.auth.email_send_failed"), "error")
-        return redirect(url_for("auth.email_verification_sent"))
+        session.clear()
+        session["user_id"] = user.id
+        session.permanent = True
+        session["is_admin"] = bool(user.is_admin)
+        session["last_seen_at"] = time.time()
+        flash(tr("flash.auth.register_ok"), "ok")
+        return redirect(url_for("main.index"))
     return render_template("auth/register.html", email="", display_name="")
 
 
@@ -231,6 +231,17 @@ def resend_verification():
 def forgot_password():
     if get_current_user() is not None:
         return redirect(url_for("main.index"))
+    reset_available = transactional_email_configured()
+    if not reset_available:
+        if request.method == "POST":
+            flash(tr("flash.auth.forgot_contact_admin"), "ok")
+            return redirect(url_for("auth.forgot_password"))
+        return render_template(
+            "auth/forgot_password.html",
+            reset_available=False,
+            dev_reset_url=None,
+        )
+
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         if email and _EMAIL_RE.match(email):
@@ -252,7 +263,11 @@ def forgot_password():
         return redirect(url_for("auth.forgot_password"))
     dev_reset_url = session.pop("dev_pw_reset_once", None)
     dev_link = dev_reset_url if (dev_reset_url and _allow_dev_secret_auth_links()) else None
-    return render_template("auth/forgot_password.html", dev_reset_url=dev_link)
+    return render_template(
+        "auth/forgot_password.html",
+        reset_available=True,
+        dev_reset_url=dev_link,
+    )
 
 
 @bp.route("/reset-password/<token>", methods=["GET", "POST"])
@@ -298,10 +313,11 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user is None or not check_password_hash(user.password_hash, password):
             flash(tr("flash.auth.bad_credentials"), "error")
-            return render_template("auth/login.html", email=email, show_verify_help=False)
-        if user.email_verified is False:
-            flash(tr("flash.auth.must_verify_login"), "error")
-            return render_template("auth/login.html", email=email, show_verify_help=True)
+            return render_template(
+                "auth/login.html",
+                email=email,
+                forgot_password_available=transactional_email_configured(),
+            )
         session.clear()
         session["user_id"] = user.id
         session.permanent = True
@@ -311,7 +327,11 @@ def login():
         if _is_safe_redirect(next_url):
             return redirect(next_url)
         return redirect(url_for("main.index"))
-    return render_template("auth/login.html", email="", show_verify_help=False)
+    return render_template(
+        "auth/login.html",
+        email="",
+        forgot_password_available=transactional_email_configured(),
+    )
 
 
 @bp.get("/logout")

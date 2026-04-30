@@ -10,6 +10,8 @@
     <button class="btn btn--sm" type="submit">{{ t("common.search") }}</button>
   </form>
 
+  <input type="hidden" id="admin-users-csrf" value="{{ csrf_token() }}">
+
   {% if not rows %}
   <p class="form__hint">{{ t("admin.users.empty") }}</p>
   {% else %}
@@ -28,6 +30,7 @@
           <th scope="col" class="num">{{ t("admin.users.entry_status_active") }}</th>
           <th scope="col" class="num">{{ t("admin.users.entry_status_cancelled_user") }}</th>
           <th scope="col" class="num">{{ t("admin.users.entry_status_voided") }}</th>
+          <th scope="col">{{ t("admin.users.actions") }}</th>
         </tr>
       </thead>
       <tbody>
@@ -44,11 +47,129 @@
           <td class="num">{{ entry_status_active_count }}</td>
           <td class="num">{{ entry_status_cancelled_count }}</td>
           <td class="num">{{ entry_status_voided_count }}</td>
+          <td class="admin-users-actions">
+            {% if user.id == current_user.id %}
+            <span class="form__hint">—</span>
+            {% else %}
+            <div class="admin-user-actions-stack">
+              <button type="button" class="btn btn--sm js-admin-reset-password"
+                data-user-id="{{ user.id }}"
+                data-confirm-detail="{{ t('admin.users.reset_password_confirm_detail', email=user.email)|e }}">{{ t("admin.users.reset_password") }}</button>
+              {% if approved_entries_count == 0 %}
+              <form method="post" action="{{ url_for('admin.delete_test_user', user_id=user.id) }}" class="admin-delete-user-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="q" value="{{ q|e }}">
+                <label class="form__hint" style="display:block;margin-bottom:0.35rem;font-size:0.82rem;">{{ t("admin.users.delete_confirm_label") }}</label>
+                <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;">
+                  <input class="form__input" type="text" name="confirm_text" autocomplete="off" placeholder="{{ t('admin.users.delete_placeholder') }}" maxlength="64" autocapitalize="characters" aria-label="{{ t('admin.users.delete_placeholder') }}" style="min-width:7rem;font-size:0.95rem;">
+                  <button type="submit" class="btn btn--sm">{{ t("admin.users.delete_test") }}</button>
+                </div>
+              </form>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+  {% endif %}
+
+  <dialog id="admin-pw-confirm" class="admin-modal" aria-labelledby="admin-pw-confirm-title">
+    <form method="dialog" class="admin-modal__inner">
+      <h2 id="admin-pw-confirm-title" class="card__title card__title--sm">{{ t("admin.users.reset_password_confirm_title") }}</h2>
+      <p id="admin-pw-confirm-detail" class="form__hint"></p>
+      <div class="admin-modal__actions">
+        <button type="submit" class="btn" value="cancel">{{ t("admin.users.reset_password_cancel") }}</button>
+        <button type="submit" class="btn btn--primary" value="confirm">{{ t("admin.users.reset_password_submit") }}</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="admin-pw-result" class="admin-modal" aria-labelledby="admin-pw-result-title">
+    <div class="admin-modal__inner">
+      <h2 id="admin-pw-result-title" class="card__title card__title--sm">{{ t("admin.users.reset_password") }}</h2>
+      <p id="admin-pw-result-msg" class="form__hint"></p>
+      <label class="form__field">
+        <span class="form__label">{{ t("admin.users.reset_password_placeholder") }}</span>
+        <input id="admin-pw-result-value" class="form__input mono" type="text" readonly autocomplete="off">
+      </label>
+      <div class="admin-modal__actions">
+        <button type="button" id="admin-pw-result-copy" class="btn btn--sm">{{ t("admin.users.reset_password_copy") }}</button>
+        <button type="button" id="admin-pw-result-close" class="btn btn--primary">{{ t("admin.users.reset_password_close") }}</button>
+      </div>
+    </div>
+  </dialog>
+
+  {% if rows %}
+  <script>
+  (function () {
+    const csrfEl = document.getElementById('admin-users-csrf');
+    const confirmDlg = document.getElementById('admin-pw-confirm');
+    const confirmDetail = document.getElementById('admin-pw-confirm-detail');
+    const resultDlg = document.getElementById('admin-pw-result');
+    const resultMsg = document.getElementById('admin-pw-result-msg');
+    const resultInput = document.getElementById('admin-pw-result-value');
+    const tmpl = {{ url_for('admin.reset_user_password', user_id=0)|tojson }}.replace('/0/', '/__UID__/');
+    const errGeneric = {{ t("admin.users.reset_password_error_generic")|tojson }};
+    let pendingUid = null;
+
+    document.querySelectorAll('.js-admin-reset-password').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        pendingUid = btn.getAttribute('data-user-id');
+        confirmDetail.textContent = btn.getAttribute('data-confirm-detail') || '';
+        confirmDlg.returnValue = '';
+        confirmDlg.showModal();
+      });
+    });
+
+    confirmDlg.addEventListener('close', async function () {
+      if (confirmDlg.returnValue !== 'confirm' || !pendingUid) {
+        pendingUid = null;
+        return;
+      }
+      var uid = pendingUid;
+      pendingUid = null;
+      var url = tmpl.replace('__UID__', encodeURIComponent(uid));
+      try {
+        var res = await fetch(url, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'X-CSRFToken': csrfEl ? csrfEl.value : '',
+            'Accept': 'application/json',
+          },
+        });
+        var data = await res.json().catch(function () { return null; });
+        if (!data || data.ok !== true) {
+          window.alert((data && data.error) ? data.error : errGeneric);
+          return;
+        }
+        resultMsg.textContent = data.message || '';
+        resultInput.value = data.temp_password || '';
+        resultDlg.showModal();
+      } catch (e) {
+        window.alert(errGeneric);
+      }
+    });
+
+    document.getElementById('admin-pw-result-copy').addEventListener('click', function () {
+      var text = resultInput.value;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () { resultInput.select(); document.execCommand('copy'); });
+        return;
+      }
+      resultInput.select();
+      try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+    });
+    document.getElementById('admin-pw-result-close').addEventListener('click', function () {
+      resultDlg.close();
+      resultInput.value = '';
+      resultMsg.textContent = '';
+    });
+  })();
+  </script>
   {% endif %}
 
   <p class="card__footer">

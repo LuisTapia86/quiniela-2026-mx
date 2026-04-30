@@ -4,12 +4,14 @@ import csv
 import io
 from pathlib import Path
 import re
+import secrets
 
 from flask import (
     Blueprint,
     abort,
     current_app,
     flash,
+    jsonify,
     redirect,
     render_template,
     request,
@@ -17,7 +19,8 @@ from flask import (
     send_file,
     url_for,
 )
-from sqlalchemy import func, or_, select
+from werkzeug.security import generate_password_hash
+from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app import db
@@ -88,6 +91,14 @@ def _is_test_payment_mode() -> bool:
 def _append_payment_admin_note(p: Payment, line: str) -> None:
     base = (p.admin_note or "").strip()
     p.admin_note = f"{base}\n{line}" if base else line
+
+
+_ADMIN_TEMP_PW_CHARSET = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+
+def _generate_admin_temp_password() -> str:
+    length = secrets.randbelow(3) + 8
+    return "".join(secrets.choice(_ADMIN_TEMP_PW_CHARSET) for _ in range(length))
 
 
 @bp.get("/admin")
@@ -246,6 +257,89 @@ def users():
 
     rows = list(db.session.execute(stmt))
     return render_template("admin/users.html", rows=rows, q=q)
+
+
+_DELETE_TEST_CONFIRM_PHRASE = "DELETE USER"
+
+
+@bp.post("/admin/users/<int:user_id>/delete-test")
+@login_required
+def delete_test_user(user_id: int):
+    """Remove a user with no approved payments — test accounts only; strict CSRF POST."""
+    _require_admin()
+    actor = get_current_user()
+    assert actor is not None
+
+    if user_id == actor.id:
+        flash(tr("flash.admin.delete_user_self"), "error")
+        return redirect(url_for("admin.users", q=(request.form.get("q") or "").strip()))
+
+    confirmation = (request.form.get("confirm_text") or "").strip()
+    if confirmation != _DELETE_TEST_CONFIRM_PHRASE:
+        flash(tr("flash.admin.delete_user_confirm_bad"), "error")
+        return redirect(url_for("admin.users", q=(request.form.get("q") or "").strip()))
+
+    target = db.session.get(User, user_id)
+    if target is None:
+        abort(404)
+
+    approved_pay = db.session.scalar(
+        select(func.count())
+        .select_from(Payment)
+        .where(
+            Payment.user_id == user_id,
+            Payment.status == PaymentStatus.APPROVED,
+        ),
+    ) or 0
+    if approved_pay > 0:
+        flash(tr("flash.admin.delete_user_has_approved_payment"), "error")
+        return redirect(url_for("admin.users", q=(request.form.get("q") or "").strip()))
+
+    eids = list(db.session.scalars(select(Entry.id).where(Entry.user_id == user_id)))
+    if eids:
+        db.session.execute(delete(Prediction).where(Prediction.entry_id.in_(eids)))
+    db.session.execute(delete(Payment).where(Payment.user_id == user_id))
+    db.session.execute(delete(Entry).where(Entry.user_id == user_id))
+    db.session.execute(delete(User).where(User.id == user_id))
+    db.session.commit()
+    flash(tr("flash.admin.delete_user_ok", email=target.email), "ok")
+    return redirect(url_for("admin.users", q=(request.form.get("q") or "").strip()))
+
+
+@bp.post("/admin/users/<int:user_id>/reset-password")
+@login_required
+def reset_user_password(user_id: int):
+    """Manual password reset: returns one-time plaintext in JSON — never logged."""
+    _require_admin()
+    actor = get_current_user()
+    assert actor is not None
+    if user_id == actor.id:
+        return (
+            jsonify(ok=False, error=tr("flash.admin.password_reset_self")),
+            403,
+        )
+
+    target = db.session.get(User, user_id)
+    if target is None:
+        return jsonify(ok=False, error="Not found"), 404
+
+    temp_plain = _generate_admin_temp_password()
+    target.password_hash = generate_password_hash(temp_plain)
+    target.password_reset_token = None
+    target.password_reset_sent_at = None
+    db.session.commit()
+
+    current_app.logger.info(
+        "Admin manual password reset: actor_id=%s target_user_id=%s (plaintext not logged)",
+        actor.id,
+        user_id,
+    )
+
+    return jsonify(
+        ok=True,
+        temp_password=temp_plain,
+        message=tr("admin.password_reset_manual_notice"),
+    )
 
 
 @bp.post("/admin/tournament/lock")

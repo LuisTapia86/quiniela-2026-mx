@@ -1475,3 +1475,40 @@ ol.pay-steps {
     width: 100%;
   }
 }
+
+.admin-user-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  align-items: flex-start;
+  max-width: 18rem;
+}
+
+.admin-users-actions {
+  vertical-align: top;
+}
+
+dialog.admin-modal {
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  background: #0f172a;
+  color: var(--text);
+  padding: 0;
+  max-width: min(92vw, 26rem);
+}
+
+dialog.admin-modal::backdrop {
+  background: rgba(15, 23, 42, 0.72);
+}
+
+.admin-modal__inner {
+  padding: 1.1rem 1.2rem;
+}
+
+.admin-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
+}
