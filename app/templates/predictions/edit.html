@@ -18,6 +18,40 @@
   {% if rows|length == 0 %}
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
   {% else %}
+  {% set official_2026 = {
+    73: "2.º Grupo A vs 2.º Grupo B",
+    74: "1.º Grupo E vs Mejor 3.º (A/B/C/D/F)",
+    75: "1.º Grupo F vs 2.º Grupo C",
+    76: "1.º Grupo C vs 2.º Grupo F",
+    77: "1.º Grupo I vs Mejor 3.º (C/D/F/G/H)",
+    78: "2.º Grupo E vs 2.º Grupo I",
+    79: "1.º Grupo A vs Mejor 3.º (C/E/F/H/I)",
+    80: "1.º Grupo L vs Mejor 3.º (E/H/I/J/K)",
+    81: "1.º Grupo D vs Mejor 3.º (B/E/F/I/J)",
+    82: "1.º Grupo G vs Mejor 3.º (A/E/H/I/J)",
+    83: "2.º Grupo K vs 2.º Grupo L",
+    84: "1.º Grupo H vs 2.º Grupo J",
+    85: "1.º Grupo B vs Mejor 3.º (E/F/G/I/J)",
+    86: "1.º Grupo J vs 2.º Grupo H",
+    87: "1.º Grupo K vs Mejor 3.º (D/E/I/J/L)",
+    88: "2.º Grupo D vs 2.º Grupo G",
+    89: "Ganador partido 73 vs Ganador partido 75",
+    90: "Ganador partido 74 vs Ganador partido 77",
+    91: "Ganador partido 76 vs Ganador partido 78",
+    92: "Ganador partido 79 vs Ganador partido 80",
+    93: "Ganador partido 83 vs Ganador partido 84",
+    94: "Ganador partido 81 vs Ganador partido 82",
+    95: "Ganador partido 86 vs Ganador partido 88",
+    96: "Ganador partido 85 vs Ganador partido 87",
+    97: "Ganador partido 89 vs Ganador partido 90",
+    98: "Ganador partido 93 vs Ganador partido 94",
+    99: "Ganador partido 91 vs Ganador partido 92",
+    100: "Ganador partido 95 vs Ganador partido 96",
+    101: "Ganador partido 97 vs Ganador partido 98",
+    102: "Ganador partido 99 vs Ganador partido 100",
+    103: "Perdedor partido 101 vs Perdedor partido 102",
+    104: "Ganador partido 101 vs Ganador partido 102"
+  } %}
   <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
@@ -49,8 +83,9 @@
               <span class="pred-stage">{{ row.group_context }}</span>
               <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
               {% else %}
+              {% set forced_label = official_2026.get(m.match_number, row.match_label|default(row.slot_line)) %}
               <span class="pred-stage">{{ row.stage_title }}</span>
-              <span class="pred-teams"><strong>{{ row.slot_line }}</strong></span>
+              <span class="pred-teams"><strong>{{ forced_label }}</strong></span>
               {% if row.slot_subtitle %}
               <span class="pred-stage pred-stage--sub">{{ row.slot_subtitle }}</span>
               {% endif %}

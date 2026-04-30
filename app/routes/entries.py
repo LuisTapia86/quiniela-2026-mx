@@ -29,25 +29,6 @@ from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
 
-_ROUND32_PAIR_MAP: dict[int, tuple[str, str, str]] = {
-    73: ("1A", "3CDE", "Ganador del grupo A vs uno de los mejores terceros"),
-    74: ("2A", "2B", "Segundo del grupo A vs segundo del grupo B"),
-    75: ("1B", "3ACD", "Ganador del grupo B vs uno de los mejores terceros"),
-    76: ("1C", "3EFG", "Ganador del grupo C vs uno de los mejores terceros"),
-    77: ("2C", "2D", "Segundo del grupo C vs segundo del grupo D"),
-    78: ("1D", "3ABC", "Ganador del grupo D vs uno de los mejores terceros"),
-    79: ("1E", "2F", "Ganador del grupo E vs segundo del grupo F"),
-    80: ("1F", "3DEG", "Ganador del grupo F vs uno de los mejores terceros"),
-    81: ("2E", "2F", "Segundo del grupo E vs segundo del grupo F"),
-    82: ("1G", "2H", "Ganador del grupo G vs segundo del grupo H"),
-    83: ("1H", "3ABC", "Ganador del grupo H vs uno de los mejores terceros"),
-    84: ("1I", "3BDF", "Ganador del grupo I vs uno de los mejores terceros"),
-    85: ("1J", "3CEG", "Ganador del grupo J vs uno de los mejores terceros"),
-    86: ("2G", "2H", "Segundo del grupo G vs segundo del grupo H"),
-    87: ("1K", "3DFH", "Ganador del grupo K vs uno de los mejores terceros"),
-    88: ("1L", "3AEH", "Ganador del grupo L vs uno de los mejores terceros"),
-}
-
 _MONTHS_ES = [
     "enero",
     "febrero",
@@ -62,6 +43,76 @@ _MONTHS_ES = [
     "noviembre",
     "diciembre",
 ]
+
+_OFFICIAL_KNOCKOUT_SLOTS: dict[int, tuple[str, str]] = {
+    73: ("2A", "2B"),
+    74: ("1E", "B3(A/B/C/D/F)"),
+    75: ("1F", "2C"),
+    76: ("1C", "2F"),
+    77: ("1I", "B3(C/D/F/G/H)"),
+    78: ("2E", "2I"),
+    79: ("1A", "B3(C/E/F/H/I)"),
+    80: ("1L", "B3(E/H/I/J/K)"),
+    81: ("1D", "B3(B/E/F/I/J)"),
+    82: ("1G", "B3(A/E/H/I/J)"),
+    83: ("2K", "2L"),
+    84: ("1H", "2J"),
+    85: ("1B", "B3(E/F/G/I/J)"),
+    86: ("1J", "2H"),
+    87: ("1K", "B3(D/E/I/J/L)"),
+    88: ("2D", "2G"),
+    89: ("W73", "W75"),
+    90: ("W74", "W77"),
+    91: ("W76", "W78"),
+    92: ("W79", "W80"),
+    93: ("W83", "W84"),
+    94: ("W81", "W82"),
+    95: ("W86", "W88"),
+    96: ("W85", "W87"),
+    97: ("W89", "W90"),
+    98: ("W93", "W94"),
+    99: ("W91", "W92"),
+    100: ("W95", "W96"),
+    101: ("W97", "W98"),
+    102: ("W99", "W100"),
+    103: ("L101", "L102"),
+    104: ("W101", "W102"),
+}
+
+_OFFICIAL_KNOCKOUT_LABELS_2026: dict[int, str] = {
+    73: "2.º Grupo A vs 2.º Grupo B",
+    74: "1.º Grupo E vs Mejor 3.º (A/B/C/D/F)",
+    75: "1.º Grupo F vs 2.º Grupo C",
+    76: "1.º Grupo C vs 2.º Grupo F",
+    77: "1.º Grupo I vs Mejor 3.º (C/D/F/G/H)",
+    78: "2.º Grupo E vs 2.º Grupo I",
+    79: "1.º Grupo A vs Mejor 3.º (C/E/F/H/I)",
+    80: "1.º Grupo L vs Mejor 3.º (E/H/I/J/K)",
+    81: "1.º Grupo D vs Mejor 3.º (B/E/F/I/J)",
+    82: "1.º Grupo G vs Mejor 3.º (A/E/H/I/J)",
+    83: "2.º Grupo K vs 2.º Grupo L",
+    84: "1.º Grupo H vs 2.º Grupo J",
+    85: "1.º Grupo B vs Mejor 3.º (E/F/G/I/J)",
+    86: "1.º Grupo J vs 2.º Grupo H",
+    87: "1.º Grupo K vs Mejor 3.º (D/E/I/J/L)",
+    88: "2.º Grupo D vs 2.º Grupo G",
+    89: "Ganador partido 73 vs Ganador partido 75",
+    90: "Ganador partido 74 vs Ganador partido 77",
+    91: "Ganador partido 76 vs Ganador partido 78",
+    92: "Ganador partido 79 vs Ganador partido 80",
+    93: "Ganador partido 83 vs Ganador partido 84",
+    94: "Ganador partido 81 vs Ganador partido 82",
+    95: "Ganador partido 86 vs Ganador partido 88",
+    96: "Ganador partido 85 vs Ganador partido 87",
+    97: "Ganador partido 89 vs Ganador partido 90",
+    98: "Ganador partido 93 vs Ganador partido 94",
+    99: "Ganador partido 91 vs Ganador partido 92",
+    100: "Ganador partido 95 vs Ganador partido 96",
+    101: "Ganador partido 97 vs Ganador partido 98",
+    102: "Ganador partido 99 vs Ganador partido 100",
+    103: "Perdedor partido 101 vs Perdedor partido 102",
+    104: "Ganador partido 101 vs Ganador partido 102",
+}
 
 
 def _parse_group_letter(raw_group: str | None) -> str | None:
@@ -100,24 +151,38 @@ def _stage_title(match: Match) -> str:
     return match.stage or "Eliminatoria"
 
 
-def _human_slot(raw: str) -> str:
-    token = (raw or "").strip()
+def get_official_knockout_label(match_number: int) -> tuple[str, str] | None:
+    return _OFFICIAL_KNOCKOUT_SLOTS.get(match_number)
+
+
+def get_official_knockout_display_label(match_number: int) -> str | None:
+    return _OFFICIAL_KNOCKOUT_LABELS_2026.get(match_number)
+
+
+def format_knockout_slot(value: str | None) -> str:
+    token = (value or "").strip()
     if not token:
         return "Por definir"
-    if token.lower() == "a definir":
+    lowered = token.lower()
+    if lowered in {"a definir", "por definir"}:
         return "Por definir"
-    m_wl = re.fullmatch(r"([WL])(\d+)", token, flags=re.IGNORECASE)
+    m_wl = re.fullmatch(r"([WL])\s*(\d+)", token, flags=re.IGNORECASE)
     if m_wl:
         code = m_wl.group(1).upper()
         num = int(m_wl.group(2))
-        return f"Ganador M{num}" if code == "W" else f"Perdedor M{num}"
-    m_rank = re.fullmatch(r"([123])([A-L])", token, flags=re.IGNORECASE)
+        return f"Ganador partido {num}" if code == "W" else f"Perdedor partido {num}"
+    m_rank = re.fullmatch(r"([12])\s*([A-L])", token, flags=re.IGNORECASE)
     if m_rank:
-        return f"{m_rank.group(1)}{m_rank.group(2).upper()}"
-    m_best3 = re.fullmatch(r"3([A-L]+)", token, flags=re.IGNORECASE)
+        return f"{m_rank.group(1)}.º Grupo {m_rank.group(2).upper()}"
+    m_best3_named = re.fullmatch(r"B3\(([A-L/\s]+)\)", token, flags=re.IGNORECASE)
+    if m_best3_named:
+        groups = re.sub(r"\s+", "", m_best3_named.group(1)).upper()
+        return f"Mejor 3.º ({groups})"
+    compact = re.sub(r"[^A-Za-z0-9]", "", token).upper()
+    m_best3 = re.fullmatch(r"3([A-L]{1,12})", compact)
     if m_best3:
-        groups = "/".join(list(m_best3.group(1).upper()))
-        return f"Mejor 3° ({groups})"
+        groups = "/".join(list(m_best3.group(1)))
+        return f"Mejor 3.º ({groups})"
     return token
 
 
@@ -391,6 +456,7 @@ def _render_predictions(
     rows: list[dict] = []
     completed_predictions = 0
     last_date_key: str | None = None
+    knockout_debug_logged = False
     for m in matches:
         p = by_match_id.get(m.id)
         if p is not None:
@@ -422,13 +488,33 @@ def _render_predictions(
         if is_group and group_letter:
             group_context = f"Grupo {group_letter}"
 
-        if stage_title == "Dieciseisavos de final" and m.match_number in _ROUND32_PAIR_MAP:
-            slot_home, slot_away, slot_subtitle = _ROUND32_PAIR_MAP[m.match_number]
-            slot_line = f"{slot_home} vs {slot_away}"
+        if is_group:
+            slot_home = (m.home_team or "").strip() or "Por definir"
+            slot_away = (m.away_team or "").strip() or "Por definir"
+            match_label = f"{slot_home} vs {slot_away}"
+            uses_official_2026 = False
         else:
-            slot_home = _human_slot(m.home_team)
-            slot_away = _human_slot(m.away_team)
-            slot_line = f"{slot_home} vs {slot_away}"
+            official_slots = get_official_knockout_label(m.match_number)
+            raw_home = m.home_team
+            raw_away = m.away_team
+            official_label = get_official_knockout_display_label(m.match_number)
+            if official_slots is not None:
+                slot_home = format_knockout_slot(official_slots[0])
+                slot_away = format_knockout_slot(official_slots[1])
+            else:
+                slot_home = format_knockout_slot(raw_home)
+                slot_away = format_knockout_slot(raw_away)
+            match_label = official_label or f"{slot_home} vs {slot_away}"
+            uses_official_2026 = official_label is not None
+            if not knockout_debug_logged:
+                current_app.logger.info(
+                    "Predictions knockout label debug: match_number=%s raw_home_team=%r raw_away_team=%r formatted=%r",
+                    m.match_number,
+                    raw_home,
+                    raw_away,
+                    match_label,
+                )
+                knockout_debug_logged = True
 
         rows.append(
             {
@@ -436,7 +522,11 @@ def _render_predictions(
                 "is_group_stage": is_group,
                 "group_context": group_context,
                 "stage_title": stage_title,
-                "slot_line": slot_line,
+                "slot_line": match_label,
+                "match_label": match_label,
+                "raw_home": m.home_team,
+                "raw_away": m.away_team,
+                "uses_official_2026": uses_official_2026,
                 "slot_subtitle": slot_subtitle,
                 "date_break": date_break,
                 "date_label": date_label,
