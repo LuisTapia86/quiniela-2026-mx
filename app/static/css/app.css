@@ -466,8 +466,15 @@ button.btn:disabled {
   max-width: 14rem;
 }
 
-.data-table tr.pred-group-break td {
+.data-table tr.pred-date-separator td {
+  border-bottom: 0;
   border-top: 10px solid #0f172a;
+  color: #cbd5e1;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding-top: 0.55rem;
+  padding-bottom: 0.4rem;
 }
 
 .form__input--num {

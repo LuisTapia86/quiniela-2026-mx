@@ -37,7 +37,12 @@
         <tbody>
           {% for row in rows %}
           {% set m = row.match %}
-          <tr class="{% if row.group_break|default(false) %}pred-group-break{% endif %}">
+          {% if row.date_break|default(false) %}
+          <tr class="pred-date-separator">
+            <td colspan="8">📅 {{ row.date_label }}</td>
+          </tr>
+          {% endif %}
+          <tr>
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
               {% if row.is_group_stage %}

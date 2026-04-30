@@ -30,23 +30,38 @@ from app.translations import tr
 bp = Blueprint("entries", __name__, url_prefix="")
 
 _ROUND32_PAIR_MAP: dict[int, tuple[str, str, str]] = {
-    73: ("1A", "Mejor 3° (C/D/E)", "Ganador del grupo A vs uno de los mejores terceros"),
+    73: ("1A", "3CDE", "Ganador del grupo A vs uno de los mejores terceros"),
     74: ("2A", "2B", "Segundo del grupo A vs segundo del grupo B"),
-    75: ("1B", "Mejor 3° (A/C/D)", "Ganador del grupo B vs uno de los mejores terceros"),
-    76: ("1C", "Mejor 3° (E/F/G)", "Ganador del grupo C vs uno de los mejores terceros"),
-    77: ("1D", "Mejor 3° (A/B/F)", "Ganador del grupo D vs uno de los mejores terceros"),
-    78: ("2C", "2D", "Segundo del grupo C vs segundo del grupo D"),
-    79: ("1E", "Mejor 3° (A/B/C/D)", "Ganador del grupo E vs uno de los mejores terceros"),
-    80: ("1F", "Mejor 3° (E/F/G/H)", "Ganador del grupo F vs uno de los mejores terceros"),
-    81: ("1G", "Mejor 3° (B/C/D)", "Ganador del grupo G vs uno de los mejores terceros"),
-    82: ("2E", "2F", "Segundo del grupo E vs segundo del grupo F"),
-    83: ("1H", "Mejor 3° (A/C/E)", "Ganador del grupo H vs uno de los mejores terceros"),
-    84: ("1I", "Mejor 3° (B/D/F)", "Ganador del grupo I vs uno de los mejores terceros"),
-    85: ("1J", "Mejor 3° (C/E/G)", "Ganador del grupo J vs uno de los mejores terceros"),
+    75: ("1B", "3ACD", "Ganador del grupo B vs uno de los mejores terceros"),
+    76: ("1C", "3EFG", "Ganador del grupo C vs uno de los mejores terceros"),
+    77: ("2C", "2D", "Segundo del grupo C vs segundo del grupo D"),
+    78: ("1D", "3ABC", "Ganador del grupo D vs uno de los mejores terceros"),
+    79: ("1E", "2F", "Ganador del grupo E vs segundo del grupo F"),
+    80: ("1F", "3DEG", "Ganador del grupo F vs uno de los mejores terceros"),
+    81: ("2E", "2F", "Segundo del grupo E vs segundo del grupo F"),
+    82: ("1G", "2H", "Ganador del grupo G vs segundo del grupo H"),
+    83: ("1H", "3ABC", "Ganador del grupo H vs uno de los mejores terceros"),
+    84: ("1I", "3BDF", "Ganador del grupo I vs uno de los mejores terceros"),
+    85: ("1J", "3CEG", "Ganador del grupo J vs uno de los mejores terceros"),
     86: ("2G", "2H", "Segundo del grupo G vs segundo del grupo H"),
-    87: ("1K", "Mejor 3° (D/F/H)", "Ganador del grupo K vs uno de los mejores terceros"),
-    88: ("1L", "Mejor 3° (A/E/H)", "Ganador del grupo L vs uno de los mejores terceros"),
+    87: ("1K", "3DFH", "Ganador del grupo K vs uno de los mejores terceros"),
+    88: ("1L", "3AEH", "Ganador del grupo L vs uno de los mejores terceros"),
 }
+
+_MONTHS_ES = [
+    "enero",
+    "febrero",
+    "marzo",
+    "abril",
+    "mayo",
+    "junio",
+    "julio",
+    "agosto",
+    "septiembre",
+    "octubre",
+    "noviembre",
+    "diciembre",
+]
 
 
 def _parse_group_letter(raw_group: str | None) -> str | None:
@@ -88,7 +103,9 @@ def _stage_title(match: Match) -> str:
 def _human_slot(raw: str) -> str:
     token = (raw or "").strip()
     if not token:
-        return "—"
+        return "Por definir"
+    if token.lower() == "a definir":
+        return "Por definir"
     m_wl = re.fullmatch(r"([WL])(\d+)", token, flags=re.IGNORECASE)
     if m_wl:
         code = m_wl.group(1).upper()
@@ -102,6 +119,13 @@ def _human_slot(raw: str) -> str:
         groups = "/".join(list(m_best3.group(1).upper()))
         return f"Mejor 3° ({groups})"
     return token
+
+
+def _date_label_es(match: Match) -> str:
+    if match.kickoff_at is None:
+        return "Fecha por definir"
+    dt = match.kickoff_at
+    return f"{dt.day} {_MONTHS_ES[dt.month - 1]} {dt.year}"
 
 @bp.route("/entries/new", methods=["GET", "POST"])
 @login_required
@@ -366,8 +390,7 @@ def _render_predictions(
 ):
     rows: list[dict] = []
     completed_predictions = 0
-    group_seen_order: list[str] = []
-    group_match_count: dict[str, int] = {}
+    last_date_key: str | None = None
     for m in matches:
         p = by_match_id.get(m.id)
         if p is not None:
@@ -387,16 +410,17 @@ def _render_predictions(
         stage_title = _stage_title(m)
         group_letter = _parse_group_letter(m.group_name)
         group_context = ""
-        group_break = False
         slot_subtitle = ""
+        if m.kickoff_at is None:
+            date_key = "Fecha por definir"
+        else:
+            date_key = m.kickoff_at.date().isoformat()
+        date_break = date_key != last_date_key
+        if date_break:
+            last_date_key = date_key
+        date_label = _date_label_es(m)
         if is_group and group_letter:
-            if group_letter not in group_seen_order:
-                group_seen_order.append(group_letter)
-                group_break = len(group_seen_order) > 1
-            count_for_group = group_match_count.get(group_letter, 0) + 1
-            group_match_count[group_letter] = count_for_group
-            matchday = ((count_for_group - 1) // 2) + 1
-            group_context = f"Grupo {group_letter} • Jornada {matchday}"
+            group_context = f"Grupo {group_letter}"
 
         if stage_title == "Dieciseisavos de final" and m.match_number in _ROUND32_PAIR_MAP:
             slot_home, slot_away, slot_subtitle = _ROUND32_PAIR_MAP[m.match_number]
@@ -414,7 +438,8 @@ def _render_predictions(
                 "stage_title": stage_title,
                 "slot_line": slot_line,
                 "slot_subtitle": slot_subtitle,
-                "group_break": group_break,
+                "date_break": date_break,
+                "date_label": date_label,
                 "home": p.home_goals if p else 0,
                 "away": p.away_goals if p else 0,
                 "has_prediction": p is not None,
