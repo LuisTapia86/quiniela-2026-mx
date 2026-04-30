@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ t("title.admin_users") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
-<section class="card">
+<section class="card admin-users-scope">
   <h1 class="card__title">{{ t("admin.users") }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("admin.users.hint") }}</p>
+  <p class="form__hint admin-users-hint">{{ t("admin.users.hint") }}</p>
 
-  <form method="get" action="{{ url_for('admin.users') }}" class="filter-search" style="margin: 0 0 1rem;">
+  <form method="get" action="{{ url_for('admin.users') }}" class="filter-search admin-users-search">
     <input class="form__input" type="search" name="q" value="{{ q|e }}" placeholder="{{ t('admin.users.search_placeholder') }}">
     <button class="btn btn--sm" type="submit">{{ t("common.search") }}</button>
   </form>
@@ -15,56 +15,45 @@
   {% if not rows %}
   <p class="form__hint">{{ t("admin.users.empty") }}</p>
   {% else %}
-  <div class="table-wrap">
-    <table class="data-table" aria-label="{{ t('admin.users.table_aria') }}">
+  {# --- Desktop table --- #}
+  <div class="admin-users-desktop table-wrap admin-users-table-wrap">
+    <table class="data-table admin-users-table" aria-label="{{ t('admin.users.table_aria') }}">
       <thead>
         <tr>
-          <th scope="col">ID</th>
-          <th scope="col">{{ t("leaderboard.col.email") }}</th>
-          <th scope="col">{{ t("admin.users.alias") }}</th>
+          <th scope="col" class="admin-users-email-h" title="{{ t('leaderboard.col.email') }}">{{ t("leaderboard.col.email") }}</th>
+          <th scope="col" title="{{ t('admin.users.alias') }}">{{ t("admin.users.alias") }}</th>
           <th scope="col">{{ t("admin.col.created") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.entries_count") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.approved_entries_count") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.pending_payment_entries") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.rejected_entries") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.entry_status_active") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.entry_status_cancelled_user") }}</th>
-          <th scope="col" class="num">{{ t("admin.users.entry_status_voided") }}</th>
-          <th scope="col">{{ t("admin.users.actions") }}</th>
+          <th scope="col" class="num" title="{{ t('admin.users.entries_count') }}">{{ t("admin.users.hdr_entries") }}</th>
+          <th scope="col" class="num" title="{{ t('admin.users.approved_entries_count') }}">{{ t("admin.users.hdr_approved") }}</th>
+          <th scope="col" class="num" title="{{ t('admin.users.pending_payment_entries') }}">{{ t("admin.users.hdr_pending") }}</th>
+          <th scope="col" class="num" title="{{ t('admin.users.rejected_entries') }}">{{ t("admin.users.hdr_rejected") }}</th>
+          <th scope="col" class="num" title="{{ t('admin.users.entry_status_active') }}">{{ t("admin.users.hdr_active") }}</th>
+          <th scope="col" class="admin-users-act-h">{{ t("admin.users.actions") }}</th>
         </tr>
       </thead>
       <tbody>
         {% for user, entries_count, approved_entries_count, pending_payment_entries_count, rejected_entries_count, entry_status_active_count, entry_status_cancelled_count, entry_status_voided_count in rows %}
-        <tr>
-          <td>{{ user.id }}</td>
-          <td>{{ user.email|e }}</td>
+        <tr class="admin-users-row"
+            title="{{ t('admin.users.row_stats_extra', cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}">
+          <td class="admin-users-email">{{ user.email|e }}</td>
           <td>{{ (user.display_name or "—")|e }}</td>
-          <td class="pay-cell-date">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</td>
+          <td class="pay-cell-date nowrap-hide">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</td>
           <td class="num">{{ entries_count }}</td>
           <td class="num">{{ approved_entries_count }}</td>
           <td class="num">{{ pending_payment_entries_count }}</td>
           <td class="num">{{ rejected_entries_count }}</td>
           <td class="num">{{ entry_status_active_count }}</td>
-          <td class="num">{{ entry_status_cancelled_count }}</td>
-          <td class="num">{{ entry_status_voided_count }}</td>
-          <td class="admin-users-actions">
+          <td class="admin-users-actions nowrap-hide">
             {% if user.id == current_user.id %}
             <span class="form__hint">—</span>
             {% else %}
-            <div class="admin-user-actions-stack">
-              <button type="button" class="btn btn--sm js-admin-reset-password"
+            <div class="admin-users-act-group">
+              <button type="button" class="btn btn--xs btn--ghost js-admin-reset-password"
                 data-user-id="{{ user.id }}"
-                data-confirm-detail="{{ t('admin.users.reset_password_confirm_detail', email=user.email)|e }}">{{ t("admin.users.reset_password") }}</button>
+                data-confirm-detail="{{ t('admin.users.reset_password_confirm_detail', email=user.email)|e }}">{{ t("admin.users.action_reset") }}</button>
               {% if approved_entries_count == 0 %}
-              <form method="post" action="{{ url_for('admin.delete_test_user', user_id=user.id) }}" class="admin-delete-user-inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                <input type="hidden" name="q" value="{{ q|e }}">
-                <label class="form__hint" style="display:block;margin-bottom:0.35rem;font-size:0.82rem;">{{ t("admin.users.delete_confirm_label") }}</label>
-                <div style="display:flex;flex-wrap:wrap;gap:0.35rem;align-items:center;">
-                  <input class="form__input" type="text" name="confirm_text" autocomplete="off" placeholder="{{ t('admin.users.delete_placeholder') }}" maxlength="64" autocapitalize="characters" aria-label="{{ t('admin.users.delete_placeholder') }}" style="min-width:7rem;font-size:0.95rem;">
-                  <button type="submit" class="btn btn--sm">{{ t("admin.users.delete_test") }}</button>
-                </div>
-              </form>
+              <button type="button" class="btn btn--xs btn--ghost btn--danger-ghost js-admin-delete-open"
+                data-user-id="{{ user.id }}">{{ t("admin.users.action_delete") }}</button>
               {% endif %}
             </div>
             {% endif %}
@@ -73,6 +62,40 @@
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  {# --- Mobile cards --- #}
+  <div class="admin-users-mobile" role="region" aria-label="{{ t('admin.users.table_aria') }}">
+    {% for user, entries_count, approved_entries_count, pending_payment_entries_count, rejected_entries_count, entry_status_active_count, entry_status_cancelled_count, entry_status_voided_count in rows %}
+    <article class="admin-user-card">
+      <div class="admin-user-card__head">
+        <span class="admin-user-card__email">{{ user.email|e }}</span>
+        <span class="admin-user-card__alias">{{ (user.display_name or "—")|e }}</span>
+      </div>
+      <p class="admin-user-card__meta form__hint">{{ t("admin.col.created") }}: {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</p>
+      <p class="admin-user-card__extra form__hint" title="{{ t('admin.users.row_stats_extra', cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}">
+        {{ t("admin.users.row_stats_extra", cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}
+      </p>
+      <dl class="admin-user-card__stats">
+        <div><dt>{{ t("admin.users.hdr_entries") }}</dt><dd>{{ entries_count }}</dd></div>
+        <div><dt>{{ t("admin.users.hdr_approved") }}</dt><dd>{{ approved_entries_count }}</dd></div>
+        <div><dt>{{ t("admin.users.hdr_pending") }}</dt><dd>{{ pending_payment_entries_count }}</dd></div>
+        <div><dt>{{ t("admin.users.hdr_rejected") }}</dt><dd>{{ rejected_entries_count }}</dd></div>
+        <div><dt>{{ t("admin.users.hdr_active") }}</dt><dd>{{ entry_status_active_count }}</dd></div>
+      </dl>
+      {% if user.id != current_user.id %}
+      <div class="admin-user-card__actions">
+        <button type="button" class="btn btn--xs btn--ghost js-admin-reset-password"
+          data-user-id="{{ user.id }}"
+          data-confirm-detail="{{ t('admin.users.reset_password_confirm_detail', email=user.email)|e }}">{{ t("admin.users.action_reset") }}</button>
+        {% if approved_entries_count == 0 %}
+        <button type="button" class="btn btn--xs btn--ghost btn--danger-ghost js-admin-delete-open"
+          data-user-id="{{ user.id }}">{{ t("admin.users.action_delete") }}</button>
+        {% endif %}
+      </div>
+      {% endif %}
+    </article>
+    {% endfor %}
   </div>
   {% endif %}
 
@@ -89,16 +112,36 @@
 
   <dialog id="admin-pw-result" class="admin-modal" aria-labelledby="admin-pw-result-title">
     <div class="admin-modal__inner">
-      <h2 id="admin-pw-result-title" class="card__title card__title--sm">{{ t("admin.users.reset_password") }}</h2>
+      <h2 id="admin-pw-result-title" class="card__title card__title--sm">{{ t("admin.users.reset_password_temp_title") }}</h2>
       <p id="admin-pw-result-msg" class="form__hint"></p>
       <label class="form__field">
         <span class="form__label">{{ t("admin.users.reset_password_placeholder") }}</span>
-        <input id="admin-pw-result-value" class="form__input mono" type="text" readonly autocomplete="off">
+        <input id="admin-pw-result-value" class="form__input mono admin-users-temp-pw" type="text" readonly autocomplete="off" spellcheck="false">
       </label>
       <div class="admin-modal__actions">
         <button type="button" id="admin-pw-result-copy" class="btn btn--sm">{{ t("admin.users.reset_password_copy") }}</button>
         <button type="button" id="admin-pw-result-close" class="btn btn--primary">{{ t("admin.users.reset_password_close") }}</button>
       </div>
+    </div>
+  </dialog>
+
+  <dialog id="admin-delete-modal" class="admin-modal" aria-labelledby="admin-delete-title">
+    <div class="admin-modal__inner">
+      <h2 id="admin-delete-title" class="card__title card__title--sm">{{ t("admin.users.delete_modal_title") }}</h2>
+      <p class="form__hint">{{ t("admin.users.delete_modal_intro") }}</p>
+      <form id="admin-delete-test-form" method="post" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="q" value="{{ q|e }}">
+        <label class="form__field">
+          <span class="form__label">{{ t("admin.users.delete_placeholder") }}</span>
+          <input id="admin-delete-confirm" class="form__input" type="text" name="confirm_text"
+            maxlength="64" autocomplete="off" autocapitalize="characters">
+        </label>
+        <div class="admin-modal__actions">
+          <button type="button" class="btn" id="admin-delete-cancel">{{ t("admin.users.reset_password_cancel") }}</button>
+          <button type="submit" class="btn btn--danger-solid" disabled id="admin-delete-submit">{{ t("admin.users.delete_submit") }}</button>
+        </div>
+      </form>
     </div>
   </dialog>
 
@@ -111,8 +154,11 @@
     const resultDlg = document.getElementById('admin-pw-result');
     const resultMsg = document.getElementById('admin-pw-result-msg');
     const resultInput = document.getElementById('admin-pw-result-value');
-    const tmpl = {{ url_for('admin.reset_user_password', user_id=0)|tojson }}.replace('/0/', '/__UID__/');
+    const resetTmpl = {{ url_for('admin.reset_user_password', user_id=0)|tojson }}.replace('/0/', '/__UID__/');
+    const deleteTmpl = {{ url_for('admin.delete_test_user', user_id=0)|tojson }}.replace('/0/', '/__UID__/');
+    const DELETE_PHRASE = 'DELETE USER';
     const errGeneric = {{ t("admin.users.reset_password_error_generic")|tojson }};
+
     let pendingUid = null;
 
     document.querySelectorAll('.js-admin-reset-password').forEach(function (btn) {
@@ -131,7 +177,7 @@
       }
       var uid = pendingUid;
       pendingUid = null;
-      var url = tmpl.replace('__UID__', encodeURIComponent(uid));
+      var url = resetTmpl.replace('__UID__', encodeURIComponent(uid));
       try {
         var res = await fetch(url, {
           method: 'POST',
@@ -167,6 +213,32 @@
       resultDlg.close();
       resultInput.value = '';
       resultMsg.textContent = '';
+    });
+
+    /* Delete test user modal — POST keeps CSRF in form body only */
+    const deleteDlg = document.getElementById('admin-delete-modal');
+    const deleteForm = document.getElementById('admin-delete-test-form');
+    const deleteInput = document.getElementById('admin-delete-confirm');
+    const deleteSubmit = document.getElementById('admin-delete-submit');
+    document.querySelectorAll('.js-admin-delete-open').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var uid = btn.getAttribute('data-user-id');
+        deleteForm.action = deleteTmpl.replace('__UID__', encodeURIComponent(uid));
+        deleteInput.value = '';
+        deleteSubmit.disabled = true;
+        deleteDlg.showModal();
+      });
+    });
+    deleteInput.addEventListener('input', function () {
+      deleteSubmit.disabled = deleteInput.value.trim() !== DELETE_PHRASE;
+    });
+    deleteInput.addEventListener('keyup', function () {
+      deleteSubmit.disabled = deleteInput.value.trim() !== DELETE_PHRASE;
+    });
+    document.getElementById('admin-delete-cancel').addEventListener('click', function () {
+      deleteDlg.close();
+      deleteInput.value = '';
+      deleteSubmit.disabled = true;
     });
   })();
   </script>
