@@ -100,16 +100,16 @@
             </td>
             <td data-label="{{ t('pred.col.home') }}">
               {% if locked %}
-              <span class="pred-readonly">{{ row.home }}</span>
+              <span class="pred-readonly">{{ '' if row.home_score is none else row.home_score }}</span>
               {% else %}
-              <input class="form__input form__input--num js-score-input" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ row.home }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+              <input class="form__input form__input--num js-score-input" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.away') }}">
               {% if locked %}
-              <span class="pred-readonly">{{ row.away }}</span>
+              <span class="pred-readonly">{{ '' if row.away_score is none else row.away_score }}</span>
               {% else %}
-              <input class="form__input form__input--num js-score-input" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ row.away }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+              <input class="form__input form__input--num js-score-input" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.result') }}">
