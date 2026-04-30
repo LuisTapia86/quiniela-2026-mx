@@ -327,6 +327,7 @@ def reset_user_password(user_id: int):
     target.password_hash = generate_password_hash(temp_plain)
     target.password_reset_token = None
     target.password_reset_sent_at = None
+    target.must_change_password = True
     db.session.commit()
 
     current_app.logger.info(

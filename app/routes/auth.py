@@ -42,6 +42,18 @@ _ADMIN_SESSION_TIMEOUT_SECONDS = 30 * 60
 _PASSWORD_RESET_MAX_AGE = timedelta(hours=1)
 _RESET_PASSWORD_MIN_LEN = 8
 
+_MUST_CHANGE_EXEMPT_ENDPOINTS = frozenset({"auth.change_password", "auth.logout", "static"})
+
+
+def _sanitize_post_login_next(raw: str) -> str | None:
+    target = (raw or "").strip()
+    if not _is_safe_redirect(target):
+        return None
+    path_only = target.split("?", 1)[0].rstrip("/") or "/"
+    if path_only == "/change-password":
+        return None
+    return target
+
 
 def _dt_utc_aware(dt: datetime | None) -> datetime | None:
     if dt is None:
@@ -106,6 +118,12 @@ def login_required(f: F) -> F:
         user = get_current_user()
         if user is None:
             return redirect(url_for("auth.login", next=request.path))
+        if getattr(user, "must_change_password", False):
+            ep = request.endpoint
+            if ep not in _MUST_CHANGE_EXEMPT_ENDPOINTS:
+                return redirect(
+                    url_for("auth.change_password", next=request.path),
+                )
         session["last_seen_at"] = time.time()
         session.permanent = True
         return f(*args, **kwargs)
@@ -137,7 +155,10 @@ def _validate_display_name(raw: str | None) -> tuple[bool, str]:
 @bp.route("/register", methods=["GET", "POST"])
 @limiter.limit("8 per minute")
 def register():
-    if get_current_user() is not None:
+    cu = get_current_user()
+    if cu is not None:
+        if getattr(cu, "must_change_password", False):
+            return redirect(url_for("auth.change_password"))
         return redirect(url_for("main.index"))
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -229,7 +250,10 @@ def resend_verification():
 @bp.route("/forgot-password", methods=["GET", "POST"])
 @limiter.limit("8 per minute")
 def forgot_password():
-    if get_current_user() is not None:
+    cu = get_current_user()
+    if cu is not None:
+        if getattr(cu, "must_change_password", False):
+            return redirect(url_for("auth.change_password"))
         return redirect(url_for("main.index"))
     reset_available = transactional_email_configured()
     if not reset_available:
@@ -297,15 +321,86 @@ def reset_password(token: str):
     user.password_hash = generate_password_hash(pw)
     user.password_reset_token = None
     user.password_reset_sent_at = None
+    user.must_change_password = False
     db.session.commit()
     flash(tr("flash.auth.reset_password_ok"), "ok")
     return redirect(url_for("auth.login"))
 
 
+@bp.route("/change-password", methods=["GET", "POST"])
+@limiter.limit("12 per minute")
+@login_required
+def change_password():
+    user = get_current_user()
+    assert user is not None
+    force_change = bool(getattr(user, "must_change_password", False))
+    next_raw = (request.args.get("next") if request.method == "GET" else request.form.get("next")) or ""
+    next_url = _sanitize_post_login_next(next_raw)
+
+    if request.method == "POST":
+        current = (request.form.get("current_password") or "").strip()
+        pw = request.form.get("password") or ""
+        pw2 = request.form.get("password_confirm") or ""
+        if len(pw) < _RESET_PASSWORD_MIN_LEN:
+            flash(tr("flash.auth.reset_password_short"), "error")
+            return render_template(
+                "auth/change_password.html",
+                force_change=force_change,
+                next_url=next_url or "",
+            )
+        if pw != pw2:
+            flash(tr("flash.auth.reset_password_mismatch"), "error")
+            return render_template(
+                "auth/change_password.html",
+                force_change=force_change,
+                next_url=next_url or "",
+            )
+        if force_change:
+            if current and not check_password_hash(user.password_hash, current):
+                flash(tr("flash.auth.change_password_bad_current"), "error")
+                return render_template(
+                    "auth/change_password.html",
+                    force_change=force_change,
+                    next_url=next_url or "",
+                )
+        else:
+            if not current:
+                flash(tr("flash.auth.change_password_required_current"), "error")
+                return render_template(
+                    "auth/change_password.html",
+                    force_change=force_change,
+                    next_url=next_url or "",
+                )
+            if not check_password_hash(user.password_hash, current):
+                flash(tr("flash.auth.change_password_bad_current"), "error")
+                return render_template(
+                    "auth/change_password.html",
+                    force_change=force_change,
+                    next_url=next_url or "",
+                )
+
+        user.password_hash = generate_password_hash(pw)
+        user.must_change_password = False
+        db.session.commit()
+        flash(tr("flash.auth.change_password_ok"), "ok")
+        if next_url:
+            return redirect(next_url)
+        return redirect(url_for("main.index"))
+
+    return render_template(
+        "auth/change_password.html",
+        force_change=force_change,
+        next_url=next_url or "",
+    )
+
+
 @bp.route("/login", methods=["GET", "POST"])
 @limiter.limit("10 per minute")
 def login():
-    if get_current_user() is not None:
+    cu = get_current_user()
+    if cu is not None:
+        if getattr(cu, "must_change_password", False):
+            return redirect(url_for("auth.change_password"))
         return redirect(url_for("main.index"))
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
@@ -323,8 +418,16 @@ def login():
         session.permanent = True
         session["is_admin"] = bool(user.is_admin)
         session["last_seen_at"] = time.time()
-        next_url = (request.form.get("next") or request.args.get("next") or "").strip()
-        if _is_safe_redirect(next_url):
+        next_url = _sanitize_post_login_next(
+            request.form.get("next") or request.args.get("next") or "",
+        )
+        db.session.refresh(user)
+        if getattr(user, "must_change_password", False):
+            qp: dict[str, str] = {}
+            if next_url:
+                qp["next"] = next_url
+            return redirect(url_for("auth.change_password", **qp))
+        if next_url:
             return redirect(next_url)
         return redirect(url_for("main.index"))
     return render_template(

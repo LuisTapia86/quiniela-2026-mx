@@ -107,6 +107,31 @@ def _ensure_user_password_reset_columns() -> None:
         db.session.commit()
 
 
+def _ensure_user_must_change_password_column() -> None:
+    cols = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    if "must_change_password" in cols:
+        return
+    dialect = db.engine.dialect.name
+    if dialect == "postgresql":
+        db.session.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT FALSE NOT NULL",
+            ),
+        )
+    else:
+        db.session.execute(
+            text(
+                "ALTER TABLE users ADD COLUMN must_change_password BOOLEAN DEFAULT 0 NOT NULL",
+            ),
+        )
+    db.session.commit()
+    if dialect == "postgresql":
+        db.session.execute(text("UPDATE users SET must_change_password = FALSE WHERE must_change_password IS NULL"))
+    else:
+        db.session.execute(text("UPDATE users SET must_change_password = 0 WHERE must_change_password IS NULL"))
+    db.session.commit()
+
+
 def _ensure_match_group_name_column() -> None:
     inspector = inspect(db.engine)
     cols = {c["name"] for c in inspector.get_columns("matches")}
@@ -274,6 +299,7 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_user_display_name_column()
         _ensure_user_email_verification_columns()
         _ensure_user_password_reset_columns()
+        _ensure_user_must_change_password_column()
         _ensure_match_group_name_column()
         _ensure_entry_table_columns()
         _backfill_entry_number_and_alias()

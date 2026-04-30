@@ -41,6 +41,7 @@ class User(db.Model):
     email_verification_sent_at = db.Column(db.DateTime, nullable=True)
     password_reset_token = db.Column(db.String(128), nullable=True, unique=True, index=True)
     password_reset_sent_at = db.Column(db.DateTime, nullable=True)
+    must_change_password = db.Column(db.Boolean, default=False, nullable=False)
 
     entries = db.relationship("Entry", back_populates="user", lazy="dynamic")
     payments = db.relationship("Payment", back_populates="user", lazy="dynamic")
