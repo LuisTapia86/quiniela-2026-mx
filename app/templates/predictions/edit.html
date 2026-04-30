@@ -23,7 +23,7 @@
     <div class="table-wrap">
       <table class="data-table" role="grid" aria-label="{{ t('pred.table_aria') }}">
         <thead>
-          <tr>
+          <tr class="{% if row.group_break %}pred-group-break{% endif %}">
             <th scope="col">#</th>
             <th scope="col">{{ t("pred.col.match") }}</th>
             <th scope="col">{{ t("pred.col.kickoff") }}</th>
@@ -40,8 +40,16 @@
           <tr>
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
-              <span class="pred-stage">{{ m.stage|e }}</span>
+              {% if row.is_group_stage %}
+              <span class="pred-stage">{{ row.group_context }}</span>
               <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
+              {% else %}
+              <span class="pred-stage">{{ row.stage_title }}</span>
+              <span class="pred-teams"><strong>{{ row.slot_line }}</strong></span>
+              {% if row.slot_subtitle %}
+              <span class="pred-stage pred-stage--sub">{{ row.slot_subtitle }}</span>
+              {% endif %}
+              {% endif %}
             </td>
             <td data-label="{{ t('pred.col.kickoff') }}">
               {% if m.kickoff_at %}

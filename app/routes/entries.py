@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import secrets
+import re
 from pathlib import Path
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
@@ -27,6 +28,80 @@ from app.services.scoring import calculate_prediction_breakdown
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
+
+_ROUND32_PAIR_MAP: dict[int, tuple[str, str, str]] = {
+    73: ("1A", "Mejor 3° (C/D/E)", "Ganador del grupo A vs uno de los mejores terceros"),
+    74: ("2A", "2B", "Segundo del grupo A vs segundo del grupo B"),
+    75: ("1B", "Mejor 3° (A/C/D)", "Ganador del grupo B vs uno de los mejores terceros"),
+    76: ("1C", "Mejor 3° (E/F/G)", "Ganador del grupo C vs uno de los mejores terceros"),
+    77: ("1D", "Mejor 3° (A/B/F)", "Ganador del grupo D vs uno de los mejores terceros"),
+    78: ("2C", "2D", "Segundo del grupo C vs segundo del grupo D"),
+    79: ("1E", "Mejor 3° (A/B/C/D)", "Ganador del grupo E vs uno de los mejores terceros"),
+    80: ("1F", "Mejor 3° (E/F/G/H)", "Ganador del grupo F vs uno de los mejores terceros"),
+    81: ("1G", "Mejor 3° (B/C/D)", "Ganador del grupo G vs uno de los mejores terceros"),
+    82: ("2E", "2F", "Segundo del grupo E vs segundo del grupo F"),
+    83: ("1H", "Mejor 3° (A/C/E)", "Ganador del grupo H vs uno de los mejores terceros"),
+    84: ("1I", "Mejor 3° (B/D/F)", "Ganador del grupo I vs uno de los mejores terceros"),
+    85: ("1J", "Mejor 3° (C/E/G)", "Ganador del grupo J vs uno de los mejores terceros"),
+    86: ("2G", "2H", "Segundo del grupo G vs segundo del grupo H"),
+    87: ("1K", "Mejor 3° (D/F/H)", "Ganador del grupo K vs uno de los mejores terceros"),
+    88: ("1L", "Mejor 3° (A/E/H)", "Ganador del grupo L vs uno de los mejores terceros"),
+}
+
+
+def _parse_group_letter(raw_group: str | None) -> str | None:
+    value = (raw_group or "").strip()
+    if not value:
+        return None
+    m = re.search(r"\b(?:grupo|group)\s+([A-L])\b", value, flags=re.IGNORECASE)
+    if not m:
+        return None
+    return m.group(1).upper()
+
+
+def _is_group_stage(stage: str | None) -> bool:
+    value = (stage or "").strip().lower()
+    return "grupo" in value or "group" in value
+
+
+def _stage_title(match: Match) -> str:
+    value = (match.stage or "").strip().lower()
+    if _is_group_stage(match.stage):
+        return "Fase de grupos"
+    if "round of 32" in value or "dieciseisavos" in value:
+        return "Dieciseisavos de final"
+    if "round of 16" in value or "octavos" in value:
+        return "Octavos de final"
+    if "quarter" in value or "cuartos" in value:
+        return "Cuartos de final"
+    if "semifinal" in value:
+        return "Semifinal"
+    if "third" in value or "tercer" in value:
+        return "Tercer lugar"
+    if "final" in value:
+        if re.fullmatch(r"L\d+", (match.home_team or "").strip()) and re.fullmatch(r"L\d+", (match.away_team or "").strip()):
+            return "Tercer lugar"
+        return "Final"
+    return match.stage or "Eliminatoria"
+
+
+def _human_slot(raw: str) -> str:
+    token = (raw or "").strip()
+    if not token:
+        return "—"
+    m_wl = re.fullmatch(r"([WL])(\d+)", token, flags=re.IGNORECASE)
+    if m_wl:
+        code = m_wl.group(1).upper()
+        num = int(m_wl.group(2))
+        return f"Ganador M{num}" if code == "W" else f"Perdedor M{num}"
+    m_rank = re.fullmatch(r"([123])([A-L])", token, flags=re.IGNORECASE)
+    if m_rank:
+        return f"{m_rank.group(1)}{m_rank.group(2).upper()}"
+    m_best3 = re.fullmatch(r"3([A-L]+)", token, flags=re.IGNORECASE)
+    if m_best3:
+        groups = "/".join(list(m_best3.group(1).upper()))
+        return f"Mejor 3° ({groups})"
+    return token
 
 @bp.route("/entries/new", methods=["GET", "POST"])
 @login_required
@@ -291,6 +366,8 @@ def _render_predictions(
 ):
     rows: list[dict] = []
     completed_predictions = 0
+    group_seen_order: list[str] = []
+    group_match_count: dict[str, int] = {}
     for m in matches:
         p = by_match_id.get(m.id)
         if p is not None:
@@ -306,9 +383,38 @@ def _render_predictions(
                 result.away_score,
             )
         points_earned = p.points_earned if p is not None and result is not None else None
+        is_group = _is_group_stage(m.stage)
+        stage_title = _stage_title(m)
+        group_letter = _parse_group_letter(m.group_name)
+        group_context = ""
+        group_break = False
+        slot_subtitle = ""
+        if is_group and group_letter:
+            if group_letter not in group_seen_order:
+                group_seen_order.append(group_letter)
+                group_break = len(group_seen_order) > 1
+            count_for_group = group_match_count.get(group_letter, 0) + 1
+            group_match_count[group_letter] = count_for_group
+            matchday = ((count_for_group - 1) // 2) + 1
+            group_context = f"Grupo {group_letter} • Jornada {matchday}"
+
+        if stage_title == "Dieciseisavos de final" and m.match_number in _ROUND32_PAIR_MAP:
+            slot_home, slot_away, slot_subtitle = _ROUND32_PAIR_MAP[m.match_number]
+            slot_line = f"{slot_home} vs {slot_away}"
+        else:
+            slot_home = _human_slot(m.home_team)
+            slot_away = _human_slot(m.away_team)
+            slot_line = f"{slot_home} vs {slot_away}"
+
         rows.append(
             {
                 "match": m,
+                "is_group_stage": is_group,
+                "group_context": group_context,
+                "stage_title": stage_title,
+                "slot_line": slot_line,
+                "slot_subtitle": slot_subtitle,
+                "group_break": group_break,
                 "home": p.home_goals if p else 0,
                 "away": p.away_goals if p else 0,
                 "has_prediction": p is not None,

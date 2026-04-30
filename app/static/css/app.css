@@ -453,11 +453,21 @@ button.btn:disabled {
   margin-bottom: 0.2rem;
 }
 
+.data-table .pred-stage--sub {
+  margin-top: 0.22rem;
+  margin-bottom: 0;
+  font-size: 0.72rem;
+}
+
 .data-table .pred-teams {
   display: block;
   line-height: 1.4;
   word-break: break-word;
   max-width: 14rem;
+}
+
+.data-table tr.pred-group-break td {
+  border-top: 10px solid #0f172a;
 }
 
 .form__input--num {
