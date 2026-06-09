@@ -314,6 +314,12 @@ def create_app(config_object: type = Config) -> Flask:
     app.register_blueprint(api_bp, url_prefix="/api")
     register_cli(app)
 
+    from app.datetime_fmt import format_mexico_local
+
+    @app.template_filter("mx_local")
+    def _mx_local_datetime_filter(dt):
+        return format_mexico_local(dt, get_lang())
+
     @app.context_processor
     def _inject_current_user() -> dict:
         logo_path = Path(app.static_folder or "") / "img" / "logo.svg"

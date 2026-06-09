@@ -22,7 +22,7 @@
         <tr>
           <th scope="col" class="admin-users-email-h" title="{{ t('leaderboard.col.email') }}">{{ t("leaderboard.col.email") }}</th>
           <th scope="col" title="{{ t('admin.users.alias') }}">{{ t("admin.users.alias") }}</th>
-          <th scope="col">{{ t("admin.col.created") }}</th>
+          <th scope="col">{{ t("admin.col.created") }} <span class="form__hint tz-hint">({{ t("common.mx_local_time") }})</span></th>
           <th scope="col" class="num" title="{{ t('admin.users.entries_count') }}">{{ t("admin.users.hdr_entries") }}</th>
           <th scope="col" class="num" title="{{ t('admin.users.approved_entries_count') }}">{{ t("admin.users.hdr_approved") }}</th>
           <th scope="col" class="num" title="{{ t('admin.users.pending_payment_entries') }}">{{ t("admin.users.hdr_pending") }}</th>
@@ -37,7 +37,7 @@
             title="{{ t('admin.users.row_stats_extra', cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}">
           <td class="admin-users-email">{{ user.email|e }}</td>
           <td>{{ (user.display_name or "—")|e }}</td>
-          <td class="pay-cell-date nowrap-hide">{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</td>
+          <td class="pay-cell-date nowrap-hide">{{ user.created_at|mx_local }}</td>
           <td class="num">{{ entries_count }}</td>
           <td class="num">{{ approved_entries_count }}</td>
           <td class="num">{{ pending_payment_entries_count }}</td>
@@ -72,7 +72,7 @@
         <span class="admin-user-card__email">{{ user.email|e }}</span>
         <span class="admin-user-card__alias">{{ (user.display_name or "—")|e }}</span>
       </div>
-      <p class="admin-user-card__meta form__hint">{{ t("admin.col.created") }}: {{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else "—" }}</p>
+      <p class="admin-user-card__meta form__hint">{{ t("admin.col.created") }} ({{ t("common.mx_local_time") }}): {{ user.created_at|mx_local }}</p>
       <p class="admin-user-card__extra form__hint" title="{{ t('admin.users.row_stats_extra', cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}">
         {{ t("admin.users.row_stats_extra", cancelled=entry_status_cancelled_count, voided=entry_status_voided_count) }}
       </p>

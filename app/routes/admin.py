@@ -44,7 +44,7 @@ from app.services.api_football import (
     sync_results_from_api,
 )
 from app.services.match_generation import generate_world_cup_2026_matches
-from app.services.matches_csv import import_matches_from_reader
+from app.services.matches_csv import import_matches_from_path, import_matches_from_reader
 from app.dev_tools import flask_debug_truthy
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
@@ -52,6 +52,8 @@ from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_f
 from app.translations import tr
 
 bp = Blueprint("admin", __name__, url_prefix="")
+
+WC2026_BUNDLED_CSV = "wc2026_matches_clean.csv"
 
 
 def _require_admin() -> None:
@@ -426,6 +428,40 @@ def results():
         completed_matches=completed_matches,
         total_matches=len(matches),
     )
+
+
+@bp.post("/admin/restore-wc2026-matches")
+@login_required
+def restore_wc2026_matches():
+    """Import bundled World Cup 2026 fixtures from repo CSV (idempotent upsert)."""
+    _require_admin()
+    csv_path = Path(current_app.config["BASE_DIR"]) / WC2026_BUNDLED_CSV
+    if not csv_path.is_file():
+        flash(tr("admin.restore_wc2026.missing_file"), "error")
+        return redirect(url_for("admin.dashboard"))
+    try:
+        summary = import_matches_from_path(csv_path)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        current_app.logger.exception("Bundled WC2026 CSV import failed")
+        flash(tr("admin.restore_wc2026.failed"), "error")
+        return redirect(url_for("admin.dashboard"))
+    flash(
+        tr(
+            "admin.restore_wc2026.success",
+            created=summary.get("created", 0),
+            updated=summary.get("updated", 0),
+            skipped=summary.get("skipped", 0),
+        ),
+        "ok",
+    )
+    if summary.get("errors"):
+        flash(
+            tr("admin.import.errors", n=len(summary["errors"])),
+            "error",
+        )
+    return redirect(url_for("admin.dashboard"))
 
 
 @bp.route("/admin/matches/import", methods=["GET", "POST"])

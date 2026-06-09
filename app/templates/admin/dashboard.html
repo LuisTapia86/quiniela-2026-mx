@@ -36,6 +36,10 @@
   </div>
 
   <div class="dash-actions">
+    <form method="post" action="{{ url_for('admin.restore_wc2026_matches') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn--primary" type="submit">{{ t("admin.restore_wc2026.button") }}</button>
+    </form>
     <a class="btn" href="{{ url_for('admin.matches') }}">{{ t("admin.matches") }}</a>
     <a class="btn" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
     <form method="post" action="{{ url_for('admin.import_public_fixtures') }}" style="display:inline;">

@@ -43,7 +43,7 @@
           <th scope="col" class="num">$ MXN</th>
           <th scope="col">{{ t("admin.col.status") }}</th>
           <th scope="col">{{ t("admin.col.proof") }}</th>
-          <th scope="col">{{ t("admin.col.created") }}</th>
+          <th scope="col">{{ t("admin.col.created") }} <span class="form__hint tz-hint">({{ t("common.mx_local_time") }})</span></th>
           <th scope="col">{{ t("admin.col.actions") }}</th>
         </tr>
       </thead>
@@ -59,13 +59,13 @@
             {% elif est == 'CANCELLED_BY_USER' %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.cancelled_by_user") }}</span>
             {% else %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.voided_by_admin") }}</span>
             {% endif %}
-            {% if p.entry.cancelled_at %}<span class="form__hint"> · {{ p.entry.cancelled_at.strftime('%Y-%m-%d %H:%M') }}</span>{% endif %}
+            {% if p.entry.cancelled_at %}<span class="form__hint"> · {{ p.entry.cancelled_at|mx_local }}</span>{% endif %}
             {% if p.entry.cancellation_reason %}<br><span class="form__hint">{{ p.entry.cancellation_reason|e }}</span>{% endif %}
           </td>
           <td class="num">{{ p.amount_mxn }}</td>
           <td><span class="entry-pay-badge entry-pay-badge--{{ p.status.value }}">{{ p.status.value }}</span></td>
           <td>{% if p.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=p.id) }}">{{ p.proof_stored_path|e }}</a>{% else %}—{% endif %}</td>
-          <td class="pay-cell-date">{{ p.created_at.strftime('%Y-%m-%d %H:%M') if p.created_at else '—' }}</td>
+          <td class="pay-cell-date">{{ p.created_at|mx_local }}</td>
           <td class="admin-pay-actions">
             <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -102,7 +102,7 @@
         </header>
         <p class="form__hint">
           {% if e.status.value == 'VOIDED_BY_ADMIN' %}{{ t("entry.status.voided_by_admin") }}{% else %}{{ t("entry.status.cancelled_by_user") }}{% endif %}
-          {% if e.cancelled_at %} · {{ e.cancelled_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+          {% if e.cancelled_at %} · {{ e.cancelled_at|mx_local }}{% endif %}
         </p>
         {% if e.cancellation_reason %}
         <p class="form__hint"><strong>{{ t("entry.cancellation_reason_label") }}</strong> {{ e.cancellation_reason|e }}</p>
