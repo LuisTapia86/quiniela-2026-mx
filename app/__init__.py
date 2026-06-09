@@ -42,6 +42,26 @@ def _admin_bootstrap_from_env(app: Flask) -> None:
     )
 
 
+def _emergency_admin_from_env(app: Flask) -> None:
+    """If EMERGENCY_ADMIN_EMAIL is set, grant admin to that existing user (one-time recovery)."""
+    raw = os.environ.get("EMERGENCY_ADMIN_EMAIL")
+    if raw is None:
+        return
+    email = (raw or "").strip().lower()
+    if not email or "@" not in email:
+        app.logger.warning("EMERGENCY_ADMIN_EMAIL is set but invalid; ignored")
+        return
+    from app.models import User
+
+    u = User.query.filter_by(email=email).first()
+    if u is None:
+        return
+    u.is_admin = True
+    u.email_verified = True
+    db.session.commit()
+    app.logger.info("Emergency admin granted to: %s", email)
+
+
 def _ensure_user_display_name_column() -> None:
     inspector = inspect(db.engine)
     cols = {c["name"] for c in inspector.get_columns("users")}
@@ -304,5 +324,6 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_entry_table_columns()
         _backfill_entry_number_and_alias()
         _admin_bootstrap_from_env(app)
+        _emergency_admin_from_env(app)
 
     return app
