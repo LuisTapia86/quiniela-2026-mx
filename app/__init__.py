@@ -43,23 +43,44 @@ def _admin_bootstrap_from_env(app: Flask) -> None:
 
 
 def _emergency_admin_from_env(app: Flask) -> None:
-    """If EMERGENCY_ADMIN_EMAIL is set, grant admin to that existing user (one-time recovery)."""
-    raw = os.environ.get("EMERGENCY_ADMIN_EMAIL")
-    if raw is None:
+    """Create or reset a single admin user when emergency env vars are set."""
+    raw_email = os.environ.get("EMERGENCY_ADMIN_EMAIL")
+    raw_password = os.environ.get("EMERGENCY_ADMIN_PASSWORD")
+    if raw_email is None or raw_password is None:
         return
-    email = (raw or "").strip().lower()
+    email = (raw_email or "").strip().lower()
+    password = raw_password or ""
     if not email or "@" not in email:
         app.logger.warning("EMERGENCY_ADMIN_EMAIL is set but invalid; ignored")
         return
+    if not password:
+        app.logger.warning("EMERGENCY_ADMIN_PASSWORD is set but empty; ignored")
+        return
+
+    from werkzeug.security import generate_password_hash
+
     from app.models import User
 
-    u = User.query.filter_by(email=email).first()
-    if u is None:
-        return
-    u.is_admin = True
-    u.email_verified = True
+    password_hash = generate_password_hash(password)
+    user = User.query.filter_by(email=email).first()
+    if user is None:
+        user = User(
+            email=email,
+            display_name="Admin",
+            password_hash=password_hash,
+            is_admin=True,
+            email_verified=True,
+            must_change_password=False,
+        )
+        db.session.add(user)
+    else:
+        user.is_admin = True
+        user.email_verified = True
+        user.must_change_password = False
+        user.password_hash = password_hash
+
     db.session.commit()
-    app.logger.info("Emergency admin granted to: %s", email)
+    app.logger.info("Emergency admin ready: %s", email)
 
 
 def _ensure_user_display_name_column() -> None:
