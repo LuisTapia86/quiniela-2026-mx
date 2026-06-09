@@ -32,6 +32,9 @@ class Config:
     BRAND_NAME = "Quiniela World Cup 2026 MX"
     ADMIN_FEE_PERCENT = 0
     ENTRY_FEE_MXN = 200
+    # User-facing prediction stages (unlock more by extending this tuple).
+    # Friendly names like "Group Stage" map to DB values in app/tournament_stages.py.
+    VISIBLE_PREDICTION_STAGES = ("Group Stage",)
     # Share of the prize pool for TOP 3; ties split that amount.
     PRIZE_TOP1_PERCENT = 70
     PRIZE_TOP2_PERCENT = 20

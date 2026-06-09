@@ -25,9 +25,25 @@ from app.models import (
 from app.payment_gating import is_payment_banking_configured
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
+from app.tournament_stages import select_visible_matches
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
+
+
+def _entry_fee_mxn() -> int:
+    return int(current_app.config.get("ENTRY_FEE_MXN", 200))
+
+
+def _create_pending_payment(entry: Entry, user_id: int) -> Payment:
+    return Payment(
+        user_id=user_id,
+        entry_id=entry.id,
+        amount_mxn=_entry_fee_mxn(),
+        status=PaymentStatus.PENDING,
+    )
+
+
 
 _MONTHS_ES = [
     "enero",
@@ -216,6 +232,8 @@ def new():
             status=EntryStatus.ACTIVE,
         )
         db.session.add(e)
+        db.session.flush()
+        db.session.add(_create_pending_payment(e, user.id))
         db.session.commit()
         flash(tr("flash.entry.created"), "ok")
         return redirect(url_for("main.index"))
@@ -280,8 +298,12 @@ def entry_payment(entry_id: int):
     if request.method == "POST":
         f = request.files.get("proof")
         if f is None or f.filename is None or f.filename.strip() == "":
-            flash(tr("flash.payment.select_file"), "error")
-            return _payment_page()
+            if payment is None:
+                payment = _create_pending_payment(entry, user.id)
+                db.session.add(payment)
+                db.session.commit()
+            flash(tr("flash.payment.awaiting_admin"), "ok")
+            return redirect(url_for("entries.entry_payment", entry_id=entry.id))
         raw_name = secure_filename(f.filename)
         if not raw_name or "." not in raw_name:
             flash(tr("flash.payment.invalid_name"), "error")
@@ -319,20 +341,14 @@ def entry_payment(entry_id: int):
                 except OSError:
                     pass
         f.save(str(dest_path))
-        fee = int(current_app.config.get("ENTRY_FEE_MXN", 200))
         if payment is None:
-            payment = Payment(
-                user_id=user.id,
-                entry_id=entry.id,
-                amount_mxn=fee,
-                proof_stored_path=store_name,
-                status=PaymentStatus.PENDING,
-            )
+            payment = _create_pending_payment(entry, user.id)
+            payment.proof_stored_path = store_name
             db.session.add(payment)
         else:
             payment.proof_stored_path = store_name
             payment.status = PaymentStatus.PENDING
-            payment.amount_mxn = fee
+            payment.amount_mxn = _entry_fee_mxn()
         db.session.commit()
         flash(tr("flash.payment.received"), "ok")
         return redirect(url_for("entries.entry_payment", entry_id=entry.id))
@@ -358,9 +374,8 @@ def predictions(entry_id: int):
     locked = state.predictions_locked
     matches = list(
         db.session.scalars(
-            select(Match)
+            select_visible_matches()
             .options(joinedload(Match.result))
-            .order_by(Match.match_number.asc(), Match.id.asc())
         )
     )
     preds = list(

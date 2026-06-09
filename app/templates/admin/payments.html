@@ -29,7 +29,7 @@
     </form>
   </div>
 
-  {% if not payments %}
+  {% if not rows %}
   <p class="form__hint">{{ t("admin.payments.empty") }}</p>
   {% else %}
   <div class="table-wrap">
@@ -48,37 +48,40 @@
         </tr>
       </thead>
       <tbody>
-        {% for p in payments %}
+        {% for entry, payment in rows %}
         <tr>
-          <td>{{ p.id }}</td>
-          <td>{{ p.user.email|e }}</td>
-          <td><strong>{{ (p.user.display_name or p.user.email)|e }} - {{ entry_title(p.entry)|e }}</strong> <span class="form__hint">#{{ p.entry_id }}</span></td>
+          <td>{% if payment %}{{ payment.id }}{% else %}—{% endif %}</td>
+          <td>{{ entry.user.email|e }}</td>
+          <td><strong>{{ (entry.user.display_name or entry.user.email)|e }} - {{ entry_title(entry)|e }}</strong> <span class="form__hint">#{{ entry.id }}</span></td>
           <td>
-            {% set est = p.entry.status.value %}
+            {% set est = entry.status.value %}
             {% if est == 'ACTIVE' %}<span class="entry-pay-badge entry-pay-badge--approved">{{ t("entry.status.active") }}</span>
             {% elif est == 'CANCELLED_BY_USER' %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.cancelled_by_user") }}</span>
             {% else %}<span class="entry-pay-badge entry-pay-badge--rejected">{{ t("entry.status.voided_by_admin") }}</span>
             {% endif %}
-            {% if p.entry.cancelled_at %}<span class="form__hint"> · {{ p.entry.cancelled_at|mx_local }}</span>{% endif %}
-            {% if p.entry.cancellation_reason %}<br><span class="form__hint">{{ p.entry.cancellation_reason|e }}</span>{% endif %}
+            {% if entry.cancelled_at %}<span class="form__hint"> · {{ entry.cancelled_at|mx_local }}</span>{% endif %}
+            {% if entry.cancellation_reason %}<br><span class="form__hint">{{ entry.cancellation_reason|e }}</span>{% endif %}
           </td>
-          <td class="num">{{ p.amount_mxn }}</td>
-          <td><span class="entry-pay-badge entry-pay-badge--{{ p.status.value }}">{{ p.status.value }}</span></td>
-          <td>{% if p.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=p.id) }}">{{ p.proof_stored_path|e }}</a>{% else %}—{% endif %}</td>
-          <td class="pay-cell-date">{{ p.created_at|mx_local }}</td>
+          <td class="num">{% if payment %}{{ payment.amount_mxn }}{% else %}{{ config.ENTRY_FEE_MXN }}{% endif %}</td>
+          <td>
+            {% set pay_status = payment.status.value if payment else 'pending' %}
+            <span class="entry-pay-badge entry-pay-badge--{{ pay_status }}">{{ pay_status }}</span>
+          </td>
+          <td>{% if payment and payment.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}">{{ payment.proof_stored_path|e }}</a>{% else %}{{ t("admin.payments.no_proof") }}{% endif %}</td>
+          <td class="pay-cell-date">{% if payment %}{{ payment.created_at|mx_local }}{% else %}{{ entry.created_at|mx_local }}{% endif %}</td>
           <td class="admin-pay-actions">
-            <form method="post" action="{{ url_for('admin.payment_approve', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
+            <form method="post" action="{{ url_for('admin.entry_approve_payment', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
-              <button type="submit" class="btn btn--sm btn--primary" {% if p.status.value == 'approved' or p.entry.status.value != 'ACTIVE' %}disabled{% endif %}>{{ t("common.approve") }}</button>
+              <button type="submit" class="btn btn--sm btn--primary" {% if pay_status == 'approved' or entry.status.value != 'ACTIVE' %}disabled{% endif %}>{{ t("common.approve") }}</button>
             </form>
-            <form method="post" action="{{ url_for('admin.payment_reject', payment_id=p.id, status=current_status, q=q) }}" class="admin-inline-form">
+            <form method="post" action="{{ url_for('admin.entry_reject_payment', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ p.admin_note|e if p.status.value == 'rejected' else '' }}">
-              <button type="submit" class="btn btn--sm" {% if p.status.value == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
+              <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500" value="{{ payment.admin_note|e if payment and pay_status == 'rejected' else '' }}">
+              <button type="submit" class="btn btn--sm" {% if pay_status == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>
-            {% if p.status.value == 'approved' and p.entry.status.value == 'ACTIVE' %}
-            <form method="post" action="{{ url_for('admin.void_entry', entry_id=p.entry_id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack" style="margin-top:0.5rem;">
+            {% if pay_status == 'approved' and entry.status.value == 'ACTIVE' %}
+            <form method="post" action="{{ url_for('admin.void_entry', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack" style="margin-top:0.5rem;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <label class="form__field" style="min-width:12rem;">
                 <span class="form__label">{{ t("admin.void_reason_label") }} *</span>

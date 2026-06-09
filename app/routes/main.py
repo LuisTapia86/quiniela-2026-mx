@@ -5,6 +5,7 @@ from sqlalchemy.orm import joinedload
 from app import db
 from app.models import Entry, EntryStatus, Match, Payment, Prediction, TournamentState, User
 from app.routes.auth import _validate_display_name, get_current_user, login_required
+from app.tournament_stages import count_visible_matches, visible_matches_where
 from app.translations import tr
 
 bp = Blueprint("main", __name__)
@@ -27,7 +28,8 @@ def index():
     cancelled_entries = [e for e in entries if e.status != EntryStatus.ACTIVE]
     payments_by_entry: dict[int, Payment | None] = {}
     prediction_counts: dict[int, int] = {}
-    total_matches = db.session.scalar(select(func.count()).select_from(Match)) or 0
+    total_matches = count_visible_matches(current_app.config)
+    visible_match_ids = select(Match.id).where(visible_matches_where(current_app.config))
     predictions_locked = TournamentState.get_singleton().predictions_locked
     if entries:
         eids = [e.id for e in entries]
@@ -36,6 +38,7 @@ def index():
         pred_rows = db.session.execute(
             select(Prediction.entry_id, func.count(Prediction.id))
             .where(Prediction.entry_id.in_(eids))
+            .where(Prediction.match_id.in_(visible_match_ids))
             .group_by(Prediction.entry_id),
         ).all()
         for entry_id, count in pred_rows:

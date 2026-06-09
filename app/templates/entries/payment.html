@@ -16,8 +16,7 @@
   </div>
   {% endif %}
 
-  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fill_first_note") }}</p>
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("payment.approval_note") }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.refund_policy") }}</p>
 
   {% if not payment_banking_configured %}
@@ -59,13 +58,14 @@
     {% endif %}
   </p>
   {% else %}
-  <p class="form__hint">{{ t("payment.none_uploaded") }}</p>
+  <p class="form__hint">{{ t("payment.awaiting_review") }}</p>
   {% endif %}
 
   <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">
     {% if payment_banking_configured %}{{ t("payment.upload_title") }}{% else %}{{ t("payment.upload_test_title") }}{% endif %}
   </h2>
-  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.formats", max_mb=(config.MAX_CONTENT_LENGTH // (1024*1024))) }}</p>
+  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("payment.upload_optional") }}</p>
+  <p class="form__hint">{{ t("payment.formats", max_mb=(config.MAX_CONTENT_LENGTH // (1024*1024))) }}</p>
   {% if payment and payment.status.value == 'approved' %}
   <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("payment.approved_warn") }}</p>
   <p class="form__hint" style="margin:0 0 0.75rem;">{{ t("entry.approved_cancel_only_via_admin") }}</p>
@@ -74,7 +74,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label class="form__field">
       <span class="form__label">{{ t("payment.file_label") }}</span>
-      <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf" required>
+      <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.webp,.pdf,image/*,application/pdf">
     </label>
     <button class="form__submit" type="submit">{% if payment_banking_configured %}{{ t("payment.send") }}{% else %}{{ t("payment.send_test") }}{% endif %}</button>
   </form>

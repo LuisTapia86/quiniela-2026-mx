@@ -90,6 +90,86 @@ def _is_test_payment_mode() -> bool:
     return bool(current_app.config.get("TEST_MODE_PAYMENTS", False))
 
 
+def _entry_fee_mxn() -> int:
+    return int(current_app.config.get("ENTRY_FEE_MXN", 200))
+
+
+def _ensure_payment_for_entry(entry: Entry) -> Payment:
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
+    if payment is None:
+        payment = Payment(
+            user_id=entry.user_id,
+            entry_id=entry.id,
+            amount_mxn=_entry_fee_mxn(),
+            status=PaymentStatus.PENDING,
+        )
+        db.session.add(payment)
+    return payment
+
+
+def _admin_payment_entry_rows(status: str, q: str) -> list[tuple[Entry, Payment | None]]:
+    stmt = (
+        select(Entry)
+        .join(User, Entry.user_id == User.id)
+        .options(joinedload(Entry.user))
+        .where(Entry.status == EntryStatus.ACTIVE)
+    )
+    if q:
+        search = f"%{q.lower()}%"
+        stmt = stmt.where(
+            or_(func.lower(User.email).like(search), func.lower(Entry.name).like(search)),
+        )
+    entries = list(db.session.scalars(stmt.order_by(Entry.id.desc())))
+    if not entries:
+        return []
+    payments = {
+        p.entry_id: p
+        for p in db.session.scalars(
+            select(Payment).where(Payment.entry_id.in_([e.id for e in entries])),
+        )
+    }
+    rows: list[tuple[Entry, Payment | None]] = []
+    for entry in entries:
+        payment = payments.get(entry.id)
+        if status == "all":
+            rows.append((entry, payment))
+        elif status == "pending":
+            if payment is None or payment.status == PaymentStatus.PENDING:
+                rows.append((entry, payment))
+        elif status == "approved" and payment is not None and payment.status == PaymentStatus.APPROVED:
+            rows.append((entry, payment))
+        elif status == "rejected" and payment is not None and payment.status == PaymentStatus.REJECTED:
+            rows.append((entry, payment))
+    return rows
+
+
+def _admin_payment_counts() -> dict[str, int]:
+    active_ids = list(
+        db.session.scalars(select(Entry.id).where(Entry.status == EntryStatus.ACTIVE)),
+    )
+    if not active_ids:
+        return {"all": 0, "pending": 0, "approved": 0, "rejected": 0}
+    payments = {
+        p.entry_id: p
+        for p in db.session.scalars(select(Payment).where(Payment.entry_id.in_(active_ids)))
+    }
+    pending = approved = rejected = 0
+    for entry_id in active_ids:
+        payment = payments.get(entry_id)
+        if payment is None or payment.status == PaymentStatus.PENDING:
+            pending += 1
+        elif payment.status == PaymentStatus.APPROVED:
+            approved += 1
+        elif payment.status == PaymentStatus.REJECTED:
+            rejected += 1
+    return {
+        "all": len(active_ids),
+        "pending": pending,
+        "approved": approved,
+        "rejected": rejected,
+    }
+
+
 def _append_payment_admin_note(p: Payment, line: str) -> None:
     base = (p.admin_note or "").strip()
     p.admin_note = f"{base}\n{line}" if base else line
@@ -612,50 +692,11 @@ def payments():
     _require_admin()
     status = _safe_status(request.args.get("status"))
     q = (request.args.get("q") or "").strip()
-
-    stmt = (
-        select(Payment)
-        .options(
-            joinedload(Payment.user),
-            joinedload(Payment.entry),
-        )
-        .order_by(Payment.created_at.desc(), Payment.id.desc())
-    )
-    if status != "all":
-        stmt = stmt.where(Payment.status == PaymentStatus(status))
-    if q:
-        search = f"%{q.lower()}%"
-        stmt = stmt.join(User, Payment.user_id == User.id).join(Entry, Payment.entry_id == Entry.id).where(
-            or_(func.lower(User.email).like(search), func.lower(Entry.name).like(search)),
-        )
-
-    payments = list(
-        db.session.scalars(stmt)
-    )
-    counts = {
-        "all": db.session.scalar(select(func.count()).select_from(Payment)) or 0,
-        "pending": (
-            db.session.scalar(
-                select(func.count()).select_from(Payment).where(Payment.status == PaymentStatus.PENDING),
-            )
-            or 0
-        ),
-        "approved": (
-            db.session.scalar(
-                select(func.count()).select_from(Payment).where(Payment.status == PaymentStatus.APPROVED),
-            )
-            or 0
-        ),
-        "rejected": (
-            db.session.scalar(
-                select(func.count()).select_from(Payment).where(Payment.status == PaymentStatus.REJECTED),
-            )
-            or 0
-        ),
-    }
+    rows = _admin_payment_entry_rows(status, q)
+    counts = _admin_payment_counts()
     return render_template(
         "admin/payments.html",
-        payments=payments,
+        rows=rows,
         current_status=status,
         q=q,
         counts=counts,
@@ -706,6 +747,45 @@ def payment_test_approve():
     return redirect(url_for("admin.payments", status=status, q=q))
 
 
+@bp.post("/admin/entries/<int:entry_id>/approve-payment")
+@login_required
+def entry_approve_payment(entry_id: int):
+    _require_admin()
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
+        return redirect(
+            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
+        )
+    p = _ensure_payment_for_entry(entry)
+    note = (request.form.get("admin_note") or "").strip() or None
+    p.status = PaymentStatus.APPROVED
+    p.admin_note = note
+    p.updated_at = utcnow()
+    db.session.commit()
+    flash(f"Entrada #{entry.id} aprobada.", "ok")
+    return redirect(url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")))
+
+
+@bp.post("/admin/entries/<int:entry_id>/reject-payment")
+@login_required
+def entry_reject_payment(entry_id: int):
+    _require_admin()
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    p = _ensure_payment_for_entry(entry)
+    note = (request.form.get("admin_note") or "").strip() or None
+    p.status = PaymentStatus.REJECTED
+    p.admin_note = note
+    p.updated_at = utcnow()
+    db.session.commit()
+    flash(f"Entrada #{entry.id} rechazada.", "ok")
+    return redirect(url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")))
+
+
 @bp.post("/admin/payments/<int:payment_id>/approve")
 @login_required
 def payment_approve(payment_id: int):
@@ -713,19 +793,7 @@ def payment_approve(payment_id: int):
     p = db.session.get(Payment, payment_id)
     if p is None:
         abort(404)
-    entry = db.session.get(Entry, p.entry_id)
-    if entry is None or entry.status != EntryStatus.ACTIVE:
-        flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
-        return redirect(
-            url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")),
-        )
-    note = (request.form.get("admin_note") or "").strip() or None
-    p.status = PaymentStatus.APPROVED
-    p.admin_note = note
-    p.updated_at = utcnow()
-    db.session.commit()
-    flash(f"Pago #{p.id} aprobado.", "ok")
-    return redirect(url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")))
+    return entry_approve_payment(p.entry_id)
 
 
 @bp.post("/admin/payments/<int:payment_id>/reject")
@@ -735,13 +803,7 @@ def payment_reject(payment_id: int):
     p = db.session.get(Payment, payment_id)
     if p is None:
         abort(404)
-    note = (request.form.get("admin_note") or "").strip() or None
-    p.status = PaymentStatus.REJECTED
-    p.admin_note = note
-    p.updated_at = utcnow()
-    db.session.commit()
-    flash(f"Pago #{p.id} rechazado.", "ok")
-    return redirect(url_for("admin.payments", status=request.args.get("status"), q=request.args.get("q")))
+    return entry_reject_payment(p.entry_id)
 
 
 @bp.post("/admin/entries/<int:entry_id>/void")
