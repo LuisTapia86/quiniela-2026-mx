@@ -13,6 +13,14 @@
     <article class="stat-card"><span>{{ t("admin.rejected_payments") }}</span><strong>{{ rejected_payments }}</strong></article>
     <article class="stat-card"><span>{{ t("admin.total_matches") }}</span><strong>{{ total_matches }}</strong></article>
     <article class="stat-card"><span>{{ t("admin.matches_with_result") }}</span><strong>{{ completed_matches }}</strong></article>
+    <article class="stat-card"><span>{{ t("admin.gross") }}</span><strong>${{ gross_collected }} MXN</strong></article>
+    {% if admin_fee_percent > 0 %}
+    <article class="stat-card"><span>{{ t("admin.fee", pct=admin_fee_percent) }}</span><strong>${{ admin_fee_amount }} MXN</strong></article>
+    {% endif %}
+    <article class="stat-card"><span>{{ t("admin.pool") }}</span><strong>${{ prize_pool }} MXN</strong></article>
+    <article class="stat-card"><span>{{ t("admin.p1", pct=config.PRIZE_TOP1_PERCENT) }}</span><strong>${{ estimate_1st }} MXN</strong></article>
+    <article class="stat-card"><span>{{ t("admin.p2", pct=config.PRIZE_TOP2_PERCENT) }}</span><strong>${{ estimate_2nd }} MXN</strong></article>
+    <article class="stat-card"><span>{{ t("admin.p3", pct=config.PRIZE_TOP3_PERCENT) }}</span><strong>${{ estimate_3rd }} MXN</strong></article>
   </div>
 
   <div class="admin-lock card card--subtle">

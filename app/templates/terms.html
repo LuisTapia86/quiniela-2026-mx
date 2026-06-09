@@ -27,16 +27,22 @@
 
   <h2 class="card__title card__title--sm">{{ t("terms.prizes_title") }}</h2>
   <ul class="prize-pool__list">
-    <li>{{ t("family.entry_amount") }}</li>
-    <li>{{ t("family.funds_prizes") }}</li>
-    <li>{{ t("family.no_commission") }}</li>
+    <li>{{ t("terms.prizes.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+    <li>{{ t("terms.prizes.2", p1=config.PRIZE_TOP1_PERCENT) }}</li>
+    <li>{{ t("terms.prizes.3", p2=config.PRIZE_TOP2_PERCENT) }}</li>
+    <li>{{ t("terms.prizes.4", p3=config.PRIZE_TOP3_PERCENT) }}</li>
+    <li>{{ t("terms.prizes.5") }}</li>
     <li>{{ t("terms.prizes.6") }}</li>
   </ul>
 
   <h2 class="card__title card__title--sm">{{ t("terms.payments_title") }}</h2>
   <ul class="prize-pool__list">
-    <li>{{ t("terms.payments.1") }}</li>
+    <li>{{ t("terms.payments.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
     <li>{{ t("terms.payments.2") }}</li>
+    <li>{{ t("terms.payments.3") }}</li>
+    <li>{{ t("payment.bank") }} {{ config.PAYMENT_BANK|e }}</li>
+    <li>{{ t("payment.beneficiary") }} {{ config.PAYMENT_BENEFICIARY_NAME|e }}</li>
+    <li>{{ t("payment.clabe") }} <span class="mono">{{ config.PAYMENT_CLABE|e }}</span></li>
   </ul>
 
   <h2 class="card__title card__title--sm">{{ t("terms.liability_title") }}</h2>

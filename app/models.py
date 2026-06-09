@@ -151,7 +151,7 @@ class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False, index=True)
     entry_id = db.Column(db.Integer, db.ForeignKey("entries.id"), nullable=False, unique=True, index=True)
-    amount_mxn = db.Column(db.Integer, nullable=False, default=1000)
+    amount_mxn = db.Column(db.Integer, nullable=False, default=200)
     proof_stored_path = db.Column(db.String(512), nullable=True)
     status = db.Column(
         db.Enum(PaymentStatus, name="payment_status", native_enum=False),

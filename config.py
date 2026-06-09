@@ -30,12 +30,12 @@ class Config:
     UPLOAD_FOLDER = BASE_DIR / "instance" / "uploads"
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB; payment proofs + other uploads
     BRAND_NAME = "Quiniela World Cup 2026 MX"
-    ADMIN_FEE_PERCENT = 5
-    ENTRY_FEE_MXN = 1000
-    # Share of the prize pool (100% - admin) for TOP 3; ties split that amount.
-    PRIZE_TOP1_PERCENT = 60
-    PRIZE_TOP2_PERCENT = 25
-    PRIZE_TOP3_PERCENT = 15
+    ADMIN_FEE_PERCENT = 0
+    ENTRY_FEE_MXN = 200
+    # Share of the prize pool for TOP 3; ties split that amount.
+    PRIZE_TOP1_PERCENT = 70
+    PRIZE_TOP2_PERCENT = 20
+    PRIZE_TOP3_PERCENT = 10
     PAYMENT_PROOFS_FOLDER = BASE_DIR / "instance" / "uploads" / "payment_proofs"
     # Extensions without leading dot; lowercased on validation
     ALLOWED_PAYMENT_EXTENSIONS = frozenset({"jpg", "jpeg", "png", "webp", "pdf"})

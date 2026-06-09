@@ -8,7 +8,7 @@
   <div class="pay-instructions pay-instructions--hero" role="region" aria-labelledby="pay-copy-title">
     <h2 id="pay-copy-title" class="pay-instructions__title">{{ t("payment.official_title") }}</h2>
     <ul class="pay-instructions__list pay-instructions__list--bullets">
-      <li>{{ t("payment.hero.1") }}</li>
+      <li>{{ t("payment.hero.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
       <li>{{ t("payment.hero.2") }}</li>
       <li>{{ t("payment.hero.3") }}</li>
       <li>{{ t("payment.hero.4") }}</li>
@@ -16,21 +16,21 @@
   </div>
   {% endif %}
 
-  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("payment.fee_hint") }}</p>
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("payment.fee_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.fill_first_note") }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("payment.refund_policy") }}</p>
 
   {% if not payment_banking_configured %}
   <p class="pay-gate" role="status">{{ t("payment.beta_mode_notice") }}</p>
   <ol class="pay-steps" aria-label="{{ t('payment.steps_future') }}">
-    <li>{{ t("payment.step1.future") }}</li>
+    <li>{{ t("payment.step1.future", entry_fee=config.ENTRY_FEE_MXN) }}</li>
     <li>{{ t("payment.step2") }}</li>
     <li>{{ t("payment.step3") }}</li>
     <li>{{ t("payment.step4") }}</li>
   </ol>
   {% else %}
   <ol class="pay-steps" aria-label="{{ t('payment.steps') }}">
-    <li>{{ t("payment.step1") }}</li>
+    <li>{{ t("payment.step1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
     <li>{{ t("payment.step2") }}</li>
     <li>{{ t("payment.step3") }}</li>
     <li>{{ t("payment.step4") }}</li>

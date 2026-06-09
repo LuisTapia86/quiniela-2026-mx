@@ -685,7 +685,7 @@ def payment_test_approve():
         flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
         return redirect(url_for("admin.payments", status=status, q=q))
     payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
-    amount = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
+    amount = int(current_app.config.get("ENTRY_FEE_MXN", 200))
     if payment is None:
         payment = Payment(
             user_id=entry.user_id,

@@ -319,7 +319,7 @@ def entry_payment(entry_id: int):
                 except OSError:
                     pass
         f.save(str(dest_path))
-        fee = int(current_app.config.get("ENTRY_FEE_MXN", 1000))
+        fee = int(current_app.config.get("ENTRY_FEE_MXN", 200))
         if payment is None:
             payment = Payment(
                 user_id=user.id,

@@ -41,10 +41,11 @@
     <h2 id="prize-title" class="landing-section__title">{{ t("landing.prizes.title") }}</h2>
     <div class="landing-card">
       <ul class="landing-list">
-        <li>{{ t("family.entry_amount_short") }}</li>
-        <li>{{ t("family.entry_amount") }}</li>
-        <li>{{ t("family.funds_prizes") }}</li>
-        <li>{{ t("family.no_commission") }}</li>
+        <li>{{ t("landing.prizes.entry_fee", entry_fee=config.ENTRY_FEE_MXN) }}</li>
+        <li>{{ t("landing.prizes.p1", p1=config.PRIZE_TOP1_PERCENT) }}</li>
+        <li>{{ t("landing.prizes.p2", p2=config.PRIZE_TOP2_PERCENT) }}</li>
+        <li>{{ t("landing.prizes.p3", p3=config.PRIZE_TOP3_PERCENT) }}</li>
+        <li>{{ t("landing.prizes.pool_note") }}</li>
       </ul>
       <p class="landing-note">{{ t("landing.prizes.note") }}</p>
     </div>
