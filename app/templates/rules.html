@@ -17,9 +17,9 @@
 
   <h2 class="card__title card__title--sm">{{ t("rules.fee_title") }}</h2>
   <ul class="prize-pool__list">
-    <li>{{ t("rules.fee.1", entry_fee=config.ENTRY_FEE_MXN) }}</li>
-    <li>{{ t("rules.fee.2", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
-    <li>{{ t("rules.fee.3", admin_fee=config.ADMIN_FEE_PERCENT) }}</li>
+    <li>{{ t("family.entry_amount") }}</li>
+    <li>{{ t("family.funds_prizes") }}</li>
+    <li>{{ t("family.no_commission") }}</li>
     <li>{{ t("rules.refund_policy") }}</li>
   </ul>
 
@@ -31,13 +31,6 @@
     <li>{{ t("common.stages_simple") }}</li>
   </ul>
 
-  <h2 class="card__title card__title--sm">{{ t("rules.prizes_title") }}</h2>
-  <p class="form__hint" style="margin-top:-0.5rem;">{{ t("rules.prizes_hint") }}</p>
-  <ul class="prize-pool__list">
-    <li>{{ t("rules.prizes.1", p1=config.PRIZE_TOP1_PERCENT) }}</li>
-    <li>{{ t("rules.prizes.2", p2=config.PRIZE_TOP2_PERCENT) }}</li>
-    <li>{{ t("rules.prizes.3", p3=config.PRIZE_TOP3_PERCENT) }}</li>
-  </ul>
   <p class="form__hint">{{ t("rules.tie_note") }}</p>
 
   <h2 class="card__title card__title--sm">{{ t("rules.points_title") }}</h2>

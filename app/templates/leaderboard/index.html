@@ -5,20 +5,6 @@
   <h1 class="card__title">{{ t("leaderboard.heading") }}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("leaderboard.only_approved") }}</p>
 
-  <div class="prize-pool" aria-label="{{ t('leaderboard.pool_aria') }}">
-    <h2 class="prize-pool__title">{{ t("leaderboard.pool_title") }}</h2>
-    <ul class="prize-pool__list">
-      <li>{{ t("leaderboard.approved_entries", count=approved_entries_count) }}</li>
-      <li>{{ t("leaderboard.gross", gross=gross_collected, count=approved_entries_count, entry_fee=config.ENTRY_FEE_MXN) }}</li>
-      <li>{{ t("leaderboard.admin_fee", pct=admin_fee_percent, amount=admin_fee_amount) }}</li>
-      <li class="prize-pool__highlight">{{ t("leaderboard.pool", pool_pct=(100-admin_fee_percent), pool=prize_pool) }}</li>
-      <li>{{ t("leaderboard.p1", pct=config.PRIZE_TOP1_PERCENT, amount=estimate_1st) }}</li>
-      <li>{{ t("leaderboard.p2", pct=config.PRIZE_TOP2_PERCENT, amount=estimate_2nd) }}</li>
-      <li>{{ t("leaderboard.p3", pct=config.PRIZE_TOP3_PERCENT, amount=estimate_3rd) }}</li>
-    </ul>
-    <p class="form__hint" style="margin:0.5rem 0 0;">{{ t("leaderboard.tie_note") }}</p>
-  </div>
-
   <p class="form__hint" style="margin: 0 0 1.25rem;">{{ t("leaderboard.results_loaded", done=n_with_result, total=n_matches) }}</p>
   {% if current_user and current_user.is_admin %}
   <p style="margin: -0.75rem 0 1rem;"><a class="btn btn--sm" href="{{ url_for('leaderboard.export_csv') }}">{{ t("leaderboard.export_csv") }}</a></p>
