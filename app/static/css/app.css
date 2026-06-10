@@ -487,8 +487,15 @@ button.btn:disabled {
 }
 
 .data-table .pred-team__flag {
-  font-size: 1.05rem;
+  font-family: "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji",
+    "Twemoji Mozilla", "EmojiOne Color", sans-serif;
+  font-size: 1.15rem;
   line-height: 1;
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+  letter-spacing: 0;
+  word-break: keep-all;
 }
 
 .data-table .pred-team__name {
