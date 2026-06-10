@@ -938,6 +938,12 @@ ol.pay-steps {
   color: var(--text);
 }
 
+.group-team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 @media (min-width: 32rem) {
   .container {
     padding: 1.5rem 1.5rem 2.5rem;

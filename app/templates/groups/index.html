@@ -34,7 +34,13 @@
             {% if g.rows %}
               {% for row in g.rows %}
               <tr>
-                <td>{{ row.team|e }}</td>
+                <td>
+                  <span class="group-team-name">
+                    {% set team_flag_src = row.team|team_flag_src %}
+                    {% if team_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=team_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
+                    {{ row.team|e }}
+                  </span>
+                </td>
                 <td class="num">{{ row.played }}</td>
                 <td class="num">{{ row.won }}</td>
                 <td class="num">{{ row.drawn }}</td>
