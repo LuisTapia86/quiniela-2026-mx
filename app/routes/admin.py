@@ -46,6 +46,7 @@ from app.services.api_football import (
 from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_path, import_matches_from_reader
 from app.dev_tools import flask_debug_truthy
+from app.entry_names import validate_entry_display_name
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
@@ -745,6 +746,30 @@ def payment_test_approve():
     db.session.commit()
     flash(f"Pago de prueba aprobado para entrada #{entry.id}.", "ok")
     return redirect(url_for("admin.payments", status=status, q=q))
+
+
+@bp.post("/admin/entries/<int:entry_id>/rename")
+@login_required
+def rename_entry(entry_id: int):
+    _require_admin()
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    ok, result = validate_entry_display_name(request.form.get("name"))
+    if not ok:
+        flash(result, "error")
+        next_url = (request.form.get("next") or "").strip()
+        if next_url.startswith("/") and not next_url.startswith("//"):
+            return redirect(next_url)
+        return redirect(url_for("admin.payments"))
+    entry.alias = result
+    entry.name = result
+    db.session.commit()
+    flash(tr("flash.entry.renamed"), "ok")
+    next_url = (request.form.get("next") or "").strip()
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect(url_for("admin.payments"))
 
 
 @bp.post("/admin/entries/<int:entry_id>/approve-payment")

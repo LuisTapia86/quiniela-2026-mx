@@ -22,6 +22,7 @@ from app.models import (
     TournamentState,
     utcnow,
 )
+from app.entry_names import validate_entry_display_name
 from app.payment_gating import is_payment_banking_configured
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
@@ -238,6 +239,37 @@ def new():
         flash(tr("flash.entry.created"), "ok")
         return redirect(url_for("main.index"))
     return render_template("entries/new.html", alias="")
+
+
+def _rename_redirect(fallback: str):
+    next_url = (request.form.get("next") or "").strip()
+    if next_url.startswith("/") and not next_url.startswith("//"):
+        return redirect(next_url)
+    return redirect(fallback)
+
+
+@bp.post("/entries/<int:entry_id>/rename")
+@login_required
+def rename_entry(entry_id: int):
+    user = get_current_user()
+    assert user is not None
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    if entry.user_id != user.id:
+        abort(403)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.entry.already_inactive"), "error")
+        return _rename_redirect(url_for("main.index"))
+    ok, result = validate_entry_display_name(request.form.get("name"))
+    if not ok:
+        flash(result, "error")
+        return _rename_redirect(url_for("main.index"))
+    entry.alias = result
+    entry.name = result
+    db.session.commit()
+    flash(tr("flash.entry.renamed"), "ok")
+    return _rename_redirect(url_for("main.index"))
 
 
 @bp.post("/entries/<int:entry_id>/cancel")

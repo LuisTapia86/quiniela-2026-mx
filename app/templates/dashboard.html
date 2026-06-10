@@ -1,4 +1,5 @@
 ﻿{% extends "base.html" %}
+{% from "macros/entry_rename.html" import entry_rename %}
 {% block title %}{{ t("title.dashboard") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card dash" aria-labelledby="dash-title">
@@ -40,7 +41,10 @@
     {% set pred_count = prediction_counts.get(e.id, 0) %}
     <article class="entry-card" aria-label="{{ entry_title(e)|e }}">
       <header class="entry-card__head">
-        <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
+        <div class="entry-card__title-row">
+          <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
+          {{ entry_rename(e, url_for('entries.rename_entry', entry_id=e.id)) }}
+        </div>
         <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
       </header>
 

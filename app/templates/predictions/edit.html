@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+{% from "macros/entry_rename.html" import entry_rename %}
 {% block title %}{{ t("pred.heading") }}: {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("pred.heading") }}: {{ entry_title(entry)|e }}</h1>
+  <div class="entry-page-head">
+    <h1 class="card__title">{{ t("pred.heading") }}: {{ entry_title(entry)|e }}</h1>
+    {{ entry_rename(entry, url_for('entries.rename_entry', entry_id=entry.id)) }}
+  </div>
   <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">
     {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
   </p>

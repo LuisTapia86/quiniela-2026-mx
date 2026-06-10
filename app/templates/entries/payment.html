@@ -1,8 +1,12 @@
 {% extends "base.html" %}
+{% from "macros/entry_rename.html" import entry_rename %}
 {% block title %}{{ t("title.payment") }} — {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
+  <div class="entry-page-head">
+    <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
+    {{ entry_rename(entry, url_for('entries.rename_entry', entry_id=entry.id)) }}
+  </div>
 
   {% if payment_banking_configured %}
   <div class="pay-instructions pay-instructions--hero" role="region" aria-labelledby="pay-copy-title">

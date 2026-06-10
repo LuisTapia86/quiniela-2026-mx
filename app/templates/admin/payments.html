@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% from "macros/entry_rename.html" import entry_rename %}
 {% block title %}{{ t("title.admin_payments") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
@@ -70,6 +71,7 @@
           <td>{% if payment and payment.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}">{{ payment.proof_stored_path|e }}</a>{% else %}{{ t("admin.payments.no_proof") }}{% endif %}</td>
           <td class="pay-cell-date">{% if payment %}{{ payment.created_at|mx_local }}{% else %}{{ entry.created_at|mx_local }}{% endif %}</td>
           <td class="admin-pay-actions">
+            {{ entry_rename(entry, url_for('admin.rename_entry', entry_id=entry.id)) }}
             <form method="post" action="{{ url_for('admin.entry_approve_payment', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">

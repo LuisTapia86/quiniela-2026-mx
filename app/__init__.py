@@ -333,12 +333,18 @@ def create_app(config_object: type = Config) -> Flask:
                 return t("entry.label_with_alias", number=number, alias=alias)
             return t("entry.label", number=number)
 
+        def entry_editable_name(entry) -> str:
+            from app.entry_names import editable_entry_name
+
+            return editable_entry_name(entry)
+
         return {
             "current_user": get_current_user(),
             "t": t,
             "lang": get_lang(),
             "has_logo": logo_path.is_file(),
             "entry_title": entry_title,
+            "entry_editable_name": entry_editable_name,
         }
 
     with app.app_context():

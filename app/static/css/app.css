@@ -1706,3 +1706,32 @@ dialog.admin-modal::backdrop {
   margin-top: 1rem;
   justify-content: flex-end;
 }
+
+.entry-page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.entry-page-head .card__title {
+  margin: 0;
+}
+
+.entry-card__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  min-width: 0;
+}
+
+.entry-card__title-row .entry-card__title {
+  margin: 0;
+}
+
+.entry-rename-open {
+  font-size: 0.85rem;
+  padding: 0.15rem 0.55rem;
+}

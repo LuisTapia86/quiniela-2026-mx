@@ -1,0 +1,21 @@
+{% macro entry_rename(entry, form_action) %}
+<span class="entry-rename-wrap">
+  <button type="button" class="btn btn--sm entry-rename-open" data-entry-rename-open="entry-rename-{{ entry.id }}" aria-haspopup="dialog">{{ t("entry.rename.btn") }}</button>
+</span>
+<dialog id="entry-rename-{{ entry.id }}" class="admin-modal entry-rename-modal" aria-labelledby="entry-rename-title-{{ entry.id }}">
+  <form method="post" action="{{ form_action }}" class="admin-modal__inner">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ request.full_path }}">
+    <h2 id="entry-rename-title-{{ entry.id }}" class="card__title card__title--sm">{{ t("entry.rename.title") }}</h2>
+    <label class="form__field">
+      <span class="form__label">{{ t("entry.rename.label") }}</span>
+      <input class="form__input" type="text" name="name" minlength="3" maxlength="50" required autocomplete="off" value="{{ entry_editable_name(entry)|e }}">
+    </label>
+    <p class="form__hint">{{ t("entry.rename.hint") }}</p>
+    <div class="admin-modal__actions">
+      <button type="button" class="btn" data-entry-rename-cancel>{{ t("common.cancel") }}</button>
+      <button type="submit" class="btn btn--primary">{{ t("common.save") }}</button>
+    </div>
+  </form>
+</dialog>
+{% endmacro %}
