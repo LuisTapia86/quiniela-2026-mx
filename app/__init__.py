@@ -333,6 +333,12 @@ def create_app(config_object: type = Config) -> Flask:
     def _mx_local_datetime_filter(dt):
         return format_mexico_local(dt, get_lang())
 
+    from app.team_flags import team_flag as _team_flag
+
+    @app.template_filter("team_flag")
+    def _team_flag_filter(team_name):
+        return _team_flag(team_name)
+
     @app.context_processor
     def _inject_current_user() -> dict:
         logo_path = Path(app.static_folder or "") / "img" / "logo.svg"

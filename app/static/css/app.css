@@ -466,6 +466,46 @@ button.btn:disabled {
   max-width: 14rem;
 }
 
+.data-table .pred-teams--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+  max-width: 28rem;
+}
+
+.data-table .pred-teams--knockout {
+  margin-top: 0.35rem;
+}
+
+.data-table .pred-team--home,
+.data-table .pred-team--away {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem 0.35rem;
+  flex-wrap: wrap;
+}
+
+.data-table .pred-team__flag {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.data-table .pred-team__name {
+  font-weight: 600;
+}
+
+.data-table .pred-vs {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.data-table .pred-team__score.form__input--num {
+  max-width: 3rem;
+  min-width: 2.25rem;
+}
+
 .data-table tr.pred-date-separator td {
   border-bottom: 0;
   border-top: 10px solid #0f172a;

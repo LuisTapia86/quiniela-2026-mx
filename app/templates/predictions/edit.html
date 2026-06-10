@@ -65,8 +65,6 @@
             <th scope="col">#</th>
             <th scope="col">{{ t("pred.col.match") }}</th>
             <th scope="col">{{ t("pred.col.kickoff") }}</th>
-            <th scope="col">{{ t("pred.col.home") }}</th>
-            <th scope="col">{{ t("pred.col.away") }}</th>
             <th scope="col">{{ t("pred.col.result") }}</th>
             <th scope="col">{{ t("pred.col.points") }}</th>
             <th scope="col">{{ t("pred.col.detail") }}</th>
@@ -77,7 +75,7 @@
           {% set m = row.match %}
           {% if row.date_break|default(false) %}
           <tr class="pred-date-separator">
-            <td colspan="8">📅 {{ row.date_label }}</td>
+            <td colspan="6">📅 {{ row.date_label }}</td>
           </tr>
           {% endif %}
           <tr>
@@ -85,7 +83,29 @@
             <td data-label="{{ t('pred.col.match') }}">
               {% if row.is_group_stage %}
               <span class="pred-stage">{{ row.group_context }}</span>
-              <span class="pred-teams"><strong>{{ m.home_team|e }}</strong> vs <strong>{{ m.away_team|e }}</strong></span>
+              <span class="pred-teams pred-teams--inline">
+                <span class="pred-team pred-team--home">
+                  {% set home_flag = m.home_team|team_flag %}
+                  {% if home_flag %}<span class="pred-team__flag" aria-hidden="true">{{ home_flag }}</span>{% endif %}
+                  <strong class="pred-team__name">{{ m.home_team|e }}</strong>
+                  {% if locked %}
+                  <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
+                  {% else %}
+                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.home_team|e }}">
+                  {% endif %}
+                </span>
+                <span class="pred-vs">vs</span>
+                <span class="pred-team pred-team--away">
+                  {% if locked %}
+                  <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
+                  {% else %}
+                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.away_team|e }}">
+                  {% endif %}
+                  <strong class="pred-team__name">{{ m.away_team|e }}</strong>
+                  {% set away_flag = m.away_team|team_flag %}
+                  {% if away_flag %}<span class="pred-team__flag" aria-hidden="true">{{ away_flag }}</span>{% endif %}
+                </span>
+              </span>
               {% else %}
               {% set forced_label = official_2026.get(m.match_number, row.match_label|default(row.slot_line)) %}
               <span class="pred-stage">{{ row.stage_title }}</span>
@@ -93,6 +113,17 @@
               {% if row.slot_subtitle %}
               <span class="pred-stage pred-stage--sub">{{ row.slot_subtitle }}</span>
               {% endif %}
+              <span class="pred-teams pred-teams--inline pred-teams--knockout">
+                {% if locked %}
+                <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
+                <span class="pred-vs">vs</span>
+                <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
+                {% else %}
+                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+                <span class="pred-vs">vs</span>
+                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+                {% endif %}
+              </span>
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.kickoff') }}">
@@ -100,20 +131,6 @@
               <time class="match-time" datetime="{{ m.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ m.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
               {% else %}
               —
-              {% endif %}
-            </td>
-            <td data-label="{{ t('pred.col.home') }}">
-              {% if locked %}
-              <span class="pred-readonly">{{ '' if row.home_score is none else row.home_score }}</span>
-              {% else %}
-              <input class="form__input form__input--num js-score-input" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
-              {% endif %}
-            </td>
-            <td data-label="{{ t('pred.col.away') }}">
-              {% if locked %}
-              <span class="pred-readonly">{{ '' if row.away_score is none else row.away_score }}</span>
-              {% else %}
-              <input class="form__input form__input--num js-score-input" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.result') }}">
@@ -141,7 +158,7 @@
             </td>
           </tr>
           <tr id="pred-detail-{{ m.id }}" class="pred-detail-row" hidden>
-            <td colspan="8">
+            <td colspan="6">
               <div class="pred-detail-panel">
                 <p><strong>{{ t("pred.detail.prediction") }}:</strong> {{ row.prediction_text }}</p>
                 <p><strong>{{ t("pred.detail.result") }}:</strong> {{ row.result_text }}</p>
