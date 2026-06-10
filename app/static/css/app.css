@@ -486,16 +486,18 @@ button.btn:disabled {
   flex-wrap: wrap;
 }
 
-.data-table .pred-team__flag {
-  font-family: "Segoe UI Emoji", "Segoe UI Symbol", "Apple Color Emoji", "Noto Color Emoji",
-    "Twemoji Mozilla", "EmojiOne Color", sans-serif;
-  font-size: 1.15rem;
-  line-height: 1;
-  display: inline-block;
+.flag-icon {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+  flex-shrink: 0;
   vertical-align: middle;
-  white-space: nowrap;
-  letter-spacing: 0;
-  word-break: keep-all;
+  display: inline-block;
+}
+
+.data-table .flag-icon {
+  align-self: center;
 }
 
 .data-table .pred-team__name {

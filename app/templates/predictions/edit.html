@@ -85,8 +85,8 @@
               <span class="pred-stage">{{ row.group_context }}</span>
               <span class="pred-teams pred-teams--inline">
                 <span class="pred-team pred-team--home">
-                  {% set home_flag = m.home_team|team_flag %}
-                  {% if home_flag %}<span class="pred-team__flag" aria-hidden="true">{{ home_flag }}</span>{% endif %}
+                  {% set home_flag_src = m.home_team|team_flag_src %}
+                  {% if home_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=home_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
                   <strong class="pred-team__name">{{ m.home_team|e }}</strong>
                   {% if locked %}
                   <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
@@ -102,8 +102,8 @@
                   <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.away_team|e }}">
                   {% endif %}
                   <strong class="pred-team__name">{{ m.away_team|e }}</strong>
-                  {% set away_flag = m.away_team|team_flag %}
-                  {% if away_flag %}<span class="pred-team__flag" aria-hidden="true">{{ away_flag }}</span>{% endif %}
+                  {% set away_flag_src = m.away_team|team_flag_src %}
+                  {% if away_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=away_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
                 </span>
               </span>
               {% else %}

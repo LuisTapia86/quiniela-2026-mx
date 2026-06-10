@@ -333,11 +333,11 @@ def create_app(config_object: type = Config) -> Flask:
     def _mx_local_datetime_filter(dt):
         return format_mexico_local(dt, get_lang())
 
-    from app.team_flags import team_flag as _team_flag
+    from app.team_flags import team_flag_static_path as _team_flag_static_path
 
-    @app.template_filter("team_flag")
-    def _team_flag_filter(team_name):
-        return _team_flag(team_name)
+    @app.template_filter("team_flag_src")
+    def _team_flag_src_filter(team_name):
+        return _team_flag_static_path(team_name)
 
     @app.context_processor
     def _inject_current_user() -> dict:
