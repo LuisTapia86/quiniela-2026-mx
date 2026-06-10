@@ -88,8 +88,21 @@ def _ensure_user_display_name_column() -> None:
     cols = {c["name"] for c in inspector.get_columns("users")}
     if "display_name" in cols:
         return
-    db.session.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(40)"))
+    db.session.execute(text("ALTER TABLE users ADD COLUMN display_name VARCHAR(50)"))
     db.session.commit()
+
+
+def _ensure_user_display_name_width() -> None:
+    inspector = inspect(db.engine)
+    cols = {c["name"]: c for c in inspector.get_columns("users")}
+    if "display_name" not in cols:
+        return
+    col_type = str(cols["display_name"].get("type", "")).lower()
+    if "50" in col_type:
+        return
+    if db.engine.dialect.name == "postgresql":
+        db.session.execute(text("ALTER TABLE users ALTER COLUMN display_name TYPE VARCHAR(50)"))
+        db.session.commit()
 
 
 def _ensure_user_email_verification_columns() -> None:
@@ -350,6 +363,7 @@ def create_app(config_object: type = Config) -> Flask:
     with app.app_context():
         db.create_all()
         _ensure_user_display_name_column()
+        _ensure_user_display_name_width()
         _ensure_user_email_verification_columns()
         _ensure_user_password_reset_columns()
         _ensure_user_must_change_password_column()

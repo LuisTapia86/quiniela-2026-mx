@@ -25,7 +25,7 @@
       </a>
       <div class="nav__right">
         {% if current_user %}
-        <span class="nav__user">{{ current_user.display_name or t("nav.user_fallback") }}</span>
+        <span class="nav__user">{{ (current_user.display_name or t("nav.user_fallback"))|e }}</span>
         <a class="nav__btn" href="{{ url_for('auth.logout') }}">{{ t("nav.logout") }}</a>
         {% endif %}
         <span class="nav__lang">

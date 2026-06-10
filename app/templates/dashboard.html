@@ -5,7 +5,7 @@
 <section class="card dash" aria-labelledby="dash-title">
   <p class="dash__badge">{{ t("dashboard.phase") }}</p>
   <h1 id="dash-title">{{ t("dashboard.panel") }}</h1>
-  <p>{{ t("dashboard.hello") }}, <strong>{{ current_user.display_name or t("dashboard.no_alias") }}</strong>.</p>
+  <p>{{ t("dashboard.hello") }}, <strong>{{ (current_user.display_name or t("dashboard.no_alias"))|e }}</strong>.</p>
   <p class="form__hint">{{ t("dashboard.account_email") }} <strong>{{ current_user.email }}</strong></p>
   {% if needs_display_name %}
   <div class="empty-state" style="margin-top: 0.75rem;">

@@ -37,7 +37,8 @@ def _allow_dev_secret_auth_links() -> bool:
     return flask_debug_truthy() and not transactional_email_configured()
 
 
-_DISPLAY_NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{3,40}$")
+_DISPLAY_NAME_MIN_LEN = 2
+_DISPLAY_NAME_MAX_LEN = 50
 _ADMIN_SESSION_TIMEOUT_SECONDS = 30 * 60
 _PASSWORD_RESET_MAX_AGE = timedelta(hours=1)
 _RESET_PASSWORD_MIN_LEN = 8
@@ -138,17 +139,17 @@ def _is_safe_redirect(target: str) -> bool:
 
 
 def _normalize_display_name(raw: str | None) -> str:
-    return " ".join((raw or "").strip().split())
+    return (raw or "").strip()
 
 
 def _validate_display_name(raw: str | None) -> tuple[bool, str]:
     value = _normalize_display_name(raw)
     if not value:
         return False, tr("flash.auth.alias_required")
-    if not _DISPLAY_NAME_RE.fullmatch(value):
-        return False, tr("flash.auth.alias_invalid")
-    if "@" in value or _EMAIL_RE.match(value):
-        return False, tr("flash.auth.alias_no_email")
+    if len(value) < _DISPLAY_NAME_MIN_LEN:
+        return False, tr("flash.auth.alias_invalid", min=_DISPLAY_NAME_MIN_LEN, max=_DISPLAY_NAME_MAX_LEN)
+    if len(value) > _DISPLAY_NAME_MAX_LEN:
+        return False, tr("flash.auth.alias_invalid", min=_DISPLAY_NAME_MIN_LEN, max=_DISPLAY_NAME_MAX_LEN)
     return True, value
 
 
