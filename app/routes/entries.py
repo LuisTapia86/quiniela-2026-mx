@@ -416,9 +416,33 @@ def predictions(entry_id: int):
     by_match_id: dict[int, Prediction] = {p.match_id: p for p in preds}
 
     if request.method == "POST" and not locked:
-        if _save_predictions(entry, matches):
+        form_field_count = len(request.form)
+        current_app.logger.info(
+            "predictions_save_attempt entry_id=%s user_id=%s matches=%s form_fields=%s ua=%s",
+            entry.id,
+            user.id,
+            len(matches),
+            form_field_count,
+            (request.user_agent.string or "")[:120],
+        )
+        saved, save_error = _save_predictions(entry, matches)
+        if saved:
+            current_app.logger.info(
+                "predictions_save_success entry_id=%s user_id=%s",
+                entry.id,
+                user.id,
+            )
             flash(tr("flash.predictions.saved"), "ok")
-            return redirect(url_for("entries.predictions", entry_id=entry.id))
+            return redirect(url_for("entries.predictions", entry_id=entry.id, saved=1))
+        current_app.logger.warning(
+            "predictions_save_failed entry_id=%s user_id=%s error=%s form_fields=%s",
+            entry.id,
+            user.id,
+            save_error or "unknown",
+            form_field_count,
+        )
+        if save_error:
+            flash(save_error, "error")
         by_match_id = {
             p.match_id: p
             for p in list(
@@ -432,6 +456,7 @@ def predictions(entry_id: int):
             matches,
             by_match_id,
             locked=locked,
+            save_feedback=save_error,
         )
 
     if request.method == "POST" and locked:
@@ -443,8 +468,11 @@ def predictions(entry_id: int):
 def _parse_score(val: str | None) -> int | None:
     if val is None or (isinstance(val, str) and val.strip() == ""):
         return None
+    raw = str(val).strip()
+    if "." in raw:
+        raw = raw.split(".", 1)[0]
     try:
-        n = int(str(val).strip())
+        n = int(raw)
     except ValueError:
         return None
     if n < 0:
@@ -452,7 +480,7 @@ def _parse_score(val: str | None) -> int | None:
     return n
 
 
-def _save_predictions(entry: Entry, matches: list[Match]) -> bool:
+def _save_predictions(entry: Entry, matches: list[Match]) -> tuple[bool, str | None]:
     parsed: list[tuple[Match, int, int]] = []
     for m in matches:
         raw_h = (request.form.get(f"home_{m.id}") or "").strip()
@@ -460,13 +488,16 @@ def _save_predictions(entry: Entry, matches: list[Match]) -> bool:
         if raw_h == "" and raw_a == "":
             continue
         if raw_h == "" or raw_a == "":
-            flash(tr("flash.predictions.complete_pair"), "error")
-            return False
+            return False, tr("flash.predictions.complete_pair")
         h, a = _parse_score(raw_h), _parse_score(raw_a)
         if h is None or a is None:
-            flash(tr("flash.predictions.integer_goals"), "error")
-            return False
+            return False, tr("flash.predictions.integer_goals")
         parsed.append((m, h, a))
+    current_app.logger.info(
+        "predictions_save_parsed entry_id=%s parsed_count=%s",
+        entry.id,
+        len(parsed),
+    )
     for m, h, a in parsed:
         pred = (
             db.session.execute(
@@ -495,7 +526,7 @@ def _save_predictions(entry: Entry, matches: list[Match]) -> bool:
     except Exception:  # pragma: no cover
         db.session.rollback()
         raise
-    return True
+    return True, None
 
 
 def _render_predictions(
@@ -504,6 +535,7 @@ def _render_predictions(
     by_match_id: dict[int, Prediction],
     *,
     locked: bool,
+    save_feedback: str | None = None,
 ):
     rows: list[dict] = []
     completed_predictions = 0
@@ -601,4 +633,6 @@ def _render_predictions(
         locked=locked,
         completed_predictions=completed_predictions,
         total_matches=len(matches),
+        save_feedback=save_feedback,
+        saved_banner=request.args.get("saved") == "1",
     )

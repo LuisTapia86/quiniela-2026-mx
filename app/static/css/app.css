@@ -406,8 +406,62 @@ button.btn:disabled {
 
 .pred-form__save {
   width: 100%;
-  max-width: 20rem;
   margin-top: 1.25rem;
+}
+
+.pred-save-reminder {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  color: var(--text);
+  background: rgba(250, 204, 21, 0.1);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+}
+
+.pred-save-feedback {
+  margin: 0 0 0.65rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pred-save-feedback--prominent {
+  font-size: 1.05rem;
+  padding: 0.9rem 1rem;
+  box-shadow: 0 4px 24px rgba(74, 222, 128, 0.3);
+  animation: pred-save-pulse 1.5s ease-in-out 4;
+}
+
+@keyframes pred-save-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.015);
+  }
+}
+
+.pred-save-feedback--ok {
+  background: rgba(74, 222, 128, 0.12);
+  color: var(--ok);
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+.pred-save-feedback--error {
+  background: rgba(248, 113, 113, 0.12);
+  color: var(--error);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.sticky-save-wrap .pred-save-feedback {
+  width: 100%;
+}
+
+.sticky-save-wrap .pred-form__save {
+  margin-top: 0;
 }
 
 .table-wrap {
@@ -891,9 +945,13 @@ ol.pay-steps {
 .sticky-save-wrap {
   position: sticky;
   bottom: 0;
+  z-index: 20;
   background: linear-gradient(to top, rgba(15, 23, 42, 0.98), rgba(15, 23, 42, 0.7));
   padding-top: 0.55rem;
+  padding-bottom: max(0.85rem, env(safe-area-inset-bottom, 0px));
   margin-top: 0.7rem;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
 .pred-detail-row td {
@@ -1789,4 +1847,175 @@ dialog.admin-modal::backdrop {
 .entry-rename-open {
   font-size: 0.85rem;
   padding: 0.15rem 0.55rem;
+}
+
+.pred-actions {
+  margin: 0.5rem 0 0.75rem;
+}
+
+.pred-print-btn {
+  font-size: 0.95rem;
+}
+
+.print-only {
+  display: none;
+}
+
+/* —— Print: predictions bracket —— */
+@media print {
+  @page {
+    margin: 1.2cm;
+    size: auto;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10pt;
+    line-height: 1.35;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  .no-print,
+  .nav,
+  .nav--app,
+  .nav--public,
+  .app-sidebar,
+  .site-footer,
+  .flash,
+  .sticky-save-wrap,
+  .pred-save-reminder,
+  .pred-actions,
+  .entry-page-head,
+  .entry-rename-wrap,
+  .entry-rename-modal,
+  dialog {
+    display: none !important;
+  }
+
+  .app-layout {
+    display: block !important;
+  }
+
+  .container,
+  .container--app {
+    max-width: none !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .card {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+  }
+
+  .pred-print-header {
+    margin: 0 0 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #000;
+  }
+
+  .pred-print-header__title {
+    margin: 0 0 0.5rem;
+    font-size: 14pt;
+    font-weight: 700;
+  }
+
+  .pred-print-header__line {
+    margin: 0.2rem 0;
+    font-size: 10pt;
+  }
+
+  .table-wrap {
+    overflow: visible !important;
+    margin: 0 !important;
+  }
+
+  .data-table {
+    width: 100%;
+    min-width: 0;
+    font-size: 9pt;
+    border-collapse: collapse;
+    page-break-inside: auto;
+  }
+
+  .data-table th,
+  .data-table td {
+    border: 1px solid #333;
+    padding: 0.35rem 0.4rem;
+    color: #000 !important;
+    background: #fff !important;
+    vertical-align: top;
+  }
+
+  .data-table thead th {
+    background: #eee !important;
+    font-weight: 700;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .data-table tbody tr {
+    page-break-inside: avoid;
+  }
+
+  .pred-date-separator td {
+    background: #f5f5f5 !important;
+    font-weight: 700;
+    border-top: 2px solid #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .pred-stage {
+    display: block;
+    font-size: 8pt;
+    font-weight: 600;
+    color: #333 !important;
+  }
+
+  .pred-team__name {
+    color: #000 !important;
+  }
+
+  .pred-vs {
+    color: #444 !important;
+    margin: 0 0.2rem;
+  }
+
+  .flag-icon {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .js-score-input,
+  .pred-readonly.pred-team__score {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #000 !important;
+    font-weight: 700;
+    font-size: inherit;
+    padding: 0 !important;
+    margin: 0 0.15rem !important;
+    width: auto !important;
+    min-width: 0 !important;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .form__input--num {
+    max-width: none;
+  }
+
+  a {
+    color: #000 !important;
+    text-decoration: none !important;
+  }
 }

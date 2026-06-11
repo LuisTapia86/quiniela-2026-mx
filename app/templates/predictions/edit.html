@@ -7,17 +7,29 @@
     <h1 class="card__title">{{ t("pred.heading") }}: {{ entry_title(entry)|e }}</h1>
     {{ entry_rename(entry, url_for('entries.rename_entry', entry_id=entry.id)) }}
   </div>
-  <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">
+  {% if rows|length > 0 %}
+  <div class="pred-actions no-print">
+    <button type="button" class="btn pred-print-btn" onclick="window.print()">{{ t("pred.print") }}</button>
+  </div>
+  <div class="pred-print-header print-only" aria-hidden="true">
+    <h1 class="pred-print-header__title">{{ config.BRAND_NAME }}</h1>
+    <p class="pred-print-header__line"><strong>{{ t("pred.print.entry") }}:</strong> {{ entry_title(entry)|e }}</p>
+    <p class="pred-print-header__line"><strong>{{ t("pred.print.user") }}:</strong> {{ (current_user.display_name or current_user.email)|e }}</p>
+    <p class="pred-print-header__line"><strong>{{ t("pred.print.date") }}:</strong> <span class="js-print-date"></span></p>
+    <p class="pred-print-header__line">{{ t("pred.progress") }}: {{ completed_predictions }}/{{ total_matches }} {{ t("pred.matches_captured") }}</p>
+  </div>
+  {% endif %}
+  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">
     {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
   </p>
   {% if locked %}
-  <p class="lock-banner" role="status">{{ t("pred.locked_readonly") }}</p>
+  <p class="lock-banner no-print" role="status">{{ t("pred.locked_readonly") }}</p>
   {% else %}
-  <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
+  <p class="form__hint no-print" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
-  <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">{{ t("rules.lock_stages") }}</p>
-  <p class="form__hint" style="margin: -0.5rem 0 0.75rem;">{{ t("common.stages_simple") }}</p>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
+  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("rules.lock_stages") }}</p>
+  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("common.stages_simple") }}</p>
+  <p class="form__hint no-print" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
 
   {% if rows|length == 0 %}
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
@@ -56,7 +68,10 @@
     103: "Perdedor partido 101 vs Perdedor partido 102",
     104: "Ganador partido 101 vs Ganador partido 102"
   } %}
-  <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}">
+  {% if not locked %}
+  <p class="pred-save-reminder" role="note">{{ t("pred.save_reminder") }}</p>
+  {% endif %}
+  <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}" novalidate>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
       <table class="data-table" role="grid" aria-label="{{ t('pred.table_aria') }}">
@@ -67,7 +82,7 @@
             <th scope="col">{{ t("pred.col.kickoff") }}</th>
             <th scope="col">{{ t("pred.col.result") }}</th>
             <th scope="col">{{ t("pred.col.points") }}</th>
-            <th scope="col">{{ t("pred.col.detail") }}</th>
+            <th scope="col" class="pred-col-detail no-print">{{ t("pred.col.detail") }}</th>
           </tr>
         </thead>
         <tbody>
@@ -91,7 +106,7 @@
                   {% if locked %}
                   <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
                   {% else %}
-                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.home_team|e }}">
+                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.home_team|e }}">
                   {% endif %}
                 </span>
                 <span class="pred-vs">vs</span>
@@ -99,7 +114,7 @@
                   {% if locked %}
                   <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
                   {% else %}
-                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.away_team|e }}">
+                  <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.away_team|e }}">
                   {% endif %}
                   <strong class="pred-team__name">{{ m.away_team|e }}</strong>
                   {% set away_flag_src = m.away_team|team_flag_src %}
@@ -119,9 +134,9 @@
                 <span class="pred-vs">vs</span>
                 <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
                 {% else %}
-                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
                 <span class="pred-vs">vs</span>
-                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" pattern="[0-9]*" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
+                <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
                 {% endif %}
               </span>
               {% endif %}
@@ -147,7 +162,7 @@
               <strong>{{ row.points_earned }}</strong>
               {% endif %}
             </td>
-            <td data-label="{{ t('pred.col.detail') }}">
+            <td class="pred-col-detail no-print" data-label="{{ t('pred.col.detail') }}">
               <button class="btn btn--sm pred-detail-btn" type="button"
                 data-open-text="{{ t('pred.view_detail') }}"
                 data-close-text="{{ t('pred.hide_detail') }}"
@@ -157,7 +172,7 @@
               </button>
             </td>
           </tr>
-          <tr id="pred-detail-{{ m.id }}" class="pred-detail-row" hidden>
+          <tr id="pred-detail-{{ m.id }}" class="pred-detail-row no-print" hidden>
             <td colspan="6">
               <div class="pred-detail-panel">
                 <p><strong>{{ t("pred.detail.prediction") }}:</strong> {{ row.prediction_text }}</p>
@@ -185,16 +200,21 @@
       </table>
     </div>
     {% if not locked %}
-    <div class="sticky-save-wrap">
+    <div class="sticky-save-wrap" id="pred-sticky-save">
+      {% if saved_banner %}
+      <p class="pred-save-feedback pred-save-feedback--ok js-pred-save-success" role="status" aria-live="polite">{{ t("pred.saved_success") }}</p>
+      {% elif save_feedback %}
+      <p class="pred-save-feedback pred-save-feedback--error" role="alert">{{ save_feedback }}</p>
+      {% endif %}
       <button class="form__submit pred-form__save" type="submit">{{ t("pred.save") }}</button>
     </div>
     {% endif %}
   </form>
   {% if locked %}
-  <p class="card__footer">{{ t("pred.locked_footer") }}</p>
+  <p class="card__footer no-print">{{ t("pred.locked_footer") }}</p>
   {% endif %}
   {% endif %}
-  <p class="card__footer"><a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a></p>
+  <p class="card__footer no-print"><a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a></p>
 </section>
 <script>
   document.querySelectorAll('.pred-detail-btn').forEach(function (btn) {
@@ -208,11 +228,76 @@
       row.hidden = isOpen;
     });
   });
-  document.querySelectorAll('.js-score-input').forEach(function (input) {
-    input.addEventListener('focus', function () {
-      if (input.value === '0' && input.dataset.existingPrediction !== '1') {
-        input.value = '';
+
+  (function () {
+    var form = document.querySelector('.pred-form');
+    if (!form) return;
+
+    var leaveWarning = {{ t("pred.unsaved_leave_warning")|tojson }};
+    var inputs = form.querySelectorAll('.js-score-input');
+    var dirty = false;
+    var submitting = false;
+
+    function normalizedVal(input) {
+      return (input.value || '').trim();
+    }
+
+    function checkDirty() {
+      dirty = false;
+      inputs.forEach(function (input) {
+        if (normalizedVal(input) !== (input.dataset.initialValue || '')) {
+          dirty = true;
+        }
+      });
+    }
+
+    inputs.forEach(function (input) {
+      input.dataset.initialValue = normalizedVal(input);
+      input.addEventListener('input', checkDirty);
+      input.addEventListener('change', checkDirty);
+      input.addEventListener('focus', function () {
+        if (input.value === '0' && input.dataset.existingPrediction !== '1') {
+          input.value = '';
+        }
+      });
+    });
+
+    form.addEventListener('submit', function () {
+      submitting = true;
+      dirty = false;
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+      if (submitting || !dirty) return;
+      e.preventDefault();
+      e.returnValue = leaveWarning;
+      return leaveWarning;
+    });
+
+    var successEl = document.querySelector('.js-pred-save-success');
+    if (successEl) {
+      successEl.classList.add('pred-save-feedback--prominent');
+      inputs.forEach(function (input) {
+        input.dataset.initialValue = normalizedVal(input);
+      });
+      dirty = false;
+      var sticky = document.getElementById('pred-sticky-save');
+      if (sticky && sticky.scrollIntoView) {
+        sticky.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
+      window.setTimeout(function () {
+        successEl.classList.remove('pred-save-feedback--prominent');
+      }, 8000);
+    }
+  })();
+
+  window.addEventListener('beforeprint', function () {
+    var el = document.querySelector('.js-print-date');
+    if (!el) return;
+    var locale = {{ lang|tojson }} === 'en' ? 'en-US' : 'es-MX';
+    el.textContent = new Date().toLocaleString(locale, {
+      dateStyle: 'long',
+      timeStyle: 'short'
     });
   });
 </script>
