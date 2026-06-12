@@ -47,7 +47,13 @@ from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_path, import_matches_from_reader
 from app.dev_tools import flask_debug_truthy
 from app.entry_names import validate_entry_display_name
-from app.payment_proofs import PaymentProofError, save_payment_proof
+from app.payment_proofs import (
+    PaymentProofError,
+    payment_proof_mimetype,
+    payment_proofs_folder,
+    resolve_payment_proof_path,
+    save_payment_proof,
+)
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
@@ -907,22 +913,48 @@ def void_entry(entry_id: int):
     )
 
 
-@bp.get("/admin/payments/<int:payment_id>/proof")
+@bp.route("/admin/payments/<int:payment_id>/proof", methods=["GET"])
 @login_required
 def payment_proof(payment_id: int):
     _require_admin()
     p = db.session.get(Payment, payment_id)
     if p is None or not p.proof_stored_path:
-        abort(404)
-    base = Path(current_app.config["PAYMENT_PROOFS_FOLDER"]).resolve()
-    try:
-        target = (base / p.proof_stored_path).resolve()
-        target.relative_to(base)
-    except ValueError:
-        abort(404)
-    if not target.is_file():
-        abort(404)
-    return send_file(target, as_attachment=False, download_name=p.proof_stored_path)
+        current_app.logger.warning(
+            "payment_proof_not_found payment_id=%s reason=no_payment_or_path",
+            payment_id,
+        )
+        return (
+            render_template(
+                "admin/proof_not_found.html",
+                message=tr("admin.payments.proof_not_found"),
+            ),
+            404,
+        )
+
+    target = resolve_payment_proof_path(p.proof_stored_path)
+    if target is None:
+        current_app.logger.warning(
+            "payment_proof_missing payment_id=%s entry_id=%s stored=%s folder=%s",
+            p.id,
+            p.entry_id,
+            p.proof_stored_path,
+            str(payment_proofs_folder()),
+        )
+        return (
+            render_template(
+                "admin/proof_not_found.html",
+                message=tr("admin.payments.proof_not_found"),
+            ),
+            404,
+        )
+
+    mimetype = payment_proof_mimetype(p.proof_stored_path)
+    return send_file(
+        target,
+        mimetype=mimetype,
+        as_attachment=False,
+        download_name=Path(p.proof_stored_path).name,
+    )
 
 
 @bp.get("/admin/seed-matches")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import mimetypes
 import secrets
 from pathlib import Path
 
@@ -14,6 +15,42 @@ class PaymentProofError(Exception):
     def __init__(self, message_key: str, **format_kwargs: object) -> None:
         self.message_key = message_key
         self.format_kwargs = format_kwargs
+
+
+def payment_proofs_folder() -> Path:
+    return Path(current_app.config["PAYMENT_PROOFS_FOLDER"]).resolve()
+
+
+def resolve_payment_proof_path(stored_path: str | None) -> Path | None:
+    """Return absolute path to a stored proof file, or None if invalid / missing."""
+    if not stored_path or not str(stored_path).strip():
+        return None
+    safe_name = Path(stored_path).name
+    if not safe_name or safe_name in {".", ".."}:
+        return None
+    base = payment_proofs_folder()
+    try:
+        target = (base / safe_name).resolve()
+        target.relative_to(base)
+    except ValueError:
+        return None
+    if not target.is_file():
+        return None
+    return target
+
+
+def payment_proof_mimetype(stored_path: str) -> str | None:
+    ext = Path(stored_path).suffix.lower()
+    explicit = {
+        ".pdf": "application/pdf",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+    }
+    if ext in explicit:
+        return explicit[ext]
+    guessed, _ = mimetypes.guess_type(stored_path)
+    return guessed
 
 
 def entry_fee_mxn() -> int:
@@ -74,7 +111,7 @@ def save_payment_proof(
         )
 
     store_name = f"{entry.id}_{secrets.token_hex(6)}.{ext}"
-    dest_dir = Path(current_app.config["PAYMENT_PROOFS_FOLDER"])
+    dest_dir = payment_proofs_folder()
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest_path = dest_dir / store_name
 

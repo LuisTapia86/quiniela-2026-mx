@@ -70,7 +70,7 @@
           </td>
           <td class="admin-proof-cell">
             {% if payment and payment.proof_stored_path %}
-            <a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}">{{ payment.proof_stored_path|e }}</a>
+            <a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}" target="_blank" rel="noopener">{{ payment.proof_stored_path|e }}</a>
             {% else %}
             <span class="form__hint">{{ t("admin.payments.no_proof") }}</span>
             {% endif %}

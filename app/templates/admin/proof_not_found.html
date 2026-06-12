@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ message }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ message }}</h1>
+  <p class="form__hint">{{ t("admin.payments.proof_not_found_hint") }}</p>
+  <p class="card__footer"><a href="{{ url_for('admin.payments') }}">{{ t("title.admin_payments") }}</a></p>
+</section>
+{% endblock %}
