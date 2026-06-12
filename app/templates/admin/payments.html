@@ -68,7 +68,20 @@
             {% set pay_status = payment.status.value if payment else 'pending' %}
             <span class="entry-pay-badge entry-pay-badge--{{ pay_status }}">{{ pay_status }}</span>
           </td>
-          <td>{% if payment and payment.proof_stored_path %}<a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}">{{ payment.proof_stored_path|e }}</a>{% else %}{{ t("admin.payments.no_proof") }}{% endif %}</td>
+          <td class="admin-proof-cell">
+            {% if payment and payment.proof_stored_path %}
+            <a href="{{ url_for('admin.payment_proof', payment_id=payment.id) }}">{{ payment.proof_stored_path|e }}</a>
+            {% else %}
+            <span class="form__hint">{{ t("admin.payments.no_proof") }}</span>
+            {% endif %}
+            {% if entry.status.value == 'ACTIVE' %}
+            <form method="post" action="{{ url_for('admin.entry_upload_proof', entry_id=entry.id, status=current_status, q=q) }}" enctype="multipart/form-data" class="admin-inline-form admin-proof-upload" data-has-proof="{{ 1 if payment and payment.proof_stored_path else 0 }}" onsubmit="return adminProofUploadConfirm(this)">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input class="form__input" type="file" name="proof" accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf" required>
+              <button type="submit" class="btn btn--sm">{{ t("admin.payments.upload_proof") }}</button>
+            </form>
+            {% endif %}
+          </td>
           <td class="pay-cell-date">{% if payment %}{{ payment.created_at|mx_local }}{% else %}{{ entry.created_at|mx_local }}{% endif %}</td>
           <td class="admin-pay-actions">
             {{ entry_rename(entry, url_for('admin.rename_entry', entry_id=entry.id)) }}
@@ -104,4 +117,16 @@
     · <a href="{{ url_for('admin.results') }}">{{ t("admin.load_results") }}</a>
   </p>
 </section>
+<script>
+  function adminProofUploadConfirm(form) {
+    var input = form.querySelector('input[type="file"]');
+    if (!input || !input.files || !input.files.length) {
+      return false;
+    }
+    if (form.dataset.hasProof !== '1') {
+      return true;
+    }
+    return confirm({{ t("admin.payments.replace_confirm")|tojson }});
+  }
+</script>
 {% endblock %}

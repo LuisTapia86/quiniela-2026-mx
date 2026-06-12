@@ -822,6 +822,22 @@ button.btn:disabled {
   min-width: 10rem;
 }
 
+.admin-proof-cell {
+  min-width: 11rem;
+  vertical-align: top;
+}
+
+.admin-proof-upload {
+  margin-top: 0.45rem;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.admin-proof-upload .form__input {
+  max-width: 100%;
+  font-size: 0.8rem;
+}
+
 .admin-inline-form {
   display: flex;
   flex-wrap: wrap;

@@ -47,6 +47,7 @@ from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_path, import_matches_from_reader
 from app.dev_tools import flask_debug_truthy
 from app.entry_names import validate_entry_display_name
+from app.payment_proofs import PaymentProofError, save_payment_proof
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.services.scoring import recalculate_all_points
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
@@ -770,6 +771,45 @@ def rename_entry(entry_id: int):
     if next_url.startswith("/") and not next_url.startswith("//"):
         return redirect(next_url)
     return redirect(url_for("admin.payments"))
+
+
+@bp.post("/admin/entries/<int:entry_id>/upload-proof")
+@login_required
+def entry_upload_proof(entry_id: int):
+    _require_admin()
+    status = _safe_status(request.args.get("status"))
+    q = (request.args.get("q") or "").strip()
+    entry = db.session.get(Entry, entry_id)
+    if entry is None:
+        abort(404)
+    if entry.status != EntryStatus.ACTIVE:
+        flash(tr("flash.admin.cannot_approve_inactive_entry"), "error")
+        return redirect(url_for("admin.payments", status=status, q=q))
+
+    admin_user = get_current_user()
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
+    uploaded = request.files.get("proof")
+    try:
+        payment, created = save_payment_proof(
+            entry,
+            payment,
+            uploaded,
+            user_id=entry.user_id,
+        )
+    except PaymentProofError as err:
+        flash(tr(err.message_key, **err.format_kwargs), "error")
+        return redirect(url_for("admin.payments", status=status, q=q))
+
+    if created:
+        db.session.add(payment)
+    db.session.commit()
+    current_app.logger.info(
+        "Admin uploaded receipt for entry #%s admin_user_id=%s",
+        entry.id,
+        admin_user.id if admin_user else None,
+    )
+    flash(tr("flash.admin.proof_uploaded", entry_id=entry.id), "ok")
+    return redirect(url_for("admin.payments", status=status, q=q))
 
 
 @bp.post("/admin/entries/<int:entry_id>/approve-payment")

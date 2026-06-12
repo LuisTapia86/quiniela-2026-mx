@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import secrets
 import re
-from pathlib import Path
 
 from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, url_for
 from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
-from werkzeug.utils import secure_filename
 
 from app import db
 from app.models import (
@@ -24,6 +21,7 @@ from app.models import (
 )
 from app.entry_names import validate_entry_display_name
 from app.payment_gating import is_payment_banking_configured
+from app.payment_proofs import PaymentProofError, create_pending_payment, save_payment_proof
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
 from app.tournament_stages import select_visible_matches
@@ -37,12 +35,7 @@ def _entry_fee_mxn() -> int:
 
 
 def _create_pending_payment(entry: Entry, user_id: int) -> Payment:
-    return Payment(
-        user_id=user_id,
-        entry_id=entry.id,
-        amount_mxn=_entry_fee_mxn(),
-        status=PaymentStatus.PENDING,
-    )
+    return create_pending_payment(entry, user_id)
 
 
 
@@ -336,51 +329,13 @@ def entry_payment(entry_id: int):
                 db.session.commit()
             flash(tr("flash.payment.awaiting_admin"), "ok")
             return redirect(url_for("entries.entry_payment", entry_id=entry.id))
-        raw_name = secure_filename(f.filename)
-        if not raw_name or "." not in raw_name:
-            flash(tr("flash.payment.invalid_name"), "error")
-            return _payment_page()
-        ext = raw_name.rsplit(".", 1)[-1].lower()
-        allowed = current_app.config.get("ALLOWED_PAYMENT_EXTENSIONS", frozenset())
-        if ext not in allowed:
-            flash(
-                tr("flash.payment.invalid_format", allowed=", ".join(sorted(allowed))),
-                "error",
-            )
-            return _payment_page()
         try:
-            f.stream.seek(0, 2)
-            size_bytes = int(f.stream.tell())
-            f.stream.seek(0)
-        except Exception:
-            size_bytes = 0
-        max_bytes = int(current_app.config.get("MAX_CONTENT_LENGTH", 5 * 1024 * 1024))
-        if size_bytes > 0 and size_bytes > max_bytes:
-            flash(
-                tr("flash.payment.file_too_large", max_mb=max(1, max_bytes // (1024 * 1024))),
-                "error",
-            )
+            payment, created = save_payment_proof(entry, payment, f, user_id=user.id)
+        except PaymentProofError as err:
+            flash(tr(err.message_key, **err.format_kwargs), "error")
             return _payment_page()
-        store_name = f"{entry.id}_{secrets.token_hex(6)}.{ext}"
-        dest_dir = Path(current_app.config["PAYMENT_PROOFS_FOLDER"])
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        dest_path = dest_dir / store_name
-        if payment and payment.proof_stored_path:
-            old = dest_dir / payment.proof_stored_path
-            if old != dest_path and old.is_file():
-                try:
-                    old.unlink()
-                except OSError:
-                    pass
-        f.save(str(dest_path))
-        if payment is None:
-            payment = _create_pending_payment(entry, user.id)
-            payment.proof_stored_path = store_name
+        if created:
             db.session.add(payment)
-        else:
-            payment.proof_stored_path = store_name
-            payment.status = PaymentStatus.PENDING
-            payment.amount_mxn = _entry_fee_mxn()
         db.session.commit()
         flash(tr("flash.payment.received"), "ok")
         return redirect(url_for("entries.entry_payment", entry_id=entry.id))
