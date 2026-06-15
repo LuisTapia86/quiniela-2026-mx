@@ -56,7 +56,7 @@ from app.payment_proofs import (
 )
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.routes.entries import build_prediction_rows
-from app.services.scoring import recalculate_all_points
+from app.services.scoring import recalculate_all_points, summarize_prediction_audit
 from app.tournament_stages import select_visible_matches
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
@@ -806,6 +806,7 @@ def entry_predictions(entry_id: int):
     )
     by_match_id = {p.match_id: p for p in preds}
     rows, completed_predictions = build_prediction_rows(matches, by_match_id)
+    audit_summary = summarize_prediction_audit(rows)
 
     status = _safe_status(request.args.get("status"))
     q = (request.args.get("q") or "").strip()
@@ -818,6 +819,7 @@ def entry_predictions(entry_id: int):
         rows=rows,
         completed_predictions=completed_predictions,
         total_matches=len(matches),
+        audit_summary=audit_summary,
         back_payments_url=url_for("admin.payments", status=status, q=q),
     )
 

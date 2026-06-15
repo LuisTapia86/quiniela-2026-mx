@@ -866,6 +866,32 @@ button.btn:disabled {
   min-width: 10rem;
 }
 
+.admin-audit-summary {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(74, 222, 128, 0.25);
+  border-radius: var(--radius);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+.admin-audit-summary__total {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+}
+
+.admin-audit-summary__stats {
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  font-size: 0.9rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.25rem;
+}
+
+.admin-audit-table {
+  min-width: 42rem;
+}
+
 .admin-inline-form {
   display: flex;
   flex-wrap: wrap;

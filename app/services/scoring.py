@@ -70,6 +70,48 @@ def calculate_prediction_breakdown(
     }
 
 
+def summarize_prediction_audit(rows: list[dict]) -> dict:
+    """Aggregate per-match breakdown rows for admin audit (uses existing row data only)."""
+    total_points = 0
+    matches_with_result = 0
+    exact_count = 0
+    outcome_correct_count = 0
+    goal_diff_count = 0
+    zero_points_count = 0
+
+    for row in rows:
+        if row.get("result_pending") or not row.get("has_prediction"):
+            continue
+        matches_with_result += 1
+        pts = row.get("points_earned")
+        if pts is None:
+            continue
+        total_points += int(pts)
+        bd = row.get("breakdown")
+        if not bd:
+            if pts == 0:
+                zero_points_count += 1
+            continue
+        if bd.get("exact_score"):
+            exact_count += 1
+        elif bd.get("correct_outcome"):
+            outcome_correct_count += 1
+        codes = bd.get("reason_codes") or []
+        if "correct_goal_difference" in codes and not bd.get("exact_score"):
+            goal_diff_count += 1
+        if pts == 0:
+            zero_points_count += 1
+
+    return {
+        "total_points": total_points,
+        "matches_with_result": matches_with_result,
+        "exact_count": exact_count,
+        "outcome_correct_count": outcome_correct_count,
+        "goal_diff_count": goal_diff_count,
+        "zero_points_count": zero_points_count,
+    }
+
+
 def recalculate_entry_points(entry_id: int) -> int:
     entry = db.session.get(Entry, entry_id)
     if entry is None:
