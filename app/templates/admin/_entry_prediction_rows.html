@@ -1,0 +1,49 @@
+{% for row in rows %}
+{% set m = row.match %}
+{% if row.date_break|default(false) %}
+<tr class="pred-date-separator">
+  <td colspan="3">📅 {{ row.date_label }}</td>
+</tr>
+{% endif %}
+<tr>
+  <td data-label="#">{{ m.match_number }}</td>
+  <td data-label="{{ t('pred.col.match') }}">
+    {% if row.is_group_stage %}
+    <span class="pred-stage">{{ row.group_context }}</span>
+    <span class="pred-teams pred-teams--inline">
+      <span class="pred-team pred-team--home">
+        {% set home_flag_src = m.home_team|team_flag_src %}
+        {% if home_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=home_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
+        <strong class="pred-team__name">{{ m.home_team|e }}</strong>
+        <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
+      </span>
+      <span class="pred-vs">vs</span>
+      <span class="pred-team pred-team--away">
+        <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
+        <strong class="pred-team__name">{{ m.away_team|e }}</strong>
+        {% set away_flag_src = m.away_team|team_flag_src %}
+        {% if away_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=away_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
+      </span>
+    </span>
+    {% if not row.has_prediction %}
+    <span class="form__hint"> — {{ t("pred.detail.no_prediction") }}</span>
+    {% endif %}
+    {% else %}
+    <span class="pred-stage">{{ row.stage_title }}</span>
+    <span class="pred-teams"><strong>{{ row.match_label|e }}</strong></span>
+    <span class="pred-teams pred-teams--inline pred-teams--knockout">
+      <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
+      <span class="pred-vs">vs</span>
+      <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
+    </span>
+    {% endif %}
+  </td>
+  <td data-label="{{ t('pred.col.kickoff') }}">
+    {% if m.kickoff_at %}
+    <time class="match-time" datetime="{{ m.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ m.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
+    {% else %}
+    —
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}

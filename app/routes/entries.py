@@ -484,14 +484,10 @@ def _save_predictions(entry: Entry, matches: list[Match]) -> tuple[bool, str | N
     return True, None
 
 
-def _render_predictions(
-    entry: Entry,
+def build_prediction_rows(
     matches: list[Match],
     by_match_id: dict[int, Prediction],
-    *,
-    locked: bool,
-    save_feedback: str | None = None,
-):
+) -> tuple[list[dict], int]:
     rows: list[dict] = []
     completed_predictions = 0
     last_date_key: str | None = None
@@ -581,6 +577,18 @@ def _render_predictions(
                 "breakdown": breakdown,
             }
         )
+    return rows, completed_predictions
+
+
+def _render_predictions(
+    entry: Entry,
+    matches: list[Match],
+    by_match_id: dict[int, Prediction],
+    *,
+    locked: bool,
+    save_feedback: str | None = None,
+):
+    rows, completed_predictions = build_prediction_rows(matches, by_match_id)
     return render_template(
         "predictions/edit.html",
         entry=entry,

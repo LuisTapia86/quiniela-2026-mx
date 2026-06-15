@@ -55,7 +55,9 @@ from app.payment_proofs import (
     save_payment_proof,
 )
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
+from app.routes.entries import build_prediction_rows
 from app.services.scoring import recalculate_all_points
+from app.tournament_stages import select_visible_matches
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
 
@@ -777,6 +779,47 @@ def rename_entry(entry_id: int):
     if next_url.startswith("/") and not next_url.startswith("//"):
         return redirect(next_url)
     return redirect(url_for("admin.payments"))
+
+
+@bp.get("/admin/entries/<int:entry_id>/predictions")
+@login_required
+def entry_predictions(entry_id: int):
+    _require_admin()
+    entry = db.session.scalar(
+        select(Entry)
+        .where(Entry.id == entry_id)
+        .options(joinedload(Entry.user)),
+    )
+    if entry is None:
+        abort(404)
+
+    payment = db.session.scalar(select(Payment).where(Payment.entry_id == entry.id))
+    pay_status = payment.status.value if payment else "pending"
+
+    matches = list(
+        db.session.scalars(
+            select_visible_matches().options(joinedload(Match.result)),
+        ),
+    )
+    preds = list(
+        db.session.scalars(select(Prediction).where(Prediction.entry_id == entry.id)),
+    )
+    by_match_id = {p.match_id: p for p in preds}
+    rows, completed_predictions = build_prediction_rows(matches, by_match_id)
+
+    status = _safe_status(request.args.get("status"))
+    q = (request.args.get("q") or "").strip()
+
+    return render_template(
+        "admin/entry_predictions.html",
+        entry=entry,
+        payment=payment,
+        pay_status=pay_status,
+        rows=rows,
+        completed_predictions=completed_predictions,
+        total_matches=len(matches),
+        back_payments_url=url_for("admin.payments", status=status, q=q),
+    )
 
 
 @bp.post("/admin/entries/<int:entry_id>/upload-proof")

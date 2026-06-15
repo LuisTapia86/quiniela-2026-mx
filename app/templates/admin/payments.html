@@ -84,6 +84,7 @@
           </td>
           <td class="pay-cell-date">{% if payment %}{{ payment.created_at|mx_local }}{% else %}{{ entry.created_at|mx_local }}{% endif %}</td>
           <td class="admin-pay-actions">
+            <a class="btn btn--sm" href="{{ url_for('admin.entry_predictions', entry_id=entry.id, status=current_status, q=q) }}">{{ t("admin.entry_predictions.view_btn") }}</a>
             {{ entry_rename(entry, url_for('admin.rename_entry', entry_id=entry.id)) }}
             <form method="post" action="{{ url_for('admin.entry_approve_payment', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

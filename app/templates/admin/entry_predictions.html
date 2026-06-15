@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ t("admin.entry_predictions.title") }}: {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("admin.entry_predictions.title") }}</h1>
+  <p class="lock-banner" role="status">{{ t("admin.entry_predictions.readonly") }}</p>
+
+  <dl class="admin-entry-meta">
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("admin.entry_predictions.entry") }}</dt>
+      <dd><strong>{{ entry_title(entry)|e }}</strong> <span class="form__hint">#{{ entry.id }}</span></dd>
+    </div>
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("leaderboard.col.email") }}</dt>
+      <dd>{{ entry.user.email|e }}</dd>
+    </div>
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("admin.users.alias") }}</dt>
+      <dd>{{ (entry.user.display_name or "—")|e }}</dd>
+    </div>
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("admin.col.status") }}</dt>
+      <dd><span class="entry-pay-badge entry-pay-badge--{{ pay_status }}">{{ pay_status }}</span></dd>
+    </div>
+  </dl>
+
+  <p class="form__hint" style="margin: 0 0 1rem;">
+    {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
+  </p>
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("common.local_time_note") }}</p>
+
+  {% if rows|length == 0 %}
+  <p class="form__hint">{{ t("pred.no_matches") }}</p>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data-table" role="grid" aria-label="{{ t('admin.entry_predictions.table_aria') }}">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">{{ t("pred.col.match") }}</th>
+          <th scope="col">{{ t("pred.col.kickoff") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% include "admin/_entry_prediction_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <p class="card__footer">
+    <a href="{{ back_payments_url }}">{{ t("admin.entry_predictions.back_payments") }}</a>
+    · <a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a>
+  </p>
+</section>
+{% endblock %}

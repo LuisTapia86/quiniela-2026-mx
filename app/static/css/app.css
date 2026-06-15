@@ -838,6 +838,34 @@ button.btn:disabled {
   font-size: 0.8rem;
 }
 
+.admin-entry-meta {
+  margin: 0 0 1.25rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #334155;
+  border-radius: var(--radius);
+  background: rgba(15, 23, 42, 0.35);
+}
+
+.admin-entry-meta__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  margin: 0.35rem 0;
+}
+
+.admin-entry-meta__row dt {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  min-width: 6.5rem;
+}
+
+.admin-entry-meta__row dd {
+  margin: 0;
+  flex: 1;
+  min-width: 10rem;
+}
+
 .admin-inline-form {
   display: flex;
   flex-wrap: wrap;
