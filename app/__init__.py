@@ -195,6 +195,15 @@ def _ensure_match_group_name_column() -> None:
     db.session.commit()
 
 
+def _ensure_penalty_winner_columns() -> None:
+    for table in ("predictions", "results"):
+        cols = {c["name"] for c in inspect(db.engine).get_columns(table)}
+        if "penalty_winner" in cols:
+            continue
+        db.session.execute(text(f"ALTER TABLE {table} ADD COLUMN penalty_winner VARCHAR(100)"))
+        db.session.commit()
+
+
 def _entry_table_column_names() -> set[str]:
     return {c["name"] for c in inspect(db.engine).get_columns("entries")}
 
@@ -374,6 +383,7 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_user_password_reset_columns()
         _ensure_user_must_change_password_column()
         _ensure_match_group_name_column()
+        _ensure_penalty_winner_columns()
         _ensure_entry_table_columns()
         _backfill_entry_number_and_alias()
         _admin_bootstrap_from_env(app)

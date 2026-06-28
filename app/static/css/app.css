@@ -532,6 +532,32 @@ button.btn:disabled {
   margin-top: 0.35rem;
 }
 
+.pred-penalty {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.pred-penalty__label {
+  font-size: 0.85rem;
+  color: var(--muted, #666);
+}
+
+.pred-penalty__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.pred-penalty__choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
 .data-table .pred-team--home,
 .data-table .pred-team--away {
   display: inline-flex;

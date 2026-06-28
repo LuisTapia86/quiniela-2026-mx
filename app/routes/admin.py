@@ -55,9 +55,9 @@ from app.payment_proofs import (
     save_payment_proof,
 )
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
-from app.routes.entries import build_prediction_rows
+from app.routes.entries import build_prediction_rows, parse_penalty_winner_choice
 from app.services.scoring import recalculate_all_points, summarize_prediction_audit
-from app.tournament_stages import select_visible_matches
+from app.tournament_stages import is_knockout_stage, select_visible_matches
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
 
@@ -489,8 +489,16 @@ def results():
             if h is None or a is None:
                 any_error = True
                 break
+            if is_knockout_stage(m.stage) and h == a:
+                pw = parse_penalty_winner_choice(request.form.get(f"result_penalty_{m.id}"), m)
+                if not pw:
+                    any_error = True
+                    break
         if any_error:
-            flash("Los goles de resultado deben ser enteros ≥ 0. Deja vacío o completa local y visita.", "error")
+            flash(
+                "Los goles de resultado deben ser enteros ≥ 0. En eliminatorias con empate, indica el ganador por penales.",
+                "error",
+            )
         else:
             for m in matches:
                 raw_h = request.form.get(f"result_home_{m.id}")
@@ -499,13 +507,26 @@ def results():
                     continue
                 h, a = _parse_int_score(raw_h), _parse_int_score(raw_a)
                 assert h is not None and a is not None
+                knockout = is_knockout_stage(m.stage)
+                penalty_winner = None
+                if knockout and h == a:
+                    penalty_winner = parse_penalty_winner_choice(
+                        request.form.get(f"result_penalty_{m.id}"),
+                        m,
+                    )
                 r = m.result
                 if r is None:
-                    r = Result(match_id=m.id, home_score=h, away_score=a)  # type: ignore[arg-type]
+                    r = Result(
+                        match_id=m.id,
+                        home_score=h,
+                        away_score=a,
+                        penalty_winner=penalty_winner,
+                    )  # type: ignore[arg-type]
                     db.session.add(r)
                 else:
                     r.home_score = h
                     r.away_score = a
+                    r.penalty_winner = penalty_winner
             db.session.flush()
             recalculate_all_points()
             db.session.commit()

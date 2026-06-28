@@ -15,27 +15,85 @@ def get_outcome(home_score: int, away_score: int) -> str:
     return "draw"
 
 
+def _normalize_team_name(name: str | None) -> str:
+    return (name or "").strip()
+
+
+def _penalty_bonus_points(
+    pred_home: int,
+    pred_away: int,
+    result_home: int,
+    result_away: int,
+    *,
+    pred_penalty_winner: str | None,
+    result_penalty_winner: str | None,
+    knockout: bool,
+) -> int:
+    if not knockout:
+        return 0
+    if pred_home != pred_away or result_home != result_away:
+        return 0
+    pred_pw = _normalize_team_name(pred_penalty_winner)
+    result_pw = _normalize_team_name(result_penalty_winner)
+    if not pred_pw or not result_pw:
+        return 0
+    return 1 if pred_pw == result_pw else 0
+
+
 def calculate_prediction_points(
-    pred_home: int, pred_away: int, result_home: int, result_away: int
+    pred_home: int,
+    pred_away: int,
+    result_home: int,
+    result_away: int,
+    *,
+    pred_penalty_winner: str | None = None,
+    result_penalty_winner: str | None = None,
+    knockout: bool = False,
 ) -> int:
     if pred_home == result_home and pred_away == result_away:
-        return 6
-    total = 0
-    if get_outcome(pred_home, pred_away) == get_outcome(result_home, result_away):
-        total += 3
-    if (pred_home - pred_away) == (result_home - result_away):
-        total += 1
+        total = 6
+    else:
+        total = 0
+        if get_outcome(pred_home, pred_away) == get_outcome(result_home, result_away):
+            total += 3
+        if (pred_home - pred_away) == (result_home - result_away):
+            total += 1
+    total += _penalty_bonus_points(
+        pred_home,
+        pred_away,
+        result_home,
+        result_away,
+        pred_penalty_winner=pred_penalty_winner,
+        result_penalty_winner=result_penalty_winner,
+        knockout=knockout,
+    )
     return total
 
 
 def calculate_prediction_breakdown(
-    pred_home: int, pred_away: int, result_home: int, result_away: int
+    pred_home: int,
+    pred_away: int,
+    result_home: int,
+    result_away: int,
+    *,
+    pred_penalty_winner: str | None = None,
+    result_penalty_winner: str | None = None,
+    knockout: bool = False,
 ) -> dict:
     exact = pred_home == result_home and pred_away == result_away
     pred_outcome = get_outcome(pred_home, pred_away)
     real_outcome = get_outcome(result_home, result_away)
     correct_outcome = pred_outcome == real_outcome
     correct_goal_diff = (pred_home - pred_away) == (result_home - result_away)
+    penalty_bonus = _penalty_bonus_points(
+        pred_home,
+        pred_away,
+        result_home,
+        result_away,
+        pred_penalty_winner=pred_penalty_winner,
+        result_penalty_winner=result_penalty_winner,
+        knockout=knockout,
+    )
 
     reasons: list[str] = []
     reason_codes: list[str] = []
@@ -60,11 +118,17 @@ def calculate_prediction_breakdown(
             reason_codes.append("correct_goal_difference")
             total += 1
 
+    if penalty_bonus:
+        reasons.append("Ganador por penales correcto (+1)")
+        reason_codes.append("correct_penalty_winner")
+        total += penalty_bonus
+
     return {
         "total": total,
         "exact_score": exact,
         "correct_outcome": correct_outcome,
         "correct_goal_difference": correct_goal_diff,
+        "correct_penalty_winner": penalty_bonus > 0,
         "reasons": reasons,
         "reason_codes": reason_codes,
     }
@@ -113,6 +177,8 @@ def summarize_prediction_audit(rows: list[dict]) -> dict:
 
 
 def recalculate_entry_points(entry_id: int) -> int:
+    from app.tournament_stages import is_knockout_stage
+
     entry = db.session.get(Entry, entry_id)
     if entry is None:
         return 0
@@ -129,8 +195,15 @@ def recalculate_entry_points(entry_id: int) -> int:
         if res is None:
             p.points_earned = 0
         else:
+            knockout = is_knockout_stage(p.match.stage)
             pts = calculate_prediction_points(
-                p.home_goals, p.away_goals, res.home_score, res.away_score
+                p.home_goals,
+                p.away_goals,
+                res.home_score,
+                res.away_score,
+                pred_penalty_winner=p.penalty_winner,
+                result_penalty_winner=res.penalty_winner,
+                knockout=knockout,
             )
             p.points_earned = pts
             total += pts

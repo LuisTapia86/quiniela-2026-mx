@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% from "macros/entry_rename.html" import entry_rename %}
+{% from "macros/penalty_picker.html" import penalty_picker %}
 {% block title %}{{ t("pred.heading") }}: {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
@@ -90,6 +91,7 @@
                   {% if away_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=away_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
                 </span>
               </span>
+              {{ penalty_picker(m, row, locked) }}
               {% else %}
               <span class="pred-stage">{{ row.stage_title }}</span>
               <span class="pred-teams"><strong>{{ row.match_label|e }}</strong></span>
@@ -107,6 +109,7 @@
                 <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}">
                 {% endif %}
               </span>
+              {{ penalty_picker(m, row, locked) }}
               {% endif %}
             </td>
             <td data-label="{{ t('pred.col.kickoff') }}">
@@ -202,12 +205,39 @@
     if (!form) return;
 
     var leaveWarning = {{ t("pred.unsaved_leave_warning")|tojson }};
+    var penaltyRequiredMsg = {{ t("pred.penalty.required_submit")|tojson }};
     var inputs = form.querySelectorAll('.js-score-input');
     var dirty = false;
     var submitting = false;
 
     function normalizedVal(input) {
       return (input.value || '').trim();
+    }
+
+    function scorePairForMatch(matchId) {
+      var homeInput = form.querySelector('[name="home_' + matchId + '"]');
+      var awayInput = form.querySelector('[name="away_' + matchId + '"]');
+      if (!homeInput || !awayInput) return { home: '', away: '', isDraw: false };
+      var home = normalizedVal(homeInput);
+      var away = normalizedVal(awayInput);
+      return {
+        home: home,
+        away: away,
+        isDraw: home !== '' && away !== '' && home === away
+      };
+    }
+
+    function updatePenaltyPickers() {
+      form.querySelectorAll('.js-penalty-picker').forEach(function (picker) {
+        var matchId = picker.dataset.matchId;
+        var scores = scorePairForMatch(matchId);
+        picker.hidden = !scores.isDraw;
+        if (!scores.isDraw) {
+          picker.querySelectorAll('.js-penalty-input').forEach(function (radio) {
+            radio.checked = false;
+          });
+        }
+      });
     }
 
     function checkDirty() {
@@ -217,12 +247,26 @@
           dirty = true;
         }
       });
+      form.querySelectorAll('.js-penalty-input').forEach(function (radio) {
+        if (radio.checked && radio.dataset.initialChecked !== '1') {
+          dirty = true;
+        }
+        if (!radio.checked && radio.dataset.initialChecked === '1') {
+          dirty = true;
+        }
+      });
     }
 
     inputs.forEach(function (input) {
       input.dataset.initialValue = normalizedVal(input);
-      input.addEventListener('input', checkDirty);
-      input.addEventListener('change', checkDirty);
+      input.addEventListener('input', function () {
+        updatePenaltyPickers();
+        checkDirty();
+      });
+      input.addEventListener('change', function () {
+        updatePenaltyPickers();
+        checkDirty();
+      });
       input.addEventListener('focus', function () {
         if (input.value === '0' && input.dataset.existingPrediction !== '1') {
           input.value = '';
@@ -230,7 +274,36 @@
       });
     });
 
-    form.addEventListener('submit', function () {
+    form.querySelectorAll('.js-penalty-input').forEach(function (radio) {
+      radio.dataset.initialChecked = radio.checked ? '1' : '0';
+      radio.addEventListener('change', checkDirty);
+    });
+
+    updatePenaltyPickers();
+
+    form.addEventListener('submit', function (e) {
+      var missingPenalty = false;
+      form.querySelectorAll('.js-penalty-picker').forEach(function (picker) {
+        if (picker.hidden) return;
+        var matchId = picker.dataset.matchId;
+        var homeInput = form.querySelector('[name="home_' + matchId + '"]');
+        var awayInput = form.querySelector('[name="away_' + matchId + '"]');
+        if (!homeInput || !awayInput) return;
+        var homeInit = homeInput.dataset.initialValue || '';
+        var awayInit = awayInput.dataset.initialValue || '';
+        var homeNow = normalizedVal(homeInput);
+        var awayNow = normalizedVal(awayInput);
+        var scoresChanged = homeNow !== homeInit || awayNow !== awayInit;
+        var isNew = homeInput.dataset.existingPrediction !== '1' && awayInput.dataset.existingPrediction !== '1';
+        if (!scoresChanged && !isNew) return;
+        var selected = picker.querySelector('.js-penalty-input:checked');
+        if (!selected) missingPenalty = true;
+      });
+      if (missingPenalty) {
+        e.preventDefault();
+        alert(penaltyRequiredMsg);
+        return;
+      }
       submitting = true;
       dirty = false;
     });

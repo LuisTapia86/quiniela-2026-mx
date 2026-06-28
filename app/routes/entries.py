@@ -24,7 +24,7 @@ from app.payment_gating import is_payment_banking_configured
 from app.payment_proofs import PaymentProofError, create_pending_payment, save_payment_proof
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
-from app.tournament_stages import is_match_editable, select_visible_matches
+from app.tournament_stages import is_knockout_stage, is_match_editable, select_visible_matches
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
@@ -411,12 +411,26 @@ def _parse_score(val: str | None) -> int | None:
     return n
 
 
+def parse_penalty_winner_choice(raw: str | None, match: Match) -> str | None:
+    return _parse_penalty_winner(raw, match)
+
+
+def _parse_penalty_winner(raw: str | None, match: Match) -> str | None:
+    value = (raw or "").strip()
+    if not value:
+        return None
+    allowed = {(match.home_team or "").strip(), (match.away_team or "").strip()}
+    if value in allowed:
+        return value
+    return None
+
+
 def _save_predictions(
     entry: Entry,
     matches: list[Match],
     by_match_id: dict[int, Prediction],
 ) -> tuple[bool, str | None]:
-    parsed: list[tuple[Match, int, int]] = []
+    parsed: list[tuple[Match, int, int, str | None]] = []
     for m in matches:
         raw_h = (request.form.get(f"home_{m.id}") or "").strip()
         raw_a = (request.form.get(f"away_{m.id}") or "").strip()
@@ -451,6 +465,14 @@ def _save_predictions(
                     m.match_number,
                 )
                 return False, tr("flash.predictions.group_stage_locked")
+            raw_pw = request.form.get(f"penalty_winner_{m.id}")
+            if raw_pw is not None and _parse_penalty_winner(raw_pw, m) != (existing.penalty_winner or None):
+                current_app.logger.warning(
+                    "predictions_save_locked_rejected entry_id=%s match_number=%s penalty_tamper",
+                    entry.id,
+                    m.match_number,
+                )
+                return False, tr("flash.predictions.group_stage_locked")
             continue
 
         if raw_h == "" and raw_a == "":
@@ -460,13 +482,29 @@ def _save_predictions(
         h, a = _parse_score(raw_h), _parse_score(raw_a)
         if h is None or a is None:
             return False, tr("flash.predictions.integer_goals")
-        parsed.append((m, h, a))
+
+        penalty_winner: str | None = None
+        knockout = is_knockout_stage(m.stage)
+        existing = by_match_id.get(m.id)
+        scores_changed = existing is None or h != existing.home_goals or a != existing.away_goals
+        raw_pw = request.form.get(f"penalty_winner_{m.id}")
+        if knockout and h == a:
+            parsed_pw = _parse_penalty_winner(raw_pw, m)
+            if raw_pw and parsed_pw is None:
+                return False, tr("flash.predictions.penalty_invalid")
+            if scores_changed and not parsed_pw:
+                return False, tr("flash.predictions.penalty_required")
+            penalty_winner = parsed_pw or (existing.penalty_winner if existing else None)
+        elif knockout:
+            penalty_winner = None
+
+        parsed.append((m, h, a, penalty_winner))
     current_app.logger.info(
         "predictions_save_parsed entry_id=%s parsed_count=%s",
         entry.id,
         len(parsed),
     )
-    for m, h, a in parsed:
+    for m, h, a, penalty_winner in parsed:
         pred = (
             db.session.execute(
                 select(Prediction).where(
@@ -484,11 +522,13 @@ def _save_predictions(
                     match_id=m.id,
                     home_goals=h,
                     away_goals=a,
+                    penalty_winner=penalty_winner,
                 )
             )
         else:
             pred.home_goals = h
             pred.away_goals = a
+            pred.penalty_winner = penalty_winner
     try:
         db.session.commit()
     except Exception:  # pragma: no cover
@@ -520,12 +560,16 @@ def build_prediction_rows(
         result: Result | None = m.result
         breakdown = None
         result_pending = result is None
+        is_knockout = is_knockout_stage(m.stage)
         if p is not None and result is not None:
             breakdown = calculate_prediction_breakdown(
                 p.home_goals,
                 p.away_goals,
                 result.home_score,
                 result.away_score,
+                pred_penalty_winner=p.penalty_winner,
+                result_penalty_winner=result.penalty_winner,
+                knockout=is_knockout,
             )
         points_earned = p.points_earned if p is not None and result is not None else None
         is_group = _is_group_stage(m.stage)
@@ -573,10 +617,19 @@ def build_prediction_rows(
                 )
                 knockout_debug_logged = True
 
+        pred_penalty = p.penalty_winner if p else None
+        if p is not None:
+            pred_text = f"{p.home_goals}-{p.away_goals}"
+            if is_knockout and p.home_goals == p.away_goals and pred_penalty:
+                pred_text = f"{pred_text} ({pred_penalty})"
+        else:
+            pred_text = "—"
+
         rows.append(
             {
                 "match": m,
                 "is_group_stage": is_group,
+                "is_knockout": is_knockout,
                 "use_db_teams": use_db_teams,
                 "group_context": group_context,
                 "stage_title": stage_title,
@@ -593,8 +646,22 @@ def build_prediction_rows(
                 "home_score": p.home_goals if p else None,
                 "away_score": p.away_goals if p else None,
                 "has_prediction": p is not None,
-                "prediction_text": f"{p.home_goals}-{p.away_goals}" if p is not None else "—",
-                "result_text": f"{result.home_score}-{result.away_score}" if result is not None else tr("pred.pending_result"),
+                "penalty_winner": pred_penalty,
+                "prediction_text": pred_text,
+                "result_text": (
+                    (
+                        f"{result.home_score}-{result.away_score}"
+                        + (
+                            f" ({result.penalty_winner})"
+                            if is_knockout
+                            and result.home_score == result.away_score
+                            and result.penalty_winner
+                            else ""
+                        )
+                    )
+                    if result is not None
+                    else tr("pred.pending_result")
+                ),
                 "result_pending": result_pending,
                 "points_earned": points_earned,
                 "breakdown": breakdown,

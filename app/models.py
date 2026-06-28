@@ -116,6 +116,7 @@ class Result(db.Model):
     match_id = db.Column(db.Integer, db.ForeignKey("matches.id"), unique=True, nullable=False)
     home_score = db.Column(db.Integer, nullable=False)
     away_score = db.Column(db.Integer, nullable=False)
+    penalty_winner = db.Column(db.String(100), nullable=True)
     recorded_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
     match = db.relationship("Match", back_populates="result")
@@ -132,6 +133,7 @@ class Prediction(db.Model):
     match_id = db.Column(db.Integer, db.ForeignKey("matches.id"), nullable=False, index=True)
     home_goals = db.Column(db.Integer, nullable=False)
     away_goals = db.Column(db.Integer, nullable=False)
+    penalty_winner = db.Column(db.String(100), nullable=True)
     points_earned = db.Column(db.Integer, default=0, nullable=False)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)

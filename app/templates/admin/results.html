@@ -12,7 +12,7 @@
   {% if not matches %}
   <p class="form__hint">{{ t("admin.results.none") }}</p>
   {% else %}
-  <form method="post" action="{{ url_for('admin.results') }}">
+  <form method="post" action="{{ url_for('admin.results') }}" id="admin-results-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
       <table class="data-table" aria-label="{{ t('admin.results.table_aria') }}">
@@ -23,11 +23,13 @@
             <th scope="col">{{ t("admin.col.kickoff") }}</th>
             <th scope="col">{{ t("admin.col.home") }}</th>
             <th scope="col">{{ t("admin.col.away") }}</th>
+            <th scope="col">{{ t("admin.results.penalty_col") }}</th>
           </tr>
         </thead>
         <tbody>
           {% for m in matches %}
-          <tr>
+          {% set is_knockout = m.stage and ('grupo' not in m.stage|lower and 'group' not in m.stage|lower) %}
+          <tr data-match-id="{{ m.id }}" data-is-knockout="{{ 1 if is_knockout else 0 }}">
             <td>{{ m.match_number }}</td>
             <td>
               <span class="pred-stage">{{ m.stage|e }}</span>
@@ -41,12 +43,33 @@
               {% endif %}
             </td>
             <td>
-              <input class="form__input form__input--num" type="number" name="result_home_{{ m.id }}" min="0" step="1"
+              <input class="form__input form__input--num js-result-score" type="number" name="result_home_{{ m.id }}" min="0" step="1"
                 value="{% if m.result is not none %}{{ m.result.home_score }}{% endif %}">
             </td>
             <td>
-              <input class="form__input form__input--num" type="number" name="result_away_{{ m.id }}" min="0" step="1"
+              <input class="form__input form__input--num js-result-score" type="number" name="result_away_{{ m.id }}" min="0" step="1"
                 value="{% if m.result is not none %}{{ m.result.away_score }}{% endif %}">
+            </td>
+            <td>
+              {% if is_knockout %}
+              <div class="pred-penalty js-admin-result-penalty" data-match-id="{{ m.id }}" hidden>
+                <span class="pred-penalty__label">{{ t("pred.penalty.label") }}</span>
+                <div class="pred-penalty__choices">
+                  <label class="pred-penalty__choice">
+                    <input type="radio" name="result_penalty_{{ m.id }}" value="{{ m.home_team|e }}" class="js-result-penalty"
+                      {% if m.result is not none and m.result.penalty_winner == m.home_team %}checked{% endif %}>
+                    <span>{{ m.home_team|e }}</span>
+                  </label>
+                  <label class="pred-penalty__choice">
+                    <input type="radio" name="result_penalty_{{ m.id }}" value="{{ m.away_team|e }}" class="js-result-penalty"
+                      {% if m.result is not none and m.result.penalty_winner == m.away_team %}checked{% endif %}>
+                    <span>{{ m.away_team|e }}</span>
+                  </label>
+                </div>
+              </div>
+              {% else %}
+              <span class="form__hint">—</span>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}
@@ -58,4 +81,40 @@
   {% endif %}
   <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
 </section>
+<script>
+  (function () {
+    var form = document.getElementById('admin-results-form');
+    if (!form) return;
+
+    function rowIsDraw(row) {
+      var matchId = row.dataset.matchId;
+      var home = form.querySelector('[name="result_home_' + matchId + '"]');
+      var away = form.querySelector('[name="result_away_' + matchId + '"]');
+      if (!home || !away) return false;
+      var h = (home.value || '').trim();
+      var a = (away.value || '').trim();
+      return h !== '' && a !== '' && h === a;
+    }
+
+    function updatePenaltyRows() {
+      form.querySelectorAll('tr[data-is-knockout="1"]').forEach(function (row) {
+        var picker = row.querySelector('.js-admin-result-penalty');
+        if (!picker) return;
+        var isDraw = rowIsDraw(row);
+        picker.hidden = !isDraw;
+        if (!isDraw) {
+          picker.querySelectorAll('.js-result-penalty').forEach(function (radio) {
+            radio.checked = false;
+          });
+        }
+      });
+    }
+
+    form.querySelectorAll('.js-result-score').forEach(function (input) {
+      input.addEventListener('input', updatePenaltyRows);
+      input.addEventListener('change', updatePenaltyRows);
+    });
+    updatePenaltyRows();
+  })();
+</script>
 {% endblock %}

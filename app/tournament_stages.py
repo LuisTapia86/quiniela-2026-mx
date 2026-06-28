@@ -114,6 +114,14 @@ def editable_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
     return Match.match_number.in_(nums)
 
 
+def is_knockout_stage(stage: str | None) -> bool:
+    """True for elimination matches (not group stage)."""
+    value = (stage or "").strip().lower()
+    if not value:
+        return False
+    return "grupo" not in value and "group" not in value
+
+
 def count_editable_matches(config: Mapping[str, Any]) -> int:
     from sqlalchemy import func
 

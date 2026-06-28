@@ -1,0 +1,27 @@
+{% macro penalty_picker(match, row, locked) %}
+{% if row.is_knockout %}
+<div class="pred-penalty js-penalty-picker" data-match-id="{{ match.id }}" hidden>
+  <span class="pred-penalty__label">{{ t("pred.penalty.label") }}</span>
+  <div class="pred-penalty__choices">
+    {% if locked or not row.editable %}
+      {% if row.penalty_winner %}
+      <span class="pred-readonly">{{ row.penalty_winner|e }}</span>
+      {% else %}
+      <span class="form__hint">—</span>
+      {% endif %}
+    {% else %}
+    <label class="pred-penalty__choice">
+      <input type="radio" name="penalty_winner_{{ match.id }}" value="{{ match.home_team|e }}" class="js-penalty-input" data-match-id="{{ match.id }}"
+        {% if row.penalty_winner == match.home_team %}checked{% endif %}>
+      <span>{{ match.home_team|e }}</span>
+    </label>
+    <label class="pred-penalty__choice">
+      <input type="radio" name="penalty_winner_{{ match.id }}" value="{{ match.away_team|e }}" class="js-penalty-input" data-match-id="{{ match.id }}"
+        {% if row.penalty_winner == match.away_team %}checked{% endif %}>
+      <span>{{ match.away_team|e }}</span>
+    </label>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endmacro %}
