@@ -539,6 +539,10 @@ button.btn:disabled {
   gap: 0.35rem;
 }
 
+.pred-penalty[hidden] {
+  display: none !important;
+}
+
 .pred-penalty__label {
   font-size: 0.85rem;
   color: var(--muted, #666);

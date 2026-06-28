@@ -214,12 +214,18 @@
       return (input.value || '').trim();
     }
 
-    function scorePairForMatch(matchId) {
+    function scorePairForMatch(matchId, picker) {
       var homeInput = form.querySelector('[name="home_' + matchId + '"]');
       var awayInput = form.querySelector('[name="away_' + matchId + '"]');
-      if (!homeInput || !awayInput) return { home: '', away: '', isDraw: false };
-      var home = normalizedVal(homeInput);
-      var away = normalizedVal(awayInput);
+      var home = '';
+      var away = '';
+      if (homeInput && awayInput) {
+        home = normalizedVal(homeInput);
+        away = normalizedVal(awayInput);
+      } else if (picker) {
+        home = (picker.getAttribute('data-home-score') || '').trim();
+        away = (picker.getAttribute('data-away-score') || '').trim();
+      }
       return {
         home: home,
         away: away,
@@ -227,16 +233,23 @@
       };
     }
 
+    function setPenaltyPickerVisible(picker, visible) {
+      picker.hidden = !visible;
+      picker.querySelectorAll('.js-penalty-input').forEach(function (radio) {
+        if (!visible) {
+          radio.checked = false;
+          radio.disabled = true;
+        } else {
+          radio.disabled = false;
+        }
+      });
+    }
+
     function updatePenaltyPickers() {
       form.querySelectorAll('.js-penalty-picker').forEach(function (picker) {
         var matchId = picker.dataset.matchId;
-        var scores = scorePairForMatch(matchId);
-        picker.hidden = !scores.isDraw;
-        if (!scores.isDraw) {
-          picker.querySelectorAll('.js-penalty-input').forEach(function (radio) {
-            radio.checked = false;
-          });
-        }
+        var scores = scorePairForMatch(matchId, picker);
+        setPenaltyPickerVisible(picker, scores.isDraw);
       });
     }
 
@@ -282,10 +295,13 @@
     updatePenaltyPickers();
 
     form.addEventListener('submit', function (e) {
+      updatePenaltyPickers();
       var missingPenalty = false;
       form.querySelectorAll('.js-penalty-picker').forEach(function (picker) {
         if (picker.hidden) return;
         var matchId = picker.dataset.matchId;
+        var scores = scorePairForMatch(matchId, picker);
+        if (!scores.isDraw) return;
         var homeInput = form.querySelector('[name="home_' + matchId + '"]');
         var awayInput = form.querySelector('[name="away_' + matchId + '"]');
         if (!homeInput || !awayInput) return;

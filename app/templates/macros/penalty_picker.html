@@ -1,6 +1,7 @@
 {% macro penalty_picker(match, row, locked) %}
 {% if row.is_knockout %}
-<div class="pred-penalty js-penalty-picker" data-match-id="{{ match.id }}" hidden>
+{% set is_draw = row.home_score is not none and row.away_score is not none and row.home_score == row.away_score %}
+<div class="pred-penalty js-penalty-picker" data-match-id="{{ match.id }}" data-home-score="{{ row.home_score if row.home_score is not none else '' }}" data-away-score="{{ row.away_score if row.away_score is not none else '' }}"{% if not is_draw %} hidden{% endif %}>
   <span class="pred-penalty__label">Ganador por penales:</span>
   <div class="pred-penalty__choices">
     {% if locked or not row.editable %}
@@ -12,12 +13,12 @@
     {% else %}
     <label class="pred-penalty__choice">
       <input type="radio" name="penalty_winner_{{ match.id }}" value="{{ match.home_team|e }}" class="js-penalty-input" data-match-id="{{ match.id }}"
-        {% if row.penalty_winner == match.home_team %}checked{% endif %}>
+        {% if row.penalty_winner == match.home_team %}checked{% endif %}{% if not is_draw %} disabled{% endif %}>
       <span>{{ match.home_team|e }}</span>
     </label>
     <label class="pred-penalty__choice">
       <input type="radio" name="penalty_winner_{{ match.id }}" value="{{ match.away_team|e }}" class="js-penalty-input" data-match-id="{{ match.id }}"
-        {% if row.penalty_winner == match.away_team %}checked{% endif %}>
+        {% if row.penalty_winner == match.away_team %}checked{% endif %}{% if not is_draw %} disabled{% endif %}>
       <span>{{ match.away_team|e }}</span>
     </label>
     {% endif %}

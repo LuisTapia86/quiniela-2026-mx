@@ -61,12 +61,18 @@ def visible_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
     return or_(*[Match.stage == stage for stage in stages])
 
 
-def select_visible_matches(*, order_by_match_number: bool = True):
+def select_visible_matches(*, order_by_kickoff: bool = True):
     """Base select(Match) scoped to visible prediction stages."""
     from flask import current_app
 
     stmt = select(Match).where(visible_matches_where(current_app.config))
-    if order_by_match_number:
+    if order_by_kickoff:
+        stmt = stmt.order_by(
+            Match.kickoff_at.asc().nulls_last(),
+            Match.match_number.asc(),
+            Match.id.asc(),
+        )
+    else:
         stmt = stmt.order_by(Match.match_number.asc(), Match.id.asc())
     return stmt
 
