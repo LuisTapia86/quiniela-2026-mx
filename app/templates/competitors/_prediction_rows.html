@@ -1,0 +1,81 @@
+{% for row in rows %}
+{% set m = row.match %}
+{% if row.date_break|default(false) %}
+<tr class="pred-date-separator">
+  <td colspan="7">📅 {{ row.date_label }}</td>
+</tr>
+{% endif %}
+<tr>
+  <td data-label="#">{{ m.match_number }}</td>
+  <td data-label="{{ t('pred.col.match') }}">
+    {% if row.is_group_stage or row.use_db_teams or (m.match_number >= 73 and m.match_number <= 88) %}
+    <span class="pred-stage">{{ row.group_context if row.is_group_stage else row.stage_title }}</span>
+    <span class="pred-teams pred-teams--inline">
+      <span class="pred-team pred-team--home">
+        {% set home_flag_src = m.home_team|team_flag_src %}
+        {% if home_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=home_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
+        <strong class="pred-team__name">{{ m.home_team|e }}</strong>
+      </span>
+      <span class="pred-vs">vs</span>
+      <span class="pred-team pred-team--away">
+        <strong class="pred-team__name">{{ m.away_team|e }}</strong>
+        {% set away_flag_src = m.away_team|team_flag_src %}
+        {% if away_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=away_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
+      </span>
+    </span>
+    {% else %}
+    <span class="pred-stage">{{ row.stage_title }}</span>
+    <span class="pred-teams"><strong>{{ row.match_label|e }}</strong></span>
+    {% endif %}
+  </td>
+  <td data-label="{{ t('pred.col.kickoff') }}">
+    {% if m.kickoff_at %}
+    <time class="match-time" datetime="{{ m.kickoff_at.strftime('%Y-%m-%dT%H:%M:%S-06:00') }}">{{ m.kickoff_at.strftime('%Y-%m-%d %H:%M') }}</time>
+    {% else %}
+    —
+    {% endif %}
+  </td>
+  <td data-label="{{ t('admin.entry_predictions.col.prediction') }}">
+    {% if row.competitor_hidden|default(false) %}
+    <span class="form__hint">{{ row.prediction_text|e }}</span>
+    {% elif row.has_prediction %}
+    <span class="pred-readonly">{{ row.prediction_text|e }}</span>
+    {% else %}
+    <span class="form__hint">—</span>
+    {% endif %}
+  </td>
+  <td data-label="{{ t('admin.entry_predictions.col.result') }}">
+    {% if row.result_pending %}
+    <span class="form__hint">{{ t("pred.pending_result") }}</span>
+    {% else %}
+    <span class="pred-readonly">{{ row.result_text|e }}</span>
+    {% endif %}
+  </td>
+  <td data-label="{{ t('admin.entry_predictions.col.points') }}">
+    {% if row.competitor_hidden|default(false) or row.result_pending or not row.has_prediction %}
+    <span class="form__hint">—</span>
+    {% else %}
+    <strong>{{ row.points_earned }}</strong>
+    {% endif %}
+  </td>
+  <td data-label="{{ t('admin.entry_predictions.col.detail') }}">
+    {% if row.competitor_hidden|default(false) %}
+    <span class="form__hint">{{ t("competitors.prediction_hidden") }}</span>
+    {% elif row.result_pending %}
+    <span class="form__hint">{{ t("admin.entry_predictions.detail_pending") }}</span>
+    {% elif not row.has_prediction %}
+    <span class="form__hint">{{ t("pred.detail.no_prediction") }}</span>
+    {% elif row.breakdown and row.breakdown.exact_score %}
+    {{ t("admin.entry_predictions.detail.exact_score") }}
+    {% elif row.points_earned == 0 %}
+    {{ t("admin.entry_predictions.detail.no_points") }}
+    {% elif row.breakdown %}
+    {% for code in row.breakdown.reason_codes %}
+    {{ t("admin.entry_predictions.detail." ~ code) }}{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    {% else %}
+    <span class="form__hint">—</span>
+    {% endif %}
+  </td>
+</tr>
+{% endfor %}

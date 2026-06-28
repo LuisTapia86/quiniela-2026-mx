@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ t("competitors.detail_title") }}: {{ entry_title(entry)|e }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("competitors.detail_title") }}</h1>
+  <p class="lock-banner" role="status">{{ t("competitors.readonly_banner") }}</p>
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("competitors.visibility_hint") }}</p>
+
+  <dl class="admin-entry-meta">
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("competitors.col.entry") }}</dt>
+      <dd><strong>{{ entry_title(entry)|e }}</strong></dd>
+    </div>
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("competitors.col.player") }}</dt>
+      <dd>{{ public_name|e }}</dd>
+    </div>
+    <div class="admin-entry-meta__row">
+      <dt>{{ t("admin.entry_predictions.total_points") }}</dt>
+      <dd><strong>{{ entry.total_points }}</strong></dd>
+    </div>
+  </dl>
+
+  <div class="admin-audit-summary">
+    <p class="admin-audit-summary__total"><strong>{{ t("admin.entry_predictions.total_points") }}:</strong> {{ audit_summary.total_points }}</p>
+    <ul class="admin-audit-summary__stats">
+      <li>{{ t("admin.entry_predictions.matches_with_result") }}: <strong>{{ audit_summary.matches_with_result }}</strong></li>
+      <li>{{ t("admin.entry_predictions.exact_count") }}: <strong>{{ audit_summary.exact_count }}</strong></li>
+      <li>{{ t("admin.entry_predictions.outcome_correct_count") }}: <strong>{{ audit_summary.outcome_correct_count }}</strong></li>
+      <li>{{ t("admin.entry_predictions.goal_diff_count") }}: <strong>{{ audit_summary.goal_diff_count }}</strong></li>
+      <li>{{ t("admin.entry_predictions.zero_points_count") }}: <strong>{{ audit_summary.zero_points_count }}</strong></li>
+    </ul>
+  </div>
+
+  <p class="form__hint" style="margin: 0 0 1rem;">
+    {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
+  </p>
+  <p class="form__hint" style="margin: 0 0 1rem;">{{ t("common.local_time_note") }}</p>
+
+  {% if rows|length == 0 %}
+  <p class="form__hint">{{ t("pred.no_matches") }}</p>
+  {% else %}
+  <div class="table-wrap">
+    <table class="data-table admin-audit-table" role="grid" aria-label="{{ t('competitors.table_aria') }}">
+      <thead>
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">{{ t("pred.col.match") }}</th>
+          <th scope="col">{{ t("pred.col.kickoff") }}</th>
+          <th scope="col">{{ t("admin.entry_predictions.col.prediction") }}</th>
+          <th scope="col">{{ t("admin.entry_predictions.col.result") }}</th>
+          <th scope="col">{{ t("admin.entry_predictions.col.points") }}</th>
+          <th scope="col">{{ t("admin.entry_predictions.col.detail") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% include "competitors/_prediction_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <p class="card__footer">
+    <a href="{{ url_for('competitors.entries_list') }}">{{ t("competitors.back_list") }}</a>
+    · <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
+  </p>
+</section>
+{% endblock %}

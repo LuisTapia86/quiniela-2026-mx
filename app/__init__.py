@@ -320,6 +320,7 @@ def create_app(config_object: type = Config) -> Flask:
         admin_bp,
         api_bp,
         auth_bp,
+        competitors_bp,
         entries_bp,
         leaderboard_bp,
         main_bp,
@@ -329,6 +330,7 @@ def create_app(config_object: type = Config) -> Flask:
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(entries_bp)
+    app.register_blueprint(competitors_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leaderboard_bp)

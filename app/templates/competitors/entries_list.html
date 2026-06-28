@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ t("competitors.title") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <h1 class="card__title">{{ t("competitors.title") }}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("competitors.list_hint") }}</p>
+  <p class="lock-banner" role="status">{{ t("competitors.readonly_banner") }}</p>
+
+  {% if entries|length == 0 %}
+  <p class="form__hint">{{ t("competitors.list_empty") }}</p>
+  {% else %}
+  <div class="entry-grid">
+    {% for item in entries %}
+    {% set e = item.entry %}
+    <article class="entry-card" aria-label="{{ entry_title(e)|e }}">
+      <header class="entry-card__head">
+        <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
+        <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
+      </header>
+      <div class="entry-card__meta">
+        <span class="form__hint">{{ t("competitors.col.player") }}: <strong>{{ item.public_name|e }}</strong></span>
+        <span class="entry-pay-badge entry-pay-badge--approved">{{ t("entry.payment.approved") }}</span>
+      </div>
+      <div class="entry-list__actions">
+        <a class="btn btn--sm btn--primary" href="{{ url_for('competitors.entry_detail', entry_id=e.id) }}">{{ t("competitors.view_entry") }}</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <p class="card__footer"><a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a></p>
+</section>
+{% endblock %}

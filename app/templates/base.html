@@ -44,6 +44,7 @@
         <a class="sidebar-link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
         <a class="sidebar-link{% if request.path.startswith('/groups') %} is-active{% endif %}" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
         <a class="sidebar-link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/competidores') %} is-active{% endif %}" href="{{ url_for('competitors.entries_list') }}">{{ t("nav.competitors") }}</a>
         <a class="sidebar-link{% if request.path == '/entries/new' %} is-active{% endif %}" href="{{ url_for('entries.new') }}">{{ t("nav.new_entry") }}</a>
         {% if current_user.is_admin %}
         <a class="sidebar-link{% if request.path.startswith('/admin') %} is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
