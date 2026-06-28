@@ -36,7 +36,9 @@ class Config:
     ENTRY_FEE_MXN = 200
     # User-facing prediction stages (unlock more by extending this tuple).
     # Friendly names like "Group Stage" map to DB values in app/tournament_stages.py.
-    VISIBLE_PREDICTION_STAGES = ("Group Stage",)
+    VISIBLE_PREDICTION_STAGES = ("Group Stage", "Round of 32")
+    # Match numbers users may edit (Dieciseisavos de final only).
+    EDITABLE_PREDICTION_MATCH_NUMBERS = tuple(range(73, 89))
     # Share of the prize pool for TOP 3; ties split that amount.
     PRIZE_TOP1_PERCENT = 70
     PRIZE_TOP2_PERCENT = 20

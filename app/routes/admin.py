@@ -805,7 +805,11 @@ def entry_predictions(entry_id: int):
         db.session.scalars(select(Prediction).where(Prediction.entry_id == entry.id)),
     )
     by_match_id = {p.match_id: p for p in preds}
-    rows, completed_predictions = build_prediction_rows(matches, by_match_id)
+    rows, completed_predictions = build_prediction_rows(
+        matches,
+        by_match_id,
+        count_progress_editable_only=False,
+    )
     audit_summary = summarize_prediction_audit(rows)
 
     status = _safe_status(request.args.get("status"))

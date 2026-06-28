@@ -24,7 +24,10 @@
   </p>
   {% if locked %}
   <p class="lock-banner no-print" role="status">{{ t("pred.locked_readonly") }}</p>
-  {% else %}
+  {% elif has_group_stage_rows %}
+  <p class="lock-banner no-print" role="status">{{ t("pred.group_stage_closed") }}</p>
+  {% endif %}
+  {% if not locked and has_editable_matches %}
   <p class="form__hint no-print" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
   <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("rules.lock_stages") }}</p>
@@ -68,7 +71,7 @@
     103: "Perdedor partido 101 vs Perdedor partido 102",
     104: "Ganador partido 101 vs Ganador partido 102"
   } %}
-  {% if not locked %}
+  {% if not locked and has_editable_matches %}
   <p class="pred-save-reminder" role="note">{{ t("pred.save_reminder") }}</p>
   {% endif %}
   <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}" novalidate>
@@ -103,7 +106,7 @@
                   {% set home_flag_src = m.home_team|team_flag_src %}
                   {% if home_flag_src %}<img class="flag-icon" src="{{ url_for('static', filename=home_flag_src) }}" alt="" aria-hidden="true" loading="lazy" width="20" height="14">{% endif %}
                   <strong class="pred-team__name">{{ m.home_team|e }}</strong>
-                  {% if locked %}
+                  {% if locked or not row.editable %}
                   <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
                   {% else %}
                   <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="home_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.home_score is none else row.home_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.home_team|e }}">
@@ -111,7 +114,7 @@
                 </span>
                 <span class="pred-vs">vs</span>
                 <span class="pred-team pred-team--away">
-                  {% if locked %}
+                  {% if locked or not row.editable %}
                   <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
                   {% else %}
                   <input class="form__input form__input--num js-score-input pred-team__score" type="number" name="away_{{ m.id }}" min="0" step="1" inputmode="numeric" placeholder="0" value="{{ '' if row.away_score is none else row.away_score }}" data-existing-prediction="{{ 1 if row.has_prediction else 0 }}" aria-label="{{ m.away_team|e }}">
@@ -129,7 +132,7 @@
               <span class="pred-stage pred-stage--sub">{{ row.slot_subtitle }}</span>
               {% endif %}
               <span class="pred-teams pred-teams--inline pred-teams--knockout">
-                {% if locked %}
+                {% if locked or not row.editable %}
                 <span class="pred-readonly pred-team__score">{{ '' if row.home_score is none else row.home_score }}</span>
                 <span class="pred-vs">vs</span>
                 <span class="pred-readonly pred-team__score">{{ '' if row.away_score is none else row.away_score }}</span>
@@ -199,7 +202,7 @@
         </tbody>
       </table>
     </div>
-    {% if not locked %}
+    {% if not locked and has_editable_matches %}
     <div class="sticky-save-wrap" id="pred-sticky-save">
       {% if saved_banner %}
       <p class="pred-save-feedback pred-save-feedback--ok js-pred-save-success" role="status" aria-live="polite">{{ t("pred.saved_success") }}</p>

@@ -24,7 +24,7 @@ from app.payment_gating import is_payment_banking_configured
 from app.payment_proofs import PaymentProofError, create_pending_payment, save_payment_proof
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
-from app.tournament_stages import select_visible_matches
+from app.tournament_stages import is_match_editable, select_visible_matches
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
@@ -380,7 +380,7 @@ def predictions(entry_id: int):
             form_field_count,
             (request.user_agent.string or "")[:120],
         )
-        saved, save_error = _save_predictions(entry, matches)
+        saved, save_error = _save_predictions(entry, matches, by_match_id)
         if saved:
             current_app.logger.info(
                 "predictions_save_success entry_id=%s user_id=%s",
@@ -435,11 +435,48 @@ def _parse_score(val: str | None) -> int | None:
     return n
 
 
-def _save_predictions(entry: Entry, matches: list[Match]) -> tuple[bool, str | None]:
+def _save_predictions(
+    entry: Entry,
+    matches: list[Match],
+    by_match_id: dict[int, Prediction],
+) -> tuple[bool, str | None]:
     parsed: list[tuple[Match, int, int]] = []
     for m in matches:
         raw_h = (request.form.get(f"home_{m.id}") or "").strip()
         raw_a = (request.form.get(f"away_{m.id}") or "").strip()
+        editable = is_match_editable(m, current_app.config, global_locked=False)
+
+        if not editable:
+            if raw_h == "" and raw_a == "":
+                continue
+            existing = by_match_id.get(m.id)
+            h = _parse_score(raw_h) if raw_h != "" else None
+            a = _parse_score(raw_a) if raw_a != "" else None
+            if h is None or a is None:
+                if raw_h != "" or raw_a != "":
+                    current_app.logger.warning(
+                        "predictions_save_locked_rejected entry_id=%s match_number=%s",
+                        entry.id,
+                        m.match_number,
+                    )
+                    return False, tr("flash.predictions.group_stage_locked")
+                continue
+            if existing is None:
+                current_app.logger.warning(
+                    "predictions_save_locked_rejected entry_id=%s match_number=%s new_prediction",
+                    entry.id,
+                    m.match_number,
+                )
+                return False, tr("flash.predictions.group_stage_locked")
+            if h != existing.home_goals or a != existing.away_goals:
+                current_app.logger.warning(
+                    "predictions_save_locked_rejected entry_id=%s match_number=%s tamper",
+                    entry.id,
+                    m.match_number,
+                )
+                return False, tr("flash.predictions.group_stage_locked")
+            continue
+
         if raw_h == "" and raw_a == "":
             continue
         if raw_h == "" or raw_a == "":
@@ -487,15 +524,23 @@ def _save_predictions(entry: Entry, matches: list[Match]) -> tuple[bool, str | N
 def build_prediction_rows(
     matches: list[Match],
     by_match_id: dict[int, Prediction],
+    *,
+    global_locked: bool = False,
+    count_progress_editable_only: bool = True,
 ) -> tuple[list[dict], int]:
     rows: list[dict] = []
     completed_predictions = 0
     last_date_key: str | None = None
     knockout_debug_logged = False
     for m in matches:
+        editable = is_match_editable(m, current_app.config, global_locked=global_locked)
         p = by_match_id.get(m.id)
-        if p is not None:
-            completed_predictions += 1
+        if p is not None and (editable or not count_progress_editable_only):
+            if count_progress_editable_only:
+                if editable:
+                    completed_predictions += 1
+            else:
+                completed_predictions += 1
         result: Result | None = m.result
         breakdown = None
         result_pending = result is None
@@ -575,6 +620,7 @@ def build_prediction_rows(
                 "result_pending": result_pending,
                 "points_earned": points_earned,
                 "breakdown": breakdown,
+                "editable": editable,
             }
         )
     return rows, completed_predictions
@@ -588,14 +634,22 @@ def _render_predictions(
     locked: bool,
     save_feedback: str | None = None,
 ):
-    rows, completed_predictions = build_prediction_rows(matches, by_match_id)
+    rows, completed_predictions = build_prediction_rows(
+        matches,
+        by_match_id,
+        global_locked=locked,
+    )
+    total_editable = sum(1 for m in matches if is_match_editable(m, current_app.config, global_locked=locked))
+    has_group_stage_rows = any(r.get("is_group_stage") for r in rows)
     return render_template(
         "predictions/edit.html",
         entry=entry,
         rows=rows,
         locked=locked,
         completed_predictions=completed_predictions,
-        total_matches=len(matches),
+        total_matches=total_editable,
+        has_editable_matches=total_editable > 0,
+        has_group_stage_rows=has_group_stage_rows,
         save_feedback=save_feedback,
         saved_banner=request.args.get("saved") == "1",
     )

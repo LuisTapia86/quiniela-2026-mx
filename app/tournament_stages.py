@@ -87,3 +87,46 @@ def count_visible_matches(config: Mapping[str, Any]) -> int:
         )
         or 0
     )
+
+
+def editable_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
+    raw = config.get("EDITABLE_PREDICTION_MATCH_NUMBERS")
+    if raw:
+        return frozenset(int(n) for n in raw)
+    return frozenset(range(73, 89))
+
+
+def is_match_editable(
+    match: Match,
+    config: Mapping[str, Any],
+    *,
+    global_locked: bool,
+) -> bool:
+    if global_locked:
+        return False
+    return match.match_number in editable_match_numbers(config)
+
+
+def editable_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
+    nums = editable_match_numbers(config)
+    if not nums:
+        return Match.id.is_(None)  # type: ignore[return-value]
+    return Match.match_number.in_(nums)
+
+
+def count_editable_matches(config: Mapping[str, Any]) -> int:
+    from sqlalchemy import func
+
+    from app import db
+
+    nums = editable_match_numbers(config)
+    if not nums:
+        return 0
+    return (
+        db.session.scalar(
+            select(func.count())
+            .select_from(Match)
+            .where(editable_matches_where(config)),
+        )
+        or 0
+    )
