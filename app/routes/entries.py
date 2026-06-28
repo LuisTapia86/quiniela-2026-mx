@@ -137,8 +137,12 @@ def get_official_knockout_display_label(match_number: int) -> str | None:
     return _OFFICIAL_KNOCKOUT_LABELS_2026.get(match_number)
 
 
-def _uses_db_team_names(match_number: int) -> bool:
+def r32_uses_db_teams(match_number: int) -> bool:
     return 73 <= match_number <= 88
+
+
+def _uses_db_team_names(match_number: int) -> bool:
+    return r32_uses_db_teams(match_number)
 
 
 def format_knockout_slot(value: str | None) -> str:

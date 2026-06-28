@@ -37,24 +37,6 @@
   {% if rows|length == 0 %}
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
   {% else %}
-  {% set official_2026 = {
-    89: "Ganador partido 73 vs Ganador partido 75",
-    90: "Ganador partido 74 vs Ganador partido 77",
-    91: "Ganador partido 76 vs Ganador partido 78",
-    92: "Ganador partido 79 vs Ganador partido 80",
-    93: "Ganador partido 83 vs Ganador partido 84",
-    94: "Ganador partido 81 vs Ganador partido 82",
-    95: "Ganador partido 86 vs Ganador partido 88",
-    96: "Ganador partido 85 vs Ganador partido 87",
-    97: "Ganador partido 89 vs Ganador partido 90",
-    98: "Ganador partido 93 vs Ganador partido 94",
-    99: "Ganador partido 91 vs Ganador partido 92",
-    100: "Ganador partido 95 vs Ganador partido 96",
-    101: "Ganador partido 97 vs Ganador partido 98",
-    102: "Ganador partido 99 vs Ganador partido 100",
-    103: "Perdedor partido 101 vs Perdedor partido 102",
-    104: "Ganador partido 101 vs Ganador partido 102"
-  } %}
   {% if not locked and has_editable_matches %}
   <p class="pred-save-reminder" role="note">{{ t("pred.save_reminder") }}</p>
   {% endif %}
@@ -83,7 +65,7 @@
           <tr>
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
-              {% if row.is_group_stage or row.use_db_teams %}
+              {% if row.is_group_stage or (m.match_number >= 73 and m.match_number <= 88) %}
               <span class="pred-stage">{{ row.group_context if row.is_group_stage else row.stage_title }}</span>
               <span class="pred-teams pred-teams--inline">
                 <span class="pred-team pred-team--home">
@@ -109,9 +91,8 @@
                 </span>
               </span>
               {% else %}
-              {% set forced_label = official_2026.get(m.match_number, row.match_label|default(row.slot_line)) %}
               <span class="pred-stage">{{ row.stage_title }}</span>
-              <span class="pred-teams"><strong>{{ forced_label }}</strong></span>
+              <span class="pred-teams"><strong>{{ row.match_label|e }}</strong></span>
               {% if row.slot_subtitle %}
               <span class="pred-stage pred-stage--sub">{{ row.slot_subtitle }}</span>
               {% endif %}
