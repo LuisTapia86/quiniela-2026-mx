@@ -1,7 +1,7 @@
 {% macro penalty_picker(match, row, locked) %}
 {% if row.is_knockout %}
 <div class="pred-penalty js-penalty-picker" data-match-id="{{ match.id }}" hidden>
-  <span class="pred-penalty__label">{{ t("pred.penalty.label") }}</span>
+  <span class="pred-penalty__label">Ganador por penales:</span>
   <div class="pred-penalty__choices">
     {% if locked or not row.editable %}
       {% if row.penalty_winner %}
