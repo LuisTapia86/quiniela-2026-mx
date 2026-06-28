@@ -55,22 +55,6 @@ _MONTHS_ES = [
 ]
 
 _OFFICIAL_KNOCKOUT_SLOTS: dict[int, tuple[str, str]] = {
-    73: ("2A", "2B"),
-    74: ("1E", "B3(A/B/C/D/F)"),
-    75: ("1F", "2C"),
-    76: ("1C", "2F"),
-    77: ("1I", "B3(C/D/F/G/H)"),
-    78: ("2E", "2I"),
-    79: ("1A", "B3(C/E/F/H/I)"),
-    80: ("1L", "B3(E/H/I/J/K)"),
-    81: ("1D", "B3(B/E/F/I/J)"),
-    82: ("1G", "B3(A/E/H/I/J)"),
-    83: ("2K", "2L"),
-    84: ("1H", "2J"),
-    85: ("1B", "B3(E/F/G/I/J)"),
-    86: ("1J", "2H"),
-    87: ("1K", "B3(D/E/I/J/L)"),
-    88: ("2D", "2G"),
     89: ("W73", "W75"),
     90: ("W74", "W77"),
     91: ("W76", "W78"),
@@ -90,22 +74,6 @@ _OFFICIAL_KNOCKOUT_SLOTS: dict[int, tuple[str, str]] = {
 }
 
 _OFFICIAL_KNOCKOUT_LABELS_2026: dict[int, str] = {
-    73: "2.º Grupo A vs 2.º Grupo B",
-    74: "1.º Grupo E vs Mejor 3.º (A/B/C/D/F)",
-    75: "1.º Grupo F vs 2.º Grupo C",
-    76: "1.º Grupo C vs 2.º Grupo F",
-    77: "1.º Grupo I vs Mejor 3.º (C/D/F/G/H)",
-    78: "2.º Grupo E vs 2.º Grupo I",
-    79: "1.º Grupo A vs Mejor 3.º (C/E/F/H/I)",
-    80: "1.º Grupo L vs Mejor 3.º (E/H/I/J/K)",
-    81: "1.º Grupo D vs Mejor 3.º (B/E/F/I/J)",
-    82: "1.º Grupo G vs Mejor 3.º (A/E/H/I/J)",
-    83: "2.º Grupo K vs 2.º Grupo L",
-    84: "1.º Grupo H vs 2.º Grupo J",
-    85: "1.º Grupo B vs Mejor 3.º (E/F/G/I/J)",
-    86: "1.º Grupo J vs 2.º Grupo H",
-    87: "1.º Grupo K vs Mejor 3.º (D/E/I/J/L)",
-    88: "2.º Grupo D vs 2.º Grupo G",
     89: "Ganador partido 73 vs Ganador partido 75",
     90: "Ganador partido 74 vs Ganador partido 77",
     91: "Ganador partido 76 vs Ganador partido 78",
@@ -167,6 +135,10 @@ def get_official_knockout_label(match_number: int) -> tuple[str, str] | None:
 
 def get_official_knockout_display_label(match_number: int) -> str | None:
     return _OFFICIAL_KNOCKOUT_LABELS_2026.get(match_number)
+
+
+def _uses_db_team_names(match_number: int) -> bool:
+    return 73 <= match_number <= 88
 
 
 def format_knockout_slot(value: str | None) -> str:
@@ -568,7 +540,8 @@ def build_prediction_rows(
         if is_group and group_letter:
             group_context = f"Grupo {group_letter}"
 
-        if is_group:
+        use_db_teams = _uses_db_team_names(m.match_number)
+        if is_group or use_db_teams:
             slot_home = (m.home_team or "").strip() or "Por definir"
             slot_away = (m.away_team or "").strip() or "Por definir"
             match_label = f"{slot_home} vs {slot_away}"
@@ -600,6 +573,7 @@ def build_prediction_rows(
             {
                 "match": m,
                 "is_group_stage": is_group,
+                "use_db_teams": use_db_teams,
                 "group_context": group_context,
                 "stage_title": stage_title,
                 "slot_line": match_label,

@@ -57,6 +57,42 @@ def register_cli(app: Flask) -> None:
             for err in summary["errors"]:
                 click.echo(f" - {err}")
 
+    @app.cli.command("update-r32-teams")
+    def update_r32_teams() -> None:
+        """One-time: set real Round of 32 teams on matches 73–88 (home/away only)."""
+        from app import db
+        from app.models import Match
+
+        teams: dict[int, tuple[str, str]] = {
+            73: ("Sudáfrica", "Canadá"),
+            74: ("Países Bajos", "Marruecos"),
+            75: ("Alemania", "Paraguay"),
+            76: ("Francia", "Suecia"),
+            77: ("Bélgica", "Senegal"),
+            78: ("Estados Unidos", "Bosnia y Herzegovina"),
+            79: ("España", "Austria"),
+            80: ("Portugal", "Croacia"),
+            81: ("Brasil", "Japón"),
+            82: ("Costa de Marfil", "Noruega"),
+            83: ("México", "Ecuador"),
+            84: ("Inglaterra", "RD Congo"),
+            85: ("Suiza", "Argelia"),
+            86: ("Colombia", "Ghana"),
+            87: ("Australia", "Egipto"),
+            88: ("Argentina", "Cabo Verde"),
+        }
+        updated = 0
+        for num, (home, away) in teams.items():
+            m = Match.query.filter_by(match_number=num).first()
+            if m is None:
+                click.echo(f"Partido {num} no encontrado — omitido.")
+                continue
+            m.home_team = home
+            m.away_team = away
+            updated += 1
+        db.session.commit()
+        click.echo(f"Listo. {updated} partidos actualizados (73–88).")
+
     @app.cli.command("generate-matches")
     def generate_matches() -> None:
         """Generate the full 2026 World Cup structure (104 matches) without external API."""

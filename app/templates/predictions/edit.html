@@ -38,22 +38,6 @@
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
   {% else %}
   {% set official_2026 = {
-    73: "2.º Grupo A vs 2.º Grupo B",
-    74: "1.º Grupo E vs Mejor 3.º (A/B/C/D/F)",
-    75: "1.º Grupo F vs 2.º Grupo C",
-    76: "1.º Grupo C vs 2.º Grupo F",
-    77: "1.º Grupo I vs Mejor 3.º (C/D/F/G/H)",
-    78: "2.º Grupo E vs 2.º Grupo I",
-    79: "1.º Grupo A vs Mejor 3.º (C/E/F/H/I)",
-    80: "1.º Grupo L vs Mejor 3.º (E/H/I/J/K)",
-    81: "1.º Grupo D vs Mejor 3.º (B/E/F/I/J)",
-    82: "1.º Grupo G vs Mejor 3.º (A/E/H/I/J)",
-    83: "2.º Grupo K vs 2.º Grupo L",
-    84: "1.º Grupo H vs 2.º Grupo J",
-    85: "1.º Grupo B vs Mejor 3.º (E/F/G/I/J)",
-    86: "1.º Grupo J vs 2.º Grupo H",
-    87: "1.º Grupo K vs Mejor 3.º (D/E/I/J/L)",
-    88: "2.º Grupo D vs 2.º Grupo G",
     89: "Ganador partido 73 vs Ganador partido 75",
     90: "Ganador partido 74 vs Ganador partido 77",
     91: "Ganador partido 76 vs Ganador partido 78",
@@ -99,8 +83,8 @@
           <tr>
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
-              {% if row.is_group_stage %}
-              <span class="pred-stage">{{ row.group_context }}</span>
+              {% if row.is_group_stage or row.use_db_teams %}
+              <span class="pred-stage">{{ row.group_context if row.is_group_stage else row.stage_title }}</span>
               <span class="pred-teams pred-teams--inline">
                 <span class="pred-team pred-team--home">
                   {% set home_flag_src = m.home_team|team_flag_src %}
