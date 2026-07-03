@@ -430,7 +430,7 @@ def _save_predictions(
                         entry.id,
                         m.match_number,
                     )
-                    return False, tr("flash.predictions.group_stage_locked")
+                    return False, tr("flash.predictions.match_locked")
                 continue
             if existing is None:
                 current_app.logger.warning(
@@ -438,14 +438,14 @@ def _save_predictions(
                     entry.id,
                     m.match_number,
                 )
-                return False, tr("flash.predictions.group_stage_locked")
+                return False, tr("flash.predictions.match_locked")
             if h != existing.home_goals or a != existing.away_goals:
                 current_app.logger.warning(
                     "predictions_save_locked_rejected entry_id=%s match_number=%s tamper",
                     entry.id,
                     m.match_number,
                 )
-                return False, tr("flash.predictions.group_stage_locked")
+                return False, tr("flash.predictions.match_locked")
             raw_pw = request.form.get(f"penalty_winner_{m.id}")
             if raw_pw is not None and _parse_penalty_winner(raw_pw, m) != (existing.penalty_winner or None):
                 current_app.logger.warning(
@@ -453,7 +453,7 @@ def _save_predictions(
                     entry.id,
                     m.match_number,
                 )
-                return False, tr("flash.predictions.group_stage_locked")
+                return False, tr("flash.predictions.match_locked")
             continue
 
         if raw_h == "" and raw_a == "":
@@ -647,6 +647,9 @@ def build_prediction_rows(
                 "points_earned": points_earned,
                 "breakdown": breakdown,
                 "editable": editable,
+                "lock_status_label": (
+                    tr("pred.match_status.open") if editable else tr("pred.match_status.closed")
+                ),
             }
         )
     return rows, completed_predictions
@@ -666,7 +669,6 @@ def _render_predictions(
         global_locked=locked,
     )
     total_editable = sum(1 for m in matches if is_match_editable(m, current_app.config, global_locked=locked))
-    has_group_stage_rows = any(r.get("is_group_stage") for r in rows)
     return render_template(
         "predictions/edit.html",
         entry=entry,
@@ -675,7 +677,6 @@ def _render_predictions(
         completed_predictions=completed_predictions,
         total_matches=total_editable,
         has_editable_matches=total_editable > 0,
-        has_group_stage_rows=has_group_stage_rows,
         save_feedback=save_feedback,
         saved_banner=request.args.get("saved") == "1",
     )

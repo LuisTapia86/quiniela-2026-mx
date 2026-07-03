@@ -28,9 +28,11 @@ def index():
     cancelled_entries = [e for e in entries if e.status != EntryStatus.ACTIVE]
     payments_by_entry: dict[int, Payment | None] = {}
     prediction_counts: dict[int, int] = {}
-    total_matches = count_editable_matches(current_app.config)
-    visible_match_ids = select(Match.id).where(editable_matches_where(current_app.config))
     predictions_locked = TournamentState.get_singleton().predictions_locked
+    total_matches = count_editable_matches(current_app.config, global_locked=predictions_locked)
+    visible_match_ids = select(Match.id).where(
+        editable_matches_where(current_app.config, global_locked=predictions_locked)
+    )
     if entries:
         eids = [e.id for e in entries]
         for p in db.session.scalars(select(Payment).where(Payment.entry_id.in_(eids))):

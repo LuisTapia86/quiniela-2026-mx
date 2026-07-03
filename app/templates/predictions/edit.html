@@ -25,14 +25,11 @@
   </p>
   {% if locked %}
   <p class="lock-banner no-print" role="status">{{ t("pred.locked_readonly") }}</p>
-  {% elif has_group_stage_rows %}
-  <p class="lock-banner no-print" role="status">{{ t("pred.group_stage_closed") }}</p>
   {% endif %}
   {% if not locked and has_editable_matches %}
   <p class="form__hint no-print" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
-  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("rules.lock_stages") }}</p>
-  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("common.stages_simple") }}</p>
+  <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("pred.auto_lock_hint") }}</p>
   <p class="form__hint no-print" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
 
   {% if rows|length == 0 %}
@@ -50,6 +47,7 @@
             <th scope="col">#</th>
             <th scope="col">{{ t("pred.col.match") }}</th>
             <th scope="col">{{ t("pred.col.kickoff") }}</th>
+            <th scope="col">{{ t("pred.col.status") }}</th>
             <th scope="col">{{ t("pred.col.result") }}</th>
             <th scope="col">{{ t("pred.col.points") }}</th>
             <th scope="col" class="pred-col-detail no-print">{{ t("pred.col.detail") }}</th>
@@ -60,7 +58,7 @@
           {% set m = row.match %}
           {% if row.date_break|default(false) %}
           <tr class="pred-date-separator">
-            <td colspan="6">📅 {{ row.date_label }}</td>
+            <td colspan="7">📅 {{ row.date_label }}</td>
           </tr>
           {% endif %}
           <tr>
@@ -119,6 +117,15 @@
               —
               {% endif %}
             </td>
+            <td data-label="{{ t('pred.col.status') }}">
+              {% if locked %}
+              <span class="form__hint">{{ t("pred.match_status.closed") }}</span>
+              {% elif row.editable %}
+              <span class="pred-status pred-status--open">{{ row.lock_status_label|e }}</span>
+              {% else %}
+              <span class="pred-status pred-status--closed">{{ row.lock_status_label|e }}</span>
+              {% endif %}
+            </td>
             <td data-label="{{ t('pred.col.result') }}">
               {% if row.result_pending %}
               <span class="form__hint">{{ t("pred.pending_result") }}</span>
@@ -144,7 +151,7 @@
             </td>
           </tr>
           <tr id="pred-detail-{{ m.id }}" class="pred-detail-row no-print" hidden>
-            <td colspan="6">
+            <td colspan="7">
               <div class="pred-detail-panel">
                 <p><strong>{{ t("pred.detail.prediction") }}:</strong> {{ row.prediction_text }}</p>
                 <p><strong>{{ t("pred.detail.result") }}:</strong> {{ row.result_text }}</p>

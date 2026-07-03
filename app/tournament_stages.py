@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import Any, Mapping
 
-from sqlalchemy import or_, select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.sql import ColumnElement
 
-from app.models import Match
+from app.datetime_fmt import _as_utc
+from app.models import Match, utcnow
+
+PREDICTION_LOCK_BEFORE_KICKOFF = timedelta(hours=1)
 
 # Friendly config labels → stage values stored in Match.stage (WC2026 CSV).
 _STAGE_CANONICAL: dict[str, str] = {
@@ -96,11 +100,31 @@ def count_visible_matches(config: Mapping[str, Any]) -> int:
     )
 
 
-def editable_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
-    raw = config.get("EDITABLE_PREDICTION_MATCH_NUMBERS")
-    if raw:
-        return frozenset(int(n) for n in raw)
-    return frozenset(range(89, 95))
+def match_prediction_lock_at(match: Match):
+    """UTC-aware moment when predictions close (kickoff minus 1 hour)."""
+    if match.kickoff_at is None:
+        return None
+    return _as_utc(match.kickoff_at) - PREDICTION_LOCK_BEFORE_KICKOFF
+
+
+def is_match_auto_locked(match: Match) -> bool:
+    lock_at = match_prediction_lock_at(match)
+    if lock_at is None:
+        return False
+    return utcnow() >= lock_at
+
+
+def editable_matches_where(
+    config: Mapping[str, Any],
+    *,
+    global_locked: bool = False,
+) -> ColumnElement[bool]:
+    """SQL filter: visible-stage matches still open for predictions."""
+    if global_locked:
+        return Match.id.is_(None)  # type: ignore[return-value]
+    cutoff = utcnow().replace(tzinfo=None) + PREDICTION_LOCK_BEFORE_KICKOFF
+    kickoff_open = or_(Match.kickoff_at.is_(None), Match.kickoff_at > cutoff)
+    return and_(visible_matches_where(config), kickoff_open)
 
 
 def is_match_editable(
@@ -111,14 +135,26 @@ def is_match_editable(
 ) -> bool:
     if global_locked:
         return False
-    return match.match_number in editable_match_numbers(config)
+    if not match_stage_is_visible(match.stage, config):
+        return False
+    return not is_match_auto_locked(match)
 
 
-def editable_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
-    nums = editable_match_numbers(config)
-    if not nums:
-        return Match.id.is_(None)  # type: ignore[return-value]
-    return Match.match_number.in_(nums)
+def count_editable_matches(config: Mapping[str, Any], *, global_locked: bool = False) -> int:
+    from sqlalchemy import func
+
+    from app import db
+
+    if global_locked:
+        return 0
+    return (
+        db.session.scalar(
+            select(func.count())
+            .select_from(Match)
+            .where(editable_matches_where(config, global_locked=global_locked)),
+        )
+        or 0
+    )
 
 
 def is_knockout_stage(stage: str | None) -> bool:
@@ -127,21 +163,3 @@ def is_knockout_stage(stage: str | None) -> bool:
     if not value:
         return False
     return "grupo" not in value and "group" not in value
-
-
-def count_editable_matches(config: Mapping[str, Any]) -> int:
-    from sqlalchemy import func
-
-    from app import db
-
-    nums = editable_match_numbers(config)
-    if not nums:
-        return 0
-    return (
-        db.session.scalar(
-            select(func.count())
-            .select_from(Match)
-            .where(editable_matches_where(config)),
-        )
-        or 0
-    )

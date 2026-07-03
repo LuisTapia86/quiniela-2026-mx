@@ -37,8 +37,8 @@ class Config:
     # User-facing prediction stages (unlock more by extending this tuple).
     # Friendly names like "Group Stage" map to DB values in app/tournament_stages.py.
     VISIBLE_PREDICTION_STAGES = ("Group Stage", "Round of 32", "Round of 16")
-    # Match numbers users may edit (Octavos de final: 89–94 only).
-    EDITABLE_PREDICTION_MATCH_NUMBERS = tuple(range(89, 95))
+    # Per-match auto-lock: predictions close this many hours before kickoff (see tournament_stages.py).
+    PREDICTION_LOCK_HOURS_BEFORE_KICKOFF = 1
     # Share of the prize pool for TOP 3; ties split that amount.
     PRIZE_TOP1_PERCENT = 70
     PRIZE_TOP2_PERCENT = 20
