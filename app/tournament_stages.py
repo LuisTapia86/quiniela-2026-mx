@@ -61,20 +61,21 @@ def visible_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
     return or_(*[Match.stage == stage for stage in stages])
 
 
-def select_visible_matches(*, order_by_kickoff: bool = True):
+def matches_chronological_order():
+    """Standard match list order: kickoff time, then match_number tie-break."""
+    return (
+        Match.kickoff_at.asc().nulls_last(),
+        Match.match_number.asc(),
+        Match.id.asc(),
+    )
+
+
+def select_visible_matches():
     """Base select(Match) scoped to visible prediction stages."""
     from flask import current_app
 
     stmt = select(Match).where(visible_matches_where(current_app.config))
-    if order_by_kickoff:
-        stmt = stmt.order_by(
-            Match.kickoff_at.asc().nulls_last(),
-            Match.match_number.asc(),
-            Match.id.asc(),
-        )
-    else:
-        stmt = stmt.order_by(Match.match_number.asc(), Match.id.asc())
-    return stmt
+    return stmt.order_by(*matches_chronological_order())
 
 
 def count_visible_matches(config: Mapping[str, Any]) -> int:
@@ -99,7 +100,7 @@ def editable_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
     raw = config.get("EDITABLE_PREDICTION_MATCH_NUMBERS")
     if raw:
         return frozenset(int(n) for n in raw)
-    return frozenset(range(73, 89))
+    return frozenset(range(89, 95))
 
 
 def is_match_editable(

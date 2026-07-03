@@ -5,7 +5,7 @@ from sqlalchemy.orm import joinedload
 from app import db
 from app.models import Entry, EntryStatus, Match, Payment, Prediction, TournamentState, User
 from app.routes.auth import _validate_display_name, get_current_user, login_required
-from app.tournament_stages import count_editable_matches, editable_matches_where
+from app.tournament_stages import count_editable_matches, editable_matches_where, matches_chronological_order
 from app.translations import tr
 
 bp = Blueprint("main", __name__)
@@ -109,7 +109,7 @@ def _group_stage_matches() -> list[Match]:
                 Match.group_name.is_not(None),
                 func.trim(Match.group_name) != "",
             )
-            .order_by(Match.match_number.asc(), Match.id.asc()),
+            .order_by(*matches_chronological_order()),
         ),
     )
 

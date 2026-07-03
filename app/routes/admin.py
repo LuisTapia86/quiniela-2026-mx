@@ -57,7 +57,7 @@ from app.payment_proofs import (
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.routes.entries import build_prediction_rows, parse_penalty_winner_choice
 from app.services.scoring import recalculate_all_points, summarize_prediction_audit
-from app.tournament_stages import is_knockout_stage, select_visible_matches
+from app.tournament_stages import is_knockout_stage, matches_chronological_order, select_visible_matches
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
 
@@ -475,7 +475,7 @@ def results():
         db.session.scalars(
             select(Match)
             .options(joinedload(Match.result))
-            .order_by(Match.match_number.asc(), Match.id.asc())
+            .order_by(*matches_chronological_order())
         )
     )
     if request.method == "POST":
@@ -627,7 +627,7 @@ def matches():
         )
         .outerjoin(Prediction, Prediction.match_id == Match.id)
         .group_by(Match.id)
-        .order_by(Match.match_number.asc(), Match.id.asc()),
+        .order_by(*matches_chronological_order()),
     ).all()
     return render_template(
         "admin/matches.html",
