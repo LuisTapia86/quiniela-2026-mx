@@ -66,7 +66,7 @@
           <tr>
             <td data-label="#">{{ m.match_number }}</td>
             <td data-label="{{ t('pred.col.match') }}">
-              {% if row.is_group_stage or (m.match_number >= 73 and m.match_number <= 88) %}
+              {% if row.is_group_stage or row.use_db_teams %}
               <span class="pred-stage">{{ row.group_context if row.is_group_stage else row.stage_title }}</span>
               <span class="pred-teams pred-teams--inline">
                 <span class="pred-team pred-team--home">

@@ -55,14 +55,6 @@ _MONTHS_ES = [
 ]
 
 _OFFICIAL_KNOCKOUT_SLOTS: dict[int, tuple[str, str]] = {
-    89: ("W73", "W75"),
-    90: ("W74", "W77"),
-    91: ("W76", "W78"),
-    92: ("W79", "W80"),
-    93: ("W83", "W84"),
-    94: ("W81", "W82"),
-    95: ("W86", "W88"),
-    96: ("W85", "W87"),
     97: ("W89", "W90"),
     98: ("W93", "W94"),
     99: ("W91", "W92"),
@@ -74,14 +66,6 @@ _OFFICIAL_KNOCKOUT_SLOTS: dict[int, tuple[str, str]] = {
 }
 
 _OFFICIAL_KNOCKOUT_LABELS_2026: dict[int, str] = {
-    89: "Ganador partido 73 vs Ganador partido 75",
-    90: "Ganador partido 74 vs Ganador partido 77",
-    91: "Ganador partido 76 vs Ganador partido 78",
-    92: "Ganador partido 79 vs Ganador partido 80",
-    93: "Ganador partido 83 vs Ganador partido 84",
-    94: "Ganador partido 81 vs Ganador partido 82",
-    95: "Ganador partido 86 vs Ganador partido 88",
-    96: "Ganador partido 85 vs Ganador partido 87",
     97: "Ganador partido 89 vs Ganador partido 90",
     98: "Ganador partido 93 vs Ganador partido 94",
     99: "Ganador partido 91 vs Ganador partido 92",
@@ -137,12 +121,9 @@ def get_official_knockout_display_label(match_number: int) -> str | None:
     return _OFFICIAL_KNOCKOUT_LABELS_2026.get(match_number)
 
 
-def r32_uses_db_teams(match_number: int) -> bool:
-    return 73 <= match_number <= 88
-
-
 def _uses_db_team_names(match_number: int) -> bool:
-    return r32_uses_db_teams(match_number)
+    """R32 (73–88) and Octavos (89–96): show home_team / away_team from DB."""
+    return 73 <= match_number <= 96
 
 
 def format_knockout_slot(value: str | None) -> str:
