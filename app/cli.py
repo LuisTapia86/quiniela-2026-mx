@@ -93,6 +93,37 @@ def register_cli(app: Flask) -> None:
         db.session.commit()
         click.echo(f"Listo. {updated} partidos actualizados (73–88).")
 
+    @app.cli.command("update-r16-teams")
+    def update_r16_teams() -> None:
+        """One-time: set Round of 16 teams and kickoffs on matches 89–96."""
+        from datetime import datetime
+
+        from app import db
+        from app.models import Match
+
+        rows: dict[int, tuple[str, str, datetime]] = {
+            89: ("Canadá", "Marruecos", datetime(2026, 7, 4, 11, 0, 0)),
+            90: ("Paraguay", "Francia", datetime(2026, 7, 4, 15, 0, 0)),
+            91: ("Brasil", "Noruega", datetime(2026, 7, 5, 14, 0, 0)),
+            92: ("México", "Inglaterra", datetime(2026, 7, 5, 18, 0, 0)),
+            93: ("Portugal", "España", datetime(2026, 7, 6, 13, 0, 0)),
+            94: ("Estados Unidos", "Bélgica", datetime(2026, 7, 6, 18, 0, 0)),
+            95: ("Argentina", "Egipto", datetime(2026, 7, 7, 10, 0, 0)),
+            96: ("Suiza", "Colombia", datetime(2026, 7, 7, 14, 0, 0)),
+        }
+        updated = 0
+        for num, (home, away, kickoff) in rows.items():
+            m = Match.query.filter_by(match_number=num).first()
+            if m is None:
+                click.echo(f"Partido {num} no encontrado — omitido.")
+                continue
+            m.home_team = home
+            m.away_team = away
+            m.kickoff_at = kickoff
+            updated += 1
+        db.session.commit()
+        click.echo(f"Listo. {updated} partidos actualizados (89–96).")
+
     @app.cli.command("generate-matches")
     def generate_matches() -> None:
         """Generate the full 2026 World Cup structure (104 matches) without external API."""
