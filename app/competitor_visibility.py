@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from flask import current_app
 
-from app.datetime_fmt import _as_utc
-from app.models import Match, TournamentState, utcnow
+from app.datetime_fmt import kickoff_as_local, server_now_local
+from app.models import Match, TournamentState
 from app.tournament_stages import is_knockout_stage, is_match_editable
 
 
@@ -21,7 +21,7 @@ def competitor_prediction_visible(match: Match, *, global_locked: bool | None = 
         return True
     if not is_match_editable(match, current_app.config, global_locked=global_locked):
         return True
-    if match.kickoff_at is not None and _as_utc(match.kickoff_at) <= utcnow():
+    if match.kickoff_at is not None and server_now_local() >= kickoff_as_local(match.kickoff_at):
         return True
     return False
 

@@ -4,6 +4,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+from app.models import utcnow
+
 MEXICO_TZ = ZoneInfo("America/Mexico_City")
 
 _MONTHS_ES = (
@@ -40,6 +42,20 @@ def _as_utc(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=timezone.utc)
     return dt.astimezone(timezone.utc)
+
+
+def kickoff_as_local(dt: datetime | None) -> datetime | None:
+    """Match kickoff_at values are stored as America/Mexico_City wall time (naive)."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=MEXICO_TZ)
+    return dt.astimezone(MEXICO_TZ)
+
+
+def server_now_local() -> datetime:
+    """Current time in America/Mexico_City (for prediction lock comparisons)."""
+    return utcnow().astimezone(MEXICO_TZ)
 
 
 def to_mexico_city(dt: datetime | None) -> datetime | None:

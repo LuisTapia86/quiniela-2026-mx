@@ -8,8 +8,8 @@ from typing import Any, Mapping
 from sqlalchemy import and_, or_, select
 from sqlalchemy.sql import ColumnElement
 
-from app.datetime_fmt import _as_utc
-from app.models import Match, utcnow
+from app.datetime_fmt import kickoff_as_local, server_now_local
+from app.models import Match
 
 PREDICTION_LOCK_BEFORE_KICKOFF = timedelta(hours=1)
 
@@ -100,18 +100,24 @@ def count_visible_matches(config: Mapping[str, Any]) -> int:
     )
 
 
+def manual_unlock_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
+    raw = config.get("MANUAL_UNLOCK_PREDICTION_MATCH_NUMBERS") or ()
+    return frozenset(int(n) for n in raw)
+
+
 def match_prediction_lock_at(match: Match):
-    """UTC-aware moment when predictions close (kickoff minus 1 hour)."""
-    if match.kickoff_at is None:
+    """Local (Mexico City) moment when predictions close (kickoff minus 1 hour)."""
+    kickoff = kickoff_as_local(match.kickoff_at)
+    if kickoff is None:
         return None
-    return _as_utc(match.kickoff_at) - PREDICTION_LOCK_BEFORE_KICKOFF
+    return kickoff - PREDICTION_LOCK_BEFORE_KICKOFF
 
 
 def is_match_auto_locked(match: Match) -> bool:
     lock_at = match_prediction_lock_at(match)
     if lock_at is None:
         return False
-    return utcnow() >= lock_at
+    return server_now_local() >= lock_at
 
 
 def editable_matches_where(
@@ -119,10 +125,10 @@ def editable_matches_where(
     *,
     global_locked: bool = False,
 ) -> ColumnElement[bool]:
-    """SQL filter: visible-stage matches still open for predictions."""
+    """SQL filter: visible-stage matches still open (naive kickoff_at = Mexico local)."""
     if global_locked:
         return Match.id.is_(None)  # type: ignore[return-value]
-    cutoff = utcnow().replace(tzinfo=None) + PREDICTION_LOCK_BEFORE_KICKOFF
+    cutoff = server_now_local().replace(tzinfo=None) + PREDICTION_LOCK_BEFORE_KICKOFF
     kickoff_open = or_(Match.kickoff_at.is_(None), Match.kickoff_at > cutoff)
     return and_(visible_matches_where(config), kickoff_open)
 
@@ -137,6 +143,8 @@ def is_match_editable(
         return False
     if not match_stage_is_visible(match.stage, config):
         return False
+    if match.match_number in manual_unlock_match_numbers(config):
+        return True
     return not is_match_auto_locked(match)
 
 
