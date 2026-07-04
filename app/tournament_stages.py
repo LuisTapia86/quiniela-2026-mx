@@ -105,6 +105,11 @@ def manual_unlock_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
     return frozenset(int(n) for n in raw)
 
 
+def manual_lock_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
+    raw = config.get("MANUAL_LOCK_PREDICTION_MATCH_NUMBERS") or ()
+    return frozenset(int(n) for n in raw)
+
+
 def match_prediction_lock_at(match: Match):
     """Local (Mexico City) moment when predictions close (kickoff minus 1 hour)."""
     kickoff = kickoff_as_local(match.kickoff_at)
@@ -130,7 +135,11 @@ def editable_matches_where(
         return Match.id.is_(None)  # type: ignore[return-value]
     cutoff = server_now_local().replace(tzinfo=None) + PREDICTION_LOCK_BEFORE_KICKOFF
     kickoff_open = or_(Match.kickoff_at.is_(None), Match.kickoff_at > cutoff)
-    return and_(visible_matches_where(config), kickoff_open)
+    clause: ColumnElement[bool] = and_(visible_matches_where(config), kickoff_open)
+    locked_nums = manual_lock_match_numbers(config)
+    if locked_nums:
+        clause = and_(clause, Match.match_number.not_in(locked_nums))
+    return clause
 
 
 def is_match_editable(
@@ -142,6 +151,8 @@ def is_match_editable(
     if global_locked:
         return False
     if not match_stage_is_visible(match.stage, config):
+        return False
+    if match.match_number in manual_lock_match_numbers(config):
         return False
     if match.match_number in manual_unlock_match_numbers(config):
         return True

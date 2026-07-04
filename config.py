@@ -39,10 +39,14 @@ class Config:
     VISIBLE_PREDICTION_STAGES = ("Group Stage", "Round of 32", "Round of 16")
     # Per-match auto-lock: predictions close this many hours before kickoff (see tournament_stages.py).
     PREDICTION_LOCK_HOURS_BEFORE_KICKOFF = 1
-    # Emergency override: these match_numbers stay editable regardless of auto-lock (comma-separated env).
-    _unlock_raw = (os.environ.get("MANUAL_UNLOCK_MATCH_NUMBERS") or "89,90").strip()
+    # Emergency overrides (comma-separated match numbers via env).
+    _unlock_raw = (os.environ.get("MANUAL_UNLOCK_MATCH_NUMBERS") or "").strip()
     MANUAL_UNLOCK_PREDICTION_MATCH_NUMBERS = tuple(
         int(part.strip()) for part in _unlock_raw.split(",") if part.strip().isdigit()
+    )
+    _lock_raw = (os.environ.get("MANUAL_LOCK_MATCH_NUMBERS") or "89").strip()
+    MANUAL_LOCK_PREDICTION_MATCH_NUMBERS = tuple(
+        int(part.strip()) for part in _lock_raw.split(",") if part.strip().isdigit()
     )
     # Share of the prize pool for TOP 3; ties split that amount.
     PRIZE_TOP1_PERCENT = 70
