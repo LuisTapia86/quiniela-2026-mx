@@ -8,10 +8,9 @@ Match.away_team are ever modified — results and predictions are never touched.
 from __future__ import annotations
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Match
+from app.models import Match, Result
 
 # Placeholder written back when a source match is not yet decided.
 UNDECIDED_PLACEHOLDER = "A definir"
@@ -41,15 +40,15 @@ BRACKET_RULES: list[tuple[int, int, str, str]] = [
 ]
 
 
-def decided_teams(match: Match | None) -> tuple[str | None, str | None]:
+def decided_teams(match: Match | None, result: Result | None) -> tuple[str | None, str | None]:
     """Return (winner, loser) team names for a finished match, else (None, None).
 
-    Regular time decides the outcome; on a tie the penalty winner is used.
+    Regular time decides the outcome; on a tie the penalty winner is used. The
+    result is passed explicitly (read from a fresh Result query) rather than via
+    match.result, so freshly-saved results are always seen even if the cached
+    relationship on the Match instance is stale.
     """
-    if match is None:
-        return None, None
-    result = match.result
-    if result is None:
+    if match is None or result is None:
         return None, None
     home_score = result.home_score
     away_score = result.away_score
@@ -81,16 +80,16 @@ def advance_bracket() -> int:
     the affected downstream slots with the new winner. Only home_team/away_team
     are modified; results and predictions are never touched.
     """
-    matches = {
-        m.match_number: m
-        for m in db.session.scalars(select(Match).options(joinedload(Match.result)))
-    }
+    matches = {m.match_number: m for m in db.session.scalars(select(Match))}
+    results_by_match_id = {r.match_id: r for r in db.session.scalars(select(Result))}
     changed = 0
     for source_num, dest_num, slot, outcome in BRACKET_RULES:
         dest = matches.get(dest_num)
         if dest is None:
             continue
-        winner, loser = decided_teams(matches.get(source_num))
+        source = matches.get(source_num)
+        result = results_by_match_id.get(source.id) if source is not None else None
+        winner, loser = decided_teams(source, result)
         team = winner if outcome == "winner" else loser
         if not team:
             continue
