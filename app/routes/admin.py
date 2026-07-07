@@ -43,6 +43,7 @@ from app.services.api_football import (
     import_fixtures_upsert,
     sync_results_from_api,
 )
+from app.services.bracket import advance_bracket
 from app.services.match_generation import generate_world_cup_2026_matches
 from app.services.matches_csv import import_matches_from_path, import_matches_from_reader
 from app.dev_tools import flask_debug_truthy
@@ -527,6 +528,8 @@ def results():
                     r.home_score = h
                     r.away_score = a
                     r.penalty_winner = penalty_winner
+            db.session.flush()
+            advance_bracket()
             db.session.flush()
             recalculate_all_points()
             db.session.commit()
@@ -1186,6 +1189,9 @@ def api_football_sync_results():
     except ApiFootballError as exc:
         flash(f"{tr('admin.api.sync_failed')}: {exc}", "error")
         return redirect(url_for("admin.api_football_panel"))
+    if advance_bracket():
+        recalculate_all_points()
+    db.session.commit()
     last = session.get("api_football_last_summary") or {}
     session["api_football_last_summary"] = {
         "created": last.get("created", 0),
