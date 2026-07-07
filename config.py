@@ -36,7 +36,15 @@ class Config:
     ENTRY_FEE_MXN = 200
     # User-facing prediction stages (unlock more by extending this tuple).
     # Friendly names like "Group Stage" map to DB values in app/tournament_stages.py.
-    VISIBLE_PREDICTION_STAGES = ("Group Stage", "Round of 32", "Round of 16")
+    VISIBLE_PREDICTION_STAGES = (
+        "Group Stage",
+        "Round of 32",
+        "Round of 16",
+        "Quarterfinals",
+        "Semifinals",
+        "Third place match",
+        "Final",
+    )
     # Per-match auto-lock: predictions close this many hours before kickoff (see tournament_stages.py).
     PREDICTION_LOCK_HOURS_BEFORE_KICKOFF = 1
     # Emergency overrides (comma-separated match numbers via env).

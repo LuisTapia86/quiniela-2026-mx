@@ -72,11 +72,14 @@ def decided_teams(match: Match | None) -> tuple[str | None, str | None]:
 
 
 def advance_bracket() -> int:
-    """Recompute knockout destination teams from current results. Returns #slots changed.
+    """Advance decided winners/losers into their next match. Returns #slots changed.
 
-    Idempotent and deterministic: destinations are fully derived from source
-    results, so re-running (e.g. after a result is edited) corrects downstream
-    matches automatically. Only home_team/away_team are written.
+    Deterministic and idempotent: a destination slot is only written when the
+    source match is decided. If a source is undecided, the destination is left
+    untouched — this preserves teams imported from the CSV and never regresses a
+    real team back to a placeholder. Re-running after a result changes rewrites
+    the affected downstream slots with the new winner. Only home_team/away_team
+    are modified; results and predictions are never touched.
     """
     matches = {
         m.match_number: m
@@ -89,9 +92,10 @@ def advance_bracket() -> int:
             continue
         winner, loser = decided_teams(matches.get(source_num))
         team = winner if outcome == "winner" else loser
-        new_value = team or UNDECIDED_PLACEHOLDER
+        if not team:
+            continue
         field = f"{slot}_team"
-        if getattr(dest, field) != new_value:
-            setattr(dest, field, new_value)
+        if getattr(dest, field) != team:
+            setattr(dest, field, team)
             changed += 1
     return changed

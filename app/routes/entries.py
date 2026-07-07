@@ -24,7 +24,7 @@ from app.payment_gating import is_payment_banking_configured
 from app.payment_proofs import PaymentProofError, create_pending_payment, save_payment_proof
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
-from app.tournament_stages import is_knockout_stage, is_match_editable, select_visible_matches
+from app.tournament_stages import both_teams_known, is_knockout_stage, is_match_editable, select_visible_matches
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
@@ -122,8 +122,12 @@ def get_official_knockout_display_label(match_number: int) -> str | None:
 
 
 def _uses_db_team_names(match_number: int) -> bool:
-    """R32 (73–88) and Octavos (89–96): show home_team / away_team from DB."""
-    return 73 <= match_number <= 96
+    """All knockout matches (73+): show home_team / away_team straight from DB.
+
+    Teams are populated from real fixtures and auto-advanced by the bracket, so
+    no hardcoded W##/"Ganador partido" placeholders are ever shown to users.
+    """
+    return match_number >= 73
 
 
 def format_knockout_slot(value: str | None) -> str:
@@ -570,6 +574,7 @@ def build_prediction_rows(
             group_context = f"Grupo {group_letter}"
 
         use_db_teams = _uses_db_team_names(m.match_number)
+        teams_known = both_teams_known(m)
         if is_group or use_db_teams:
             slot_home = (m.home_team or "").strip() or "Por definir"
             slot_away = (m.away_team or "").strip() or "Por definir"
@@ -647,8 +652,13 @@ def build_prediction_rows(
                 "points_earned": points_earned,
                 "breakdown": breakdown,
                 "editable": editable,
+                "teams_known": teams_known,
                 "lock_status_label": (
-                    tr("pred.match_status.open") if editable else tr("pred.match_status.closed")
+                    tr("pred.match_status.open")
+                    if editable
+                    else tr("pred.match_status.pending_teams")
+                    if not teams_known
+                    else tr("pred.match_status.closed")
                 ),
             }
         )

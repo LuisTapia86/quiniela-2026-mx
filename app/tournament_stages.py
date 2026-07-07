@@ -100,6 +100,19 @@ def count_visible_matches(config: Mapping[str, Any]) -> int:
     )
 
 
+# Placeholder used for knockout slots whose team is not decided yet.
+UNDEFINED_TEAM_PLACEHOLDER = "A definir"
+
+
+def both_teams_known(match: Match) -> bool:
+    """True when both teams are real (not the 'A definir' placeholder / empty)."""
+    home = (match.home_team or "").strip()
+    away = (match.away_team or "").strip()
+    if not home or not away:
+        return False
+    return home != UNDEFINED_TEAM_PLACEHOLDER and away != UNDEFINED_TEAM_PLACEHOLDER
+
+
 def manual_unlock_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
     raw = config.get("MANUAL_UNLOCK_PREDICTION_MATCH_NUMBERS") or ()
     return frozenset(int(n) for n in raw)
@@ -135,7 +148,13 @@ def editable_matches_where(
         return Match.id.is_(None)  # type: ignore[return-value]
     cutoff = server_now_local().replace(tzinfo=None) + PREDICTION_LOCK_BEFORE_KICKOFF
     kickoff_open = or_(Match.kickoff_at.is_(None), Match.kickoff_at > cutoff)
-    clause: ColumnElement[bool] = and_(visible_matches_where(config), kickoff_open)
+    teams_known = and_(
+        Match.home_team.is_not(None),
+        Match.away_team.is_not(None),
+        Match.home_team != UNDEFINED_TEAM_PLACEHOLDER,
+        Match.away_team != UNDEFINED_TEAM_PLACEHOLDER,
+    )
+    clause: ColumnElement[bool] = and_(visible_matches_where(config), kickoff_open, teams_known)
     locked_nums = manual_lock_match_numbers(config)
     if locked_nums:
         clause = and_(clause, Match.match_number.not_in(locked_nums))
@@ -153,6 +172,8 @@ def is_match_editable(
     if not match_stage_is_visible(match.stage, config):
         return False
     if match.match_number in manual_lock_match_numbers(config):
+        return False
+    if not both_teams_known(match):
         return False
     if match.match_number in manual_unlock_match_numbers(config):
         return True
