@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Any, Mapping
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.sql import ColumnElement
 
 from app.datetime_fmt import kickoff_as_local, server_now_local
@@ -24,11 +24,17 @@ _STAGE_CANONICAL: dict[str, str] = {
     "octavos de final": "Octavos de final",
     "quarterfinals": "Cuartos de final",
     "quarter-finals": "Cuartos de final",
+    "quarterfinal": "Cuartos de final",
     "cuartos de final": "Cuartos de final",
+    "cuartos": "Cuartos de final",
     "semifinals": "Semifinales",
+    "semi-finals": "Semifinales",
+    "semifinal": "Semifinales",
     "semifinales": "Semifinales",
     "third place match": "Eliminatoria por el tercer lugar",
     "third place": "Eliminatoria por el tercer lugar",
+    "third-place": "Eliminatoria por el tercer lugar",
+    "tercer lugar": "Eliminatoria por el tercer lugar",
     "eliminatoria por el tercer lugar": "Eliminatoria por el tercer lugar",
     "final": "Final",
 }
@@ -57,12 +63,27 @@ def match_stage_is_visible(stage: str | None, config: Mapping[str, Any]) -> bool
     return canonical.lower() in visible
 
 
+def visible_stage_values_lower(config: Mapping[str, Any]) -> set[str]:
+    """All lowercased stage spellings (aliases + canonical) that are visible.
+
+    Robust to how Match.stage is actually stored (e.g. 'Semifinal' vs
+    'Semifinales', 'Tercer lugar' vs 'Eliminatoria por el tercer lugar').
+    """
+    visible_canonical = {s.lower() for s in resolve_visible_db_stages(config)}
+    allowed: set[str] = set(visible_canonical)
+    for alias, canonical in _STAGE_CANONICAL.items():
+        if canonical.lower() in visible_canonical:
+            allowed.add(alias.lower())
+            allowed.add(canonical.lower())
+    return allowed
+
+
 def visible_matches_where(config: Mapping[str, Any]) -> ColumnElement[bool]:
-    """SQLAlchemy filter: Match rows in currently visible stages."""
-    stages = resolve_visible_db_stages(config)
-    if not stages:
+    """SQLAlchemy filter: Match rows in currently visible stages (case-insensitive)."""
+    allowed = visible_stage_values_lower(config)
+    if not allowed:
         return Match.id.is_(None)  # type: ignore[return-value]
-    return or_(*[Match.stage == stage for stage in stages])
+    return func.lower(func.trim(Match.stage)).in_(allowed)
 
 
 def matches_chronological_order():
