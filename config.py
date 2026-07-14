@@ -56,6 +56,12 @@ class Config:
     MANUAL_LOCK_PREDICTION_MATCH_NUMBERS = tuple(
         int(part.strip()) for part in _lock_raw.split(",") if part.strip().isdigit()
     )
+    # TEMP emergency: bypass auto-lock for these users on listed matches only.
+    # Remove MANUAL_PREDICTION_OVERRIDE_* after quiniela26mx saves match 101.
+    MANUAL_PREDICTION_OVERRIDE_USERS = (
+        "quiniela26mx@gmail.com",
+    )
+    MANUAL_PREDICTION_OVERRIDE_MATCH_NUMBERS = (101,)
     # Share of the prize pool for TOP 3; ties split that amount.
     PRIZE_TOP1_PERCENT = 70
     PRIZE_TOP2_PERCENT = 20

@@ -144,6 +144,29 @@ def manual_lock_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
     return frozenset(int(n) for n in raw)
 
 
+def manual_prediction_override_users(config: Mapping[str, Any]) -> frozenset[str]:
+    raw = config.get("MANUAL_PREDICTION_OVERRIDE_USERS") or ()
+    return frozenset((email or "").strip().lower() for email in raw if (email or "").strip())
+
+
+def manual_prediction_override_match_numbers(config: Mapping[str, Any]) -> frozenset[int]:
+    raw = config.get("MANUAL_PREDICTION_OVERRIDE_MATCH_NUMBERS") or ()
+    return frozenset(int(n) for n in raw)
+
+
+def user_has_manual_prediction_override(
+    config: Mapping[str, Any],
+    user_email: str | None,
+    match_number: int | None,
+) -> bool:
+    """True only for configured users on configured match numbers (temp hotfix)."""
+    if not user_email or match_number is None:
+        return False
+    if match_number not in manual_prediction_override_match_numbers(config):
+        return False
+    return user_email.strip().lower() in manual_prediction_override_users(config)
+
+
 def match_prediction_lock_at(match: Match):
     """Local (Mexico City) moment when predictions close (kickoff minus 1 hour)."""
     kickoff = kickoff_as_local(match.kickoff_at)
@@ -187,6 +210,7 @@ def is_match_editable(
     config: Mapping[str, Any],
     *,
     global_locked: bool,
+    user_email: str | None = None,
 ) -> bool:
     if global_locked:
         return False
@@ -197,6 +221,8 @@ def is_match_editable(
     if not both_teams_known(match):
         return False
     if match.match_number in manual_unlock_match_numbers(config):
+        return True
+    if user_has_manual_prediction_override(config, user_email, match.match_number):
         return True
     return not is_match_auto_locked(match)
 

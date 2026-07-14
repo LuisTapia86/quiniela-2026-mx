@@ -341,7 +341,12 @@ def predictions(entry_id: int):
             form_field_count,
             (request.user_agent.string or "")[:120],
         )
-        saved, save_error = _save_predictions(entry, matches, by_match_id)
+        saved, save_error = _save_predictions(
+            entry,
+            matches,
+            by_match_id,
+            user_email=user.email,
+        )
         if saved:
             current_app.logger.info(
                 "predictions_save_success entry_id=%s user_id=%s",
@@ -373,12 +378,19 @@ def predictions(entry_id: int):
             by_match_id,
             locked=locked,
             save_feedback=save_error,
+            user_email=user.email,
         )
 
     if request.method == "POST" and locked:
         abort(403)
 
-    return _render_predictions(entry, matches, by_match_id, locked=locked)
+    return _render_predictions(
+        entry,
+        matches,
+        by_match_id,
+        locked=locked,
+        user_email=user.email,
+    )
 
 
 def _parse_score(val: str | None) -> int | None:
@@ -414,12 +426,19 @@ def _save_predictions(
     entry: Entry,
     matches: list[Match],
     by_match_id: dict[int, Prediction],
+    *,
+    user_email: str | None = None,
 ) -> tuple[bool, str | None]:
     parsed: list[tuple[Match, int, int, str | None]] = []
     for m in matches:
         raw_h = (request.form.get(f"home_{m.id}") or "").strip()
         raw_a = (request.form.get(f"away_{m.id}") or "").strip()
-        editable = is_match_editable(m, current_app.config, global_locked=False)
+        editable = is_match_editable(
+            m,
+            current_app.config,
+            global_locked=False,
+            user_email=user_email,
+        )
 
         if not editable:
             if raw_h == "" and raw_a == "":
@@ -528,13 +547,19 @@ def build_prediction_rows(
     *,
     global_locked: bool = False,
     count_progress_editable_only: bool = True,
+    user_email: str | None = None,
 ) -> tuple[list[dict], int]:
     rows: list[dict] = []
     completed_predictions = 0
     last_date_key: str | None = None
     knockout_debug_logged = False
     for m in matches:
-        editable = is_match_editable(m, current_app.config, global_locked=global_locked)
+        editable = is_match_editable(
+            m,
+            current_app.config,
+            global_locked=global_locked,
+            user_email=user_email,
+        )
         p = by_match_id.get(m.id)
         if p is not None and (editable or not count_progress_editable_only):
             if count_progress_editable_only:
@@ -672,13 +697,24 @@ def _render_predictions(
     *,
     locked: bool,
     save_feedback: str | None = None,
+    user_email: str | None = None,
 ):
     rows, completed_predictions = build_prediction_rows(
         matches,
         by_match_id,
         global_locked=locked,
+        user_email=user_email,
     )
-    total_editable = sum(1 for m in matches if is_match_editable(m, current_app.config, global_locked=locked))
+    total_editable = sum(
+        1
+        for m in matches
+        if is_match_editable(
+            m,
+            current_app.config,
+            global_locked=locked,
+            user_email=user_email,
+        )
+    )
     return render_template(
         "predictions/edit.html",
         entry=entry,
