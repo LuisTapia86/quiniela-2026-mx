@@ -48,8 +48,7 @@ class Config:
     # Per-match auto-lock: predictions close this many hours before kickoff (see tournament_stages.py).
     PREDICTION_LOCK_HOURS_BEFORE_KICKOFF = 1
     # Emergency overrides (comma-separated match numbers via env).
-    # TEMP: reopen match 101 for ALL users. Remove "101" (or set env empty) before kickoff.
-    _unlock_raw = (os.environ.get("MANUAL_UNLOCK_MATCH_NUMBERS") or "101").strip()
+    _unlock_raw = (os.environ.get("MANUAL_UNLOCK_MATCH_NUMBERS") or "").strip()
     MANUAL_UNLOCK_PREDICTION_MATCH_NUMBERS = tuple(
         int(part.strip()) for part in _unlock_raw.split(",") if part.strip().isdigit()
     )
