@@ -58,6 +58,7 @@
     <a class="btn" href="{{ url_for('admin.users') }}">{{ t("admin.users") }}</a>
     <a class="btn" href="{{ url_for('admin.payments') }}">{{ t("admin.payments") }}</a>
     <a class="btn" href="{{ url_for('admin.results') }}">{{ t("admin.results") }}</a>
+    <a class="btn" href="{{ url_for('admin.certificates_index') }}">Certificados</a>
     <form method="post" action="{{ url_for('admin.recalculate') }}" style="display:inline;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">{{ t("admin.recalc") }}</button>

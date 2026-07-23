@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Certificados — {{ config.BRAND_NAME }}{% endblock %}
+{% block content %}
+<section class="card">
+  <p class="dash__badge">{{ t("nav.admin") }}</p>
+  <h1 class="card__title">Certificados de ganadores</h1>
+  <p class="form__hint">
+    Top 3 del leaderboard final (misma lógica de ranking y desempate).
+    Los campos editables solo afectan el diploma; no cambian puntajes, ranking, pagos ni perfiles.
+  </p>
+
+  <div class="dash-actions" style="margin-bottom:1.25rem;">
+    <form method="post" action="{{ url_for('admin.certificates_sync') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--primary">Generar / sincronizar top 3</button>
+    </form>
+    <form method="post" action="{{ url_for('admin.certificates_sync') }}" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="refresh_prizes" value="1">
+      <button type="submit" class="btn">Sincronizar y actualizar premios del pool</button>
+    </form>
+    <a class="btn" href="{{ url_for('leaderboard.index') }}">Ver leaderboard</a>
+    <a class="btn" href="{{ url_for('admin.dashboard') }}">Volver al admin</a>
+  </div>
+
+  {% if not has_top3 %}
+  <p class="form__hint">Aún no hay lugares 1–3 en el leaderboard (se requieren entradas activas con pago aprobado).</p>
+  {% elif not rows %}
+  <p class="form__hint">Pulsa «Generar / sincronizar top 3» para crear los certificados.</p>
+  {% else %}
+  <div class="stats-grid" style="margin-bottom:1rem;">
+    <article class="stat-card"><span>Premio 1.er (pool)</span><strong>${{ pool_estimates[1] }} MXN</strong></article>
+    <article class="stat-card"><span>Premio 2.º (pool)</span><strong>${{ pool_estimates[2] }} MXN</strong></article>
+    <article class="stat-card"><span>Premio 3.er (pool)</span><strong>${{ pool_estimates[3] }} MXN</strong></article>
+  </div>
+
+  {% for row in rows %}
+  <article class="card card--subtle" style="margin-bottom:1rem;">
+    <h2 class="card__title card__title--sm">
+      {{ row.position_title }}
+      <span class="form__hint" style="display:inline;font-weight:400;">— {{ row.entry_label }}</span>
+    </h2>
+    <div class="stats-grid">
+      <article class="stat-card"><span>Posición final</span><strong>{{ row.final_position }}</strong></article>
+      <article class="stat-card"><span>Puntos (leaderboard)</span><strong>{{ row.total_points }}</strong></article>
+      <article class="stat-card"><span>Premio en diploma</span><strong>${{ row.prize_amount }} MXN</strong></article>
+      <article class="stat-card"><span>Nombre en diploma</span><strong>{{ row.display_name }}</strong></article>
+    </div>
+
+    <form method="post" action="{{ url_for('admin.certificates_update', token=row.public_token) }}" class="form" style="margin-top:1rem;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="form__field">
+        <span class="form__label">Nombre en el certificado</span>
+        <input class="form__input" name="display_name" type="text" maxlength="120" required value="{{ row.display_name }}">
+      </label>
+      <label class="form__field">
+        <span class="form__label">Premio (MXN)</span>
+        <input class="form__input" name="prize_amount" type="number" min="0" step="1" required value="{{ row.prize_amount }}">
+        <span class="form__hint">Sugerido por pool: ${{ row.suggested_prize }} MXN</span>
+      </label>
+      <label class="form__field">
+        <span class="form__label">Fecha de reconocimiento</span>
+        <input class="form__input" name="recognition_date" type="date" required value="{{ row.recognition_date.isoformat() }}">
+      </label>
+      <div class="dash-actions">
+        <button type="submit" class="btn">Guardar campos del certificado</button>
+        <a class="btn btn--primary" href="{{ url_for('admin.certificates_view', token=row.public_token) }}">Ver certificado</a>
+        <a class="btn" href="{{ url_for('certificates.public_view', token=row.public_token) }}" target="_blank" rel="noopener">URL pública</a>
+      </div>
+    </form>
+  </article>
+  {% endfor %}
+  {% endif %}
+</section>
+{% endblock %}

@@ -264,6 +264,15 @@ def _normalize_entry_status_values_raw_sql() -> None:
     db.session.commit()
 
 
+def _ensure_winner_certificates_table() -> None:
+    """Create winner_certificates if missing (safe on PostgreSQL + SQLite; additive only)."""
+    from app.models import WinnerCertificate
+
+    inspector = inspect(db.engine)
+    if "winner_certificates" in inspector.get_table_names():
+        return
+    WinnerCertificate.__table__.create(bind=db.engine, checkfirst=True)
+
 def _backfill_entry_number_and_alias() -> None:
     """ORM backfill: run only after ``_ensure_entry_table_columns()`` (all columns present)."""
     from app.models import Entry
@@ -320,6 +329,7 @@ def create_app(config_object: type = Config) -> Flask:
         admin_bp,
         api_bp,
         auth_bp,
+        certificates_bp,
         competitors_bp,
         entries_bp,
         leaderboard_bp,
@@ -334,6 +344,7 @@ def create_app(config_object: type = Config) -> Flask:
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(leaderboard_bp)
+    app.register_blueprint(certificates_bp)
     app.register_blueprint(rules_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     register_cli(app)
@@ -387,6 +398,7 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_match_group_name_column()
         _ensure_penalty_winner_columns()
         _ensure_entry_table_columns()
+        _ensure_winner_certificates_table()
         _backfill_entry_number_and_alias()
         _admin_bootstrap_from_env(app)
         _emergency_admin_from_env(app)

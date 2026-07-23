@@ -24,6 +24,8 @@ from sqlalchemy import delete, func, or_, select
 from sqlalchemy.orm import joinedload
 
 from app import db
+from datetime import date, datetime
+
 from app.models import (
     Entry,
     EntryStatus,
@@ -1202,3 +1204,139 @@ def api_football_sync_results():
     }
     flash(tr("admin.api.sync_ok", count=summary.get("results_synced", 0)), "ok")
     return redirect(url_for("admin.api_football_panel"))
+
+
+def _parse_recognition_date(raw: str | None) -> date | None:
+    text = (raw or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.strptime(text, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def _parse_prize_amount(raw: str | None) -> int | None:
+    text = (raw or "").strip().replace(",", "").replace("$", "")
+    if not text:
+        return None
+    try:
+        n = int(text)
+    except ValueError:
+        return None
+    if n < 0:
+        return None
+    return n
+
+
+@bp.get("/admin/certificates")
+@login_required
+def certificates_index():
+    _require_admin()
+    from app.services.certificates import (
+        certificate_view_context,
+        get_active_certificates,
+        prize_for_position,
+        sync_top3_certificates,
+        top3_winners,
+    )
+
+    ranked_top = top3_winners()
+    certs = get_active_certificates()
+    if ranked_top and not certs:
+        certs = sync_top3_certificates()
+
+    rows = []
+    for cert in certs:
+        ctx = certificate_view_context(cert)
+        entry_number = None
+        if cert.entry is not None:
+            entry_number = cert.entry.entry_number
+        rows.append(
+            {
+                **ctx,
+                "suggested_prize": prize_for_position(cert.final_position),
+                "entry_label": (
+                    f"Entrada #{entry_number}" if entry_number is not None else "Entrada"
+                ),
+            },
+        )
+
+    return render_template(
+        "admin/certificates.html",
+        rows=rows,
+        has_top3=bool(ranked_top),
+        pool_estimates={
+            1: prize_for_position(1),
+            2: prize_for_position(2),
+            3: prize_for_position(3),
+        },
+    )
+
+
+@bp.post("/admin/certificates/sync")
+@login_required
+def certificates_sync():
+    _require_admin()
+    from app.services.certificates import sync_top3_certificates, top3_winners
+
+    refresh_prizes = (request.form.get("refresh_prizes") or "").strip() == "1"
+    winners = top3_winners()
+    if not winners:
+        flash("No hay entradas activas con pago aprobado en el podio (lugares 1–3).", "error")
+        return redirect(url_for("admin.certificates_index"))
+    certs = sync_top3_certificates(refresh_prizes=refresh_prizes)
+    flash(f"Certificados sincronizados con el leaderboard final ({len(certs)}).", "ok")
+    return redirect(url_for("admin.certificates_index"))
+
+
+@bp.post("/admin/certificates/<string:token>/update")
+@login_required
+def certificates_update(token: str):
+    _require_admin()
+    from app.services.certificates import get_certificate_by_token
+
+    cert = get_certificate_by_token(token)
+    if cert is None:
+        abort(404)
+
+    display_name = (request.form.get("display_name") or "").strip()
+    if len(display_name) < 2 or len(display_name) > 120:
+        flash("El nombre para el certificado debe tener entre 2 y 120 caracteres.", "error")
+        return redirect(url_for("admin.certificates_index"))
+
+    prize = _parse_prize_amount(request.form.get("prize_amount"))
+    if prize is None:
+        flash("Monto del premio inválido (usa un entero en MXN).", "error")
+        return redirect(url_for("admin.certificates_index"))
+
+    recognition = _parse_recognition_date(request.form.get("recognition_date"))
+    if recognition is None:
+        flash("Fecha de reconocimiento inválida.", "error")
+        return redirect(url_for("admin.certificates_index"))
+
+    cert.display_name = display_name
+    cert.prize_amount = prize
+    cert.recognition_date = recognition
+    cert.updated_at = utcnow()
+    db.session.commit()
+    flash("Datos del certificado actualizados (solo afectan el diploma).", "ok")
+    return redirect(url_for("admin.certificates_index"))
+
+
+@bp.get("/admin/certificates/<string:token>")
+@login_required
+def certificates_view(token: str):
+    _require_admin()
+    from app.services.certificates import certificate_view_context, get_certificate_by_token
+
+    cert = get_certificate_by_token(token)
+    if cert is None:
+        abort(404)
+    ctx = certificate_view_context(cert)
+    return render_template(
+        "certificates/view.html",
+        **ctx,
+        is_admin_view=True,
+        public_url=url_for("certificates.public_view", token=cert.public_token, _external=True),
+    )

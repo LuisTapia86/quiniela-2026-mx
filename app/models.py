@@ -186,3 +186,31 @@ class TournamentState(db.Model):
             db.session.add(row)
             db.session.commit()
         return row
+
+
+class WinnerCertificate(db.Model):
+    """Certificate-only overlay for final TOP 3 (does not alter scores or ranking)."""
+
+    __tablename__ = "winner_certificates"
+
+    id = db.Column(db.Integer, primary_key=True)
+    entry_id = db.Column(
+        db.Integer,
+        db.ForeignKey("entries.id"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+    final_position = db.Column(db.Integer, nullable=False)  # 1, 2, or 3
+    display_name = db.Column(db.String(120), nullable=False)
+    prize_amount = db.Column(db.Integer, nullable=False, default=0)  # MXN
+    recognition_date = db.Column(db.Date, nullable=False)
+    public_token = db.Column(db.String(64), unique=True, nullable=False, index=True)
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    entry = db.relationship("Entry", backref=db.backref("winner_certificates", lazy="dynamic"))
+
+    def __repr__(self) -> str:
+        return f"<WinnerCertificate pos={self.final_position} entry={self.entry_id}>"

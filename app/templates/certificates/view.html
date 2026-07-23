@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ position_title }} — {{ display_name }} | {{ certificate_header }}</title>
+  <meta name="robots" content="noindex,nofollow">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/certificate.css') }}">
+</head>
+<body class="cert-page{% if is_admin_view %} cert-page--admin{% endif %}">
+  <div class="cert-toolbar no-print" role="toolbar" aria-label="Acciones del certificado">
+    {% if is_admin_view %}
+    <a class="cert-toolbar__btn" href="{{ url_for('admin.certificates_index') }}">Volver a certificados</a>
+    {% endif %}
+    <button type="button" class="cert-toolbar__btn cert-toolbar__btn--primary" id="cert-print-btn">Imprimir / Guardar PDF</button>
+    <button type="button" class="cert-toolbar__btn" id="cert-download-btn">Descargar imagen</button>
+    <button type="button" class="cert-toolbar__btn" id="cert-share-btn">Compartir</button>
+    <button type="button" class="cert-toolbar__btn cert-toolbar__btn--ghost" id="cert-copy-btn" data-url="{{ public_url }}">Copiar enlace</button>
+  </div>
+
+  <div class="cert-stage">
+    <article
+      class="certificate"
+      id="winner-certificate"
+      data-filename="certificado-{{ final_position }}-{{ display_name|replace(' ', '-')|lower }}"
+      data-share-title="{{ position_title }} — {{ display_name }}"
+      data-share-text="{{ display_name }} — {{ position_label }} en la {{ tournament_name }} ({{ total_points }} pts)."
+      data-share-url="{{ public_url }}"
+    >
+      <div class="certificate__glow" aria-hidden="true"></div>
+      <div class="certificate__pattern" aria-hidden="true"></div>
+      <div class="certificate__frame">
+        <div class="certificate__frame-inner">
+          <header class="certificate__header">
+            <div class="certificate__ornament" aria-hidden="true">
+              <svg viewBox="0 0 64 64" width="56" height="56" role="img" aria-label="Trofeo">
+                <path fill="#d4af37" d="M18 10h28v6c0 10-6 18-14 20v6h8v4H24v-4h8v-6C24 34 18 26 18 16V10zm-4 2h-2c0 8 3 14 8 17-2-5-3-10-3-15V12zm36 0h-2v2c0 5-1 10-3 15 5-3 8-9 8-17h-3z"/>
+                <rect x="22" y="48" width="20" height="4" rx="1" fill="#d4af37"/>
+                <rect x="18" y="52" width="28" height="5" rx="1.5" fill="#c9a227"/>
+              </svg>
+            </div>
+            <p class="certificate__eyebrow">{{ certificate_header }}</p>
+            <h1 class="certificate__title">{{ position_title }}</h1>
+          </header>
+
+          <p class="certificate__lead">Se otorga el presente reconocimiento a</p>
+          <p class="certificate__winner">{{ display_name }}</p>
+          <p class="certificate__body">
+            por haber obtenido el
+            <strong class="certificate__position">{{ position_label }}</strong>
+            en la Quiniela Mundialista {{ tournament_year }} MX, demostrando constancia,
+            conocimiento futbolístico y excelentes pronósticos durante todo el torneo.
+          </p>
+
+          <dl class="certificate__stats">
+            <div>
+              <dt>Posición final</dt>
+              <dd>{{ final_position }}º</dd>
+            </div>
+            <div>
+              <dt>Puntos totales</dt>
+              <dd>{{ total_points }}</dd>
+            </div>
+            <div>
+              <dt>Premio</dt>
+              <dd>${{ "{:,}".format(prize_amount) }} MXN</dd>
+            </div>
+          </dl>
+
+          {% if champion_extra %}
+          <p class="certificate__quote">Los campeones no siempre aciertan todos los partidos, pero sí los más importantes.</p>
+          {% endif %}
+
+          <p class="certificate__thanks">Gracias por formar parte de esta primera edición y competir hasta el último partido.</p>
+
+          <footer class="certificate__footer">
+            <div class="certificate__sign">
+              <p class="certificate__sign-line"></p>
+              <p class="certificate__sign-label">Organizador</p>
+              <p class="certificate__sign-name">{{ organizer_name }}</p>
+              <p class="certificate__sign-org">{{ tournament_name }}</p>
+            </div>
+            <div class="certificate__date-block">
+              <p class="certificate__date-label">Fecha de reconocimiento</p>
+              <p class="certificate__date-value">{{ recognition_date_formatted }}</p>
+              <p class="certificate__meta">{{ tournament_name }} · {{ tournament_year }}</p>
+            </div>
+          </footer>
+        </div>
+      </div>
+    </article>
+  </div>
+
+  <p class="cert-status no-print" id="cert-status" hidden role="status" aria-live="polite"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+  <script src="{{ url_for('static', filename='js/certificate.js') }}"></script>
+</body>
+</html>

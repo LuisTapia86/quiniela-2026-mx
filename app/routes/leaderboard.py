@@ -25,18 +25,9 @@ def _entry_label(entry: Entry) -> str:
 
 @bp.get("/leaderboard")
 def index():
-    rows = list(
-        db.session.execute(
-            select(Entry, User)
-            .join(Payment, Payment.entry_id == Entry.id)
-            .where(
-                Payment.status == PaymentStatus.APPROVED,
-                Entry.status == EntryStatus.ACTIVE,
-            )
-            .join(User, Entry.user_id == User.id)
-            .order_by(Entry.total_points.desc(), Entry.created_at.asc(), Entry.id.asc())
-        )
-    )
+    from app.services.certificates import fetch_ranked_leaderboard
+
+    ranked = fetch_ranked_leaderboard()
     n_matches = (
         db.session.scalar(
             select(func.count()).select_from(Match)
@@ -54,12 +45,8 @@ def index():
     admin_pct = int(current_app.config.get("ADMIN_FEE_PERCENT", 5))
 
     leaderboard_rows: list[dict] = []
-    prev_points: int | None = None
-    rank = 0
-    for i, (entry, user) in enumerate(rows, start=1):
-        if prev_points is None or entry.total_points < prev_points:
-            rank = i
-        prev_points = entry.total_points
+    for row in ranked:
+        entry = row.entry
         n_pred = (
             db.session.scalar(
                 select(func.count())
@@ -80,10 +67,10 @@ def index():
         )
         leaderboard_rows.append(
             {
-                "rank": rank,
+                "rank": row.rank,
                 "entry": entry,
                 "entry_label": _entry_label(entry),
-                "public_name": (user.display_name or "").strip() or f"{tr('leaderboard.player_fallback')} {entry.id}",
+                "public_name": row.public_name or f"{tr('leaderboard.player_fallback')} {entry.id}",
                 "n_predictions": n_pred,
                 "n_results_counted": n_done,
             }
