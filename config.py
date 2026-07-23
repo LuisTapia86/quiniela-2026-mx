@@ -31,6 +31,7 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = BASE_DIR / "instance" / "uploads"
     MAX_CONTENT_LENGTH = 5 * 1024 * 1024  # 5 MB; payment proofs + other uploads
+    CURRENT_TOURNAMENT_SLUG = (os.environ.get("CURRENT_TOURNAMENT_SLUG") or "world-cup-2026-mx").strip()
     BRAND_NAME = "Quiniela World Cup 2026 MX"
     ADMIN_FEE_PERCENT = 0
     ENTRY_FEE_MXN = 200

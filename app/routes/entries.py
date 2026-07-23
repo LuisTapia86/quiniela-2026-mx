@@ -16,7 +16,6 @@ from app.models import (
     PaymentStatus,
     Prediction,
     Result,
-    TournamentState,
     utcnow,
 )
 from app.entry_names import validate_entry_display_name
@@ -24,10 +23,18 @@ from app.payment_gating import is_payment_banking_configured
 from app.payment_proofs import PaymentProofError, create_pending_payment, save_payment_proof
 from app.routes.auth import get_current_user, login_required
 from app.services.scoring import calculate_prediction_breakdown
+from app.tournament_lifecycle import predictions_are_locked, tournament_is_finished, tournament_is_writable
 from app.tournament_stages import both_teams_known, is_knockout_stage, is_match_editable, select_visible_matches
 from app.translations import tr
 
 bp = Blueprint("entries", __name__, url_prefix="")
+
+
+def _reject_if_tournament_closed():
+    if tournament_is_writable():
+        return None
+    flash(tr("flash.tournament.finished_readonly"), "error")
+    return redirect(url_for("main.index"))
 
 
 def _entry_fee_mxn() -> int:
@@ -166,6 +173,9 @@ def _date_label_es(match: Match) -> str:
 @bp.route("/entries/new", methods=["GET", "POST"])
 @login_required
 def new():
+    blocked = _reject_if_tournament_closed()
+    if blocked is not None:
+        return blocked
     user = get_current_user()
     assert user is not None
     if request.method == "POST":
@@ -205,6 +215,9 @@ def _rename_redirect(fallback: str):
 @bp.post("/entries/<int:entry_id>/rename")
 @login_required
 def rename_entry(entry_id: int):
+    blocked = _reject_if_tournament_closed()
+    if blocked is not None:
+        return blocked
     user = get_current_user()
     assert user is not None
     entry = db.session.get(Entry, entry_id)
@@ -229,6 +242,9 @@ def rename_entry(entry_id: int):
 @bp.post("/entries/<int:entry_id>/cancel")
 @login_required
 def cancel_entry(entry_id: int):
+    blocked = _reject_if_tournament_closed()
+    if blocked is not None:
+        return blocked
     user = get_current_user()
     assert user is not None
     entry = db.session.get(Entry, entry_id)
@@ -277,11 +293,15 @@ def entry_payment(entry_id: int):
             "user": user,
             "payment": payment,
             "payment_banking_configured": banking_configured,
+            "tournament_finished": tournament_is_finished(),
         }
         ctx.update(extra)
         return render_template("entries/payment.html", **ctx)
 
     if request.method == "POST":
+        if tournament_is_finished():
+            flash(tr("flash.tournament.finished_readonly"), "error")
+            return redirect(url_for("entries.entry_payment", entry_id=entry.id))
         f = request.files.get("proof")
         if f is None or f.filename is None or f.filename.strip() == "":
             if payment is None:
@@ -318,8 +338,8 @@ def predictions(entry_id: int):
         flash(tr("flash.predictions.entry_cancelled"), "error")
         return redirect(url_for("main.index"))
 
-    state = TournamentState.get_singleton()
-    locked = state.predictions_locked
+    locked = predictions_are_locked()
+    finished = tournament_is_finished()
     matches = list(
         db.session.scalars(
             select_visible_matches()
@@ -377,6 +397,7 @@ def predictions(entry_id: int):
             matches,
             by_match_id,
             locked=locked,
+            tournament_finished=finished,
             save_feedback=save_error,
             user_email=user.email,
         )
@@ -389,6 +410,7 @@ def predictions(entry_id: int):
         matches,
         by_match_id,
         locked=locked,
+        tournament_finished=finished,
         user_email=user.email,
     )
 
@@ -696,6 +718,7 @@ def _render_predictions(
     by_match_id: dict[int, Prediction],
     *,
     locked: bool,
+    tournament_finished: bool = False,
     save_feedback: str | None = None,
     user_email: str | None = None,
 ):
@@ -720,6 +743,7 @@ def _render_predictions(
         entry=entry,
         rows=rows,
         locked=locked,
+        tournament_finished=tournament_finished,
         completed_predictions=completed_predictions,
         total_matches=total_editable,
         has_editable_matches=total_editable > 0,

@@ -404,6 +404,63 @@ button.btn:disabled {
   font-size: 0.9rem;
 }
 
+.tournament-finished-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 0.85rem 1.25rem;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95));
+  border-bottom: 1px solid rgba(212, 175, 55, 0.35);
+  color: #f8fafc;
+  text-align: left;
+}
+
+.tournament-finished-banner__icon {
+  margin: 0;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.tournament-finished-banner__copy {
+  max-width: 46rem;
+}
+
+.tournament-finished-banner__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 0.98rem;
+  color: #f0d78c;
+}
+
+.tournament-finished-banner__text {
+  margin: 0.15rem 0 0;
+  font-size: 0.88rem;
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.tournament-finished-cta {
+  width: 100%;
+  margin: 0 0 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background: rgba(212, 175, 55, 0.08);
+}
+
+.tournament-finished-cta__title {
+  margin: 0;
+  font-weight: 700;
+  color: #f0d78c;
+  font-size: 0.95rem;
+}
+
+.tournament-finished-cta__text {
+  margin: 0.2rem 0 0;
+  color: rgba(248, 250, 252, 0.85);
+  font-size: 0.85rem;
+}
+
 .pred-form__save {
   width: 100%;
   margin-top: 1.25rem;
@@ -1004,6 +1061,55 @@ ol.pay-steps {
 
 .admin-lock {
   margin-bottom: 1rem;
+}
+
+.admin-closed-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin: 0 0 1.25rem;
+  padding: 0.95rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0.98), rgba(30, 41, 59, 0.95));
+  color: #f8fafc;
+}
+
+.admin-closed-banner__icon {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.admin-closed-banner__title {
+  margin: 0;
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: #f0d78c;
+}
+
+.admin-closed-banner__text {
+  margin: 0.2rem 0 0;
+  font-size: 0.92rem;
+  color: rgba(248, 250, 252, 0.88);
+}
+
+.admin-final-summary {
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius);
+  border: 1px solid rgba(212, 175, 55, 0.25);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.admin-final-summary__grid {
+  margin-top: 0.75rem;
+}
+
+.btn:disabled,
+button.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .filter-row {
@@ -1992,6 +2098,7 @@ dialog.admin-modal::backdrop {
   .entry-page-head,
   .entry-rename-wrap,
   .entry-rename-modal,
+  .tournament-finished-banner,
   dialog {
     display: none !important;
   }

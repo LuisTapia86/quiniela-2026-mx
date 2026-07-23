@@ -85,7 +85,11 @@
           <td class="pay-cell-date">{% if payment %}{{ payment.created_at|mx_local }}{% else %}{{ entry.created_at|mx_local }}{% endif %}</td>
           <td class="admin-pay-actions">
             <a class="btn btn--sm" href="{{ url_for('admin.entry_predictions', entry_id=entry.id, status=current_status, q=q) }}">{{ t("admin.entry_predictions.view_btn") }}</a>
+            {% if not tournament_finished %}
             {{ entry_rename(entry, url_for('admin.rename_entry', entry_id=entry.id)) }}
+            {% else %}
+            <button type="button" class="btn btn--sm" disabled title="{{ t('admin.closed.mutation_blocked') }}">Editar nombre</button>
+            {% endif %}
             <form method="post" action="{{ url_for('admin.entry_approve_payment', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input class="form__input form__input--note" type="text" name="admin_note" placeholder="{{ t('admin.note_optional') }}" maxlength="500">
@@ -97,6 +101,9 @@
               <button type="submit" class="btn btn--sm" {% if pay_status == 'rejected' %}disabled{% endif %}>{{ t("common.reject") }}</button>
             </form>
             {% if pay_status == 'approved' and entry.status.value == 'ACTIVE' %}
+            {% if tournament_finished %}
+            <button type="button" class="btn btn--sm" disabled title="{{ t('admin.closed.mutation_blocked') }}" style="margin-top:0.5rem;">{{ t("admin.void_entry_btn") }}</button>
+            {% else %}
             <form method="post" action="{{ url_for('admin.void_entry', entry_id=entry.id, status=current_status, q=q) }}" class="admin-inline-form admin-inline-form--stack" style="margin-top:0.5rem;">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <label class="form__field" style="min-width:12rem;">
@@ -105,6 +112,7 @@
               </label>
               <button type="submit" class="btn btn--sm">{{ t("admin.void_entry_btn") }}</button>
             </form>
+            {% endif %}
             {% endif %}
           </td>
         </tr>

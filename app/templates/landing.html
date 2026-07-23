@@ -21,8 +21,13 @@
     <p class="landing-note">{{ t("rules.lock_stages") }}</p>
     <p class="landing-note">{{ t("common.stages_simple") }}</p>
     <div class="landing-hero__ctas">
+      {% if tournament_finished %}
+      <a class="btn btn--primary" href="{{ url_for('leaderboard.index') }}">{{ t("nav.final_standings") }}</a>
+      <a class="btn" href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
+      {% else %}
       <a class="btn btn--primary" href="{{ url_for('auth.register') }}">{{ t("landing.cta.create") }}</a>
       <a class="btn" href="{{ url_for('rules.index') }}">{{ t("landing.cta.rules") }}</a>
+      {% endif %}
     </div>
   </section>
 
@@ -94,7 +99,11 @@
   </section>
 
   <section class="landing-cta" aria-label="{{ t('landing.final_aria') }}">
+    {% if tournament_finished %}
+    <a class="btn btn--primary btn--wide" href="{{ url_for('leaderboard.index') }}">{{ t("nav.final_standings") }}</a>
+    {% else %}
     <a class="btn btn--primary btn--wide" href="{{ url_for('auth.register') }}">{{ t("landing.final_cta") }}</a>
+    {% endif %}
   </section>
 </div>
 {% endblock %}

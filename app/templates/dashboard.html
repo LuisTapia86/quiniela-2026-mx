@@ -3,7 +3,11 @@
 {% block title %}{{ t("title.dashboard") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card dash" aria-labelledby="dash-title">
+  {% if tournament_finished %}
+  <p class="dash__badge">{{ t("dashboard.phase_finished") }}</p>
+  {% else %}
   <p class="dash__badge">{{ t("dashboard.phase") }}</p>
+  {% endif %}
   <h1 id="dash-title">{{ t("dashboard.panel") }}</h1>
   <p>{{ t("dashboard.hello") }}, <strong>{{ (current_user.display_name or t("dashboard.no_alias"))|e }}</strong>.</p>
   <p class="form__hint">{{ t("dashboard.account_email") }} <strong>{{ current_user.email }}</strong></p>
@@ -15,8 +19,13 @@
   </div>
   {% endif %}
   <div class="dash-actions">
+    {% if not tournament_finished %}
     <a class="btn btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.new_entry") }}</a>
-    <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
+    {% endif %}
+    <a class="btn{% if tournament_finished %} btn--primary{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_final_standings") if tournament_finished else t("dashboard.view_leaderboard") }}</a>
+    {% if tournament_finished %}
+    <a class="btn" href="{{ url_for('hall_of_fame.index') }}">{{ t("nav.hall_of_fame") }}</a>
+    {% endif %}
     <a class="btn" href="{{ url_for('main.profile') }}">{{ t("nav.profile") }}</a>
     {% if current_user.is_admin %}
     <a class="btn" href="{{ url_for('admin.dashboard') }}">{{ t("dashboard.admin_panel") }}</a>
@@ -27,8 +36,12 @@
   {% if not entries and not cancelled_entries %}
   <div class="empty-state">
     <p class="empty-state__title">{{ t("dashboard.no_entries") }}</p>
+    {% if tournament_finished %}
+    <p class="form__hint">{{ t("tournament.finished.closed_hint") }}</p>
+    {% else %}
     <p class="form__hint">{{ t("dashboard.no_entries_hint", entry_fee=config.ENTRY_FEE_MXN) }}</p>
     <p><a class="btn btn--sm btn--primary" href="{{ url_for('entries.new') }}">{{ t("dashboard.create_first") }}</a></p>
+    {% endif %}
   </div>
   {% else %}
   {% if not entries and cancelled_entries %}
@@ -43,7 +56,9 @@
       <header class="entry-card__head">
         <div class="entry-card__title-row">
           <h3 class="entry-card__title">{{ entry_title(e)|e }}</h3>
+          {% if not tournament_finished %}
           {{ entry_rename(e, url_for('entries.rename_entry', entry_id=e.id)) }}
+          {% endif %}
         </div>
         <span class="entry-list__points">{{ e.total_points }} {{ t("dashboard.points_suffix") }}</span>
       </header>
@@ -64,14 +79,23 @@
       </div>
 
       <div class="entry-list__actions">
+        {% if not tournament_finished %}
         <a class="btn btn--sm" href="{{ url_for('entries.entry_payment', entry_id=e.id) }}">{{ t("entry.upload_payment") }}</a>
-        {% if predictions_locked %}
+        {% endif %}
+        {% if tournament_finished %}
+        <div class="tournament-finished-cta" role="status">
+          <p class="tournament-finished-cta__title">{{ t("tournament.finished.cta_title") }}</p>
+          <p class="tournament-finished-cta__text">{{ t("tournament.finished.cta_text") }}</p>
+        </div>
+        <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.view_predictions") }}</a>
+        {% elif predictions_locked %}
         <a class="btn btn--sm" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.view_predictions") }}</a>
         {% else %}
         <a class="btn btn--sm btn--primary" href="{{ url_for('entries.predictions', entry_id=e.id) }}">{{ t("entry.fill_predictions") }}</a>
         {% endif %}
       </div>
 
+      {% if not tournament_finished %}
       <div class="entry-list__actions" style="margin-top:0.5rem;flex-wrap:wrap;">
         {% if not pay or pay.status.value != 'approved' %}
         <form method="post" action="{{ url_for('entries.cancel_entry', entry_id=e.id) }}" class="admin-inline-form">
@@ -82,11 +106,14 @@
         <p class="form__hint" style="margin:0;">{{ t("entry.approved_cancel_only_via_admin") }}</p>
         {% endif %}
       </div>
+      {% endif %}
 
-      {% if not pay or pay.status.value != 'approved' %}
-      <p class="entry-list__msg">{{ t("entry.payment_warning") }}</p>
-      {% elif predictions_locked %}
-      <p class="entry-list__msg">{{ t("entry.pred.locked_msg") }}</p>
+      {% if not tournament_finished %}
+        {% if not pay or pay.status.value != 'approved' %}
+        <p class="entry-list__msg">{{ t("entry.payment_warning") }}</p>
+        {% elif predictions_locked %}
+        <p class="entry-list__msg">{{ t("entry.pred.locked_msg") }}</p>
+        {% endif %}
       {% endif %}
     </article>
     {% endfor %}
@@ -121,6 +148,8 @@
   {% endif %}
   {% endif %}
 </section>
+{% if not tournament_finished %}
 <p class="form__hint" style="margin-top: 1rem;">{{ t("rules.lock_stages") }}</p>
 <p class="form__hint">{{ t("common.stages_simple") }}</p>
+{% endif %}
 {% endblock %}

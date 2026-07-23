@@ -171,21 +171,107 @@ class Payment(db.Model):
         return f"<Payment {self.id} entry={self.entry_id} {self.status}>"
 
 
+class TournamentStatus(str, enum.Enum):
+    ACTIVE = "ACTIVE"
+    FINISHED = "FINISHED"
+    ARCHIVED = "ARCHIVED"
+
+
 class TournamentState(db.Model):
     __tablename__ = "tournament_state"
 
     id = db.Column(db.Integer, primary_key=True)
     predictions_locked = db.Column(db.Boolean, default=False, nullable=False)
+    status = db.Column(
+        db.Enum(TournamentStatus, name="tournament_status", native_enum=False),
+        default=TournamentStatus.FINISHED,
+        nullable=False,
+    )
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
     @staticmethod
     def get_singleton() -> "TournamentState":
         row = db.session.get(TournamentState, 1)
         if row is None:
-            row = TournamentState(id=1, predictions_locked=False)
+            row = TournamentState(
+                id=1,
+                predictions_locked=True,
+                status=TournamentStatus.FINISHED,
+            )
             db.session.add(row)
             db.session.commit()
         return row
+
+    @property
+    def is_finished(self) -> bool:
+        status = self.status
+        if isinstance(status, TournamentStatus):
+            return status in {TournamentStatus.FINISHED, TournamentStatus.ARCHIVED}
+        raw = (str(status or "")).strip().upper()
+        return raw in {TournamentStatus.FINISHED.value, TournamentStatus.ARCHIVED.value}
+
+    @property
+    def is_writable(self) -> bool:
+        """Users may create/edit entries and predictions only while ACTIVE and unlocked."""
+        status = self.status
+        if isinstance(status, TournamentStatus):
+            active = status == TournamentStatus.ACTIVE
+        else:
+            active = (str(status or "")).strip().upper() == TournamentStatus.ACTIVE.value
+        return active and not bool(self.predictions_locked)
+
+    def ensure_closed_locks(self) -> bool:
+        """When FINISHED/ARCHIVED, force predictions_locked. Returns True if changed."""
+        changed = False
+        if self.is_finished and not self.predictions_locked:
+            self.predictions_locked = True
+            changed = True
+        return changed
+
+class TournamentEdition(db.Model):
+    """Reusable quiniela edition — Hall of Fame + History archive (unlimited future tournaments)."""
+
+    __tablename__ = "tournament_editions"
+
+    id = db.Column(db.Integer, primary_key=True)
+    slug = db.Column(db.String(80), unique=True, nullable=False, index=True)
+    name = db.Column(db.String(160), nullable=False)
+    edition_label = db.Column(db.String(80), nullable=True)  # e.g. "1ª edición"
+    champion_title = db.Column(db.String(160), nullable=False, default="Champion")
+    year = db.Column(db.Integer, nullable=False, index=True)
+    logo_path = db.Column(db.String(512), nullable=True)  # static-relative path
+    start_date = db.Column(db.Date, nullable=True)
+    end_date = db.Column(db.Date, nullable=True)
+    status = db.Column(
+        db.Enum(TournamentStatus, name="edition_status", native_enum=False),
+        default=TournamentStatus.FINISHED,
+        nullable=False,
+    )
+    recognition_date = db.Column(db.Date, nullable=True)
+    participants_count = db.Column(db.Integer, nullable=False, default=0)
+    entries_count = db.Column(db.Integer, nullable=False, default=0)
+    prize_pool_mxn = db.Column(db.Integer, nullable=False, default=0)
+    champion_points = db.Column(db.Integer, nullable=False, default=0)
+    sort_order = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
+
+    certificates = db.relationship(
+        "WinnerCertificate",
+        back_populates="tournament_edition",
+        lazy="dynamic",
+    )
+
+    def __repr__(self) -> str:
+        return f"<TournamentEdition {self.slug} {self.year}>"
+
+    @property
+    def is_closed(self) -> bool:
+        status = self.status
+        if isinstance(status, TournamentStatus):
+            return status in {TournamentStatus.FINISHED, TournamentStatus.ARCHIVED}
+        raw = (str(status or "")).strip().upper()
+        return raw in {TournamentStatus.FINISHED.value, TournamentStatus.ARCHIVED.value}
 
 
 class WinnerCertificate(db.Model):
@@ -194,6 +280,12 @@ class WinnerCertificate(db.Model):
     __tablename__ = "winner_certificates"
 
     id = db.Column(db.Integer, primary_key=True)
+    tournament_edition_id = db.Column(
+        db.Integer,
+        db.ForeignKey("tournament_editions.id"),
+        nullable=True,
+        index=True,
+    )
     entry_id = db.Column(
         db.Integer,
         db.ForeignKey("entries.id"),
@@ -205,12 +297,14 @@ class WinnerCertificate(db.Model):
     display_name = db.Column(db.String(120), nullable=False)
     prize_amount = db.Column(db.Integer, nullable=False, default=0)  # MXN
     recognition_date = db.Column(db.Date, nullable=False)
+    photo_path = db.Column(db.String(512), nullable=True)  # optional future portrait
     public_token = db.Column(db.String(64), unique=True, nullable=False, index=True)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=utcnow, onupdate=utcnow, nullable=False)
 
     entry = db.relationship("Entry", backref=db.backref("winner_certificates", lazy="dynamic"))
+    tournament_edition = db.relationship("TournamentEdition", back_populates="certificates")
 
     def __repr__(self) -> str:
         return f"<WinnerCertificate pos={self.final_position} entry={self.entry_id}>"

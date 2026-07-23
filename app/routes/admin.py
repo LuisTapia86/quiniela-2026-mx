@@ -60,6 +60,7 @@ from app.payment_proofs import (
 from app.prize_info import count_prize_pool_qualifying_entries, entry_financials
 from app.routes.entries import build_prediction_rows, parse_penalty_winner_choice
 from app.services.scoring import recalculate_all_points, summarize_prediction_audit
+from app.tournament_lifecycle import tournament_is_finished
 from app.tournament_stages import is_knockout_stage, matches_chronological_order, select_visible_matches
 from app.services.worldcup_scraper import WorldCupScraperError, fetch_fixtures_from_public_source
 from app.translations import tr
@@ -74,6 +75,14 @@ def _require_admin() -> None:
     assert u is not None
     if not u.is_admin:
         abort(403)
+
+
+def _block_closed_tournament_mutation():
+    """Block admin writes that would change matches, results, scoring, or fixtures."""
+    if not tournament_is_finished():
+        return None
+    flash(tr("admin.closed.mutation_blocked"), "error")
+    return redirect(url_for("admin.dashboard"))
 
 
 def _form_blank(v: str | None) -> bool:
@@ -224,6 +233,14 @@ def dashboard():
     admin_fee_percent = int(current_app.config.get("ADMIN_FEE_PERCENT", 5))
     fin = entry_financials(approved_entries, current_app.config)
     state = TournamentState.get_singleton()
+    finished = state.is_finished
+
+    final_summary = None
+    if finished:
+        from app.services.tournament_editions import build_edition_card, ensure_current_edition
+
+        edition = ensure_current_edition()
+        final_summary = build_edition_card(edition)
 
     return render_template(
         "admin/dashboard.html",
@@ -241,7 +258,10 @@ def dashboard():
         estimate_3rd=fin["estimate_3rd"],
         total_matches=total_matches,
         completed_matches=completed_matches,
-        predictions_locked=state.predictions_locked,
+        predictions_locked=state.predictions_locked or finished,
+        tournament_status=state.status.value if hasattr(state.status, "value") else str(state.status),
+        tournament_finished=finished,
+        final_summary=final_summary,
     )
 
 
@@ -442,6 +462,9 @@ def reset_user_password(user_id: int):
 @login_required
 def tournament_lock():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     state = TournamentState.get_singleton()
     state.predictions_locked = True
     db.session.commit()
@@ -453,6 +476,9 @@ def tournament_lock():
 @login_required
 def tournament_unlock():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     state = TournamentState.get_singleton()
     state.predictions_locked = False
     db.session.commit()
@@ -464,6 +490,9 @@ def tournament_unlock():
 @login_required
 def recalculate():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     recalculate_all_points()
     db.session.commit()
     flash("Puntajes recalculados correctamente.", "ok")
@@ -482,6 +511,9 @@ def results():
         )
     )
     if request.method == "POST":
+        blocked = _block_closed_tournament_mutation()
+        if blocked:
+            return blocked
         any_error = False
         for m in matches:
             raw_h = request.form.get(f"result_home_{m.id}")
@@ -551,6 +583,9 @@ def results():
 def restore_wc2026_matches():
     """Import bundled World Cup 2026 fixtures from repo CSV (idempotent upsert)."""
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     csv_path = Path(current_app.config["BASE_DIR"]) / WC2026_BUNDLED_CSV
     if not csv_path.is_file():
         flash(tr("admin.restore_wc2026.missing_file"), "error")
@@ -586,6 +621,9 @@ def matches_import():
     _require_admin()
     summary = None
     if request.method == "POST":
+        blocked = _block_closed_tournament_mutation()
+        if blocked:
+            return blocked
         f = request.files.get("csv_file")
         if f is None or not f.filename:
             flash("Selecciona un archivo CSV.", "error")
@@ -645,6 +683,9 @@ def matches():
 @login_required
 def import_public_fixtures():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     try:
         summary = fetch_fixtures_from_public_source()
     except WorldCupScraperError as exc:
@@ -672,6 +713,9 @@ def import_public_fixtures():
 @login_required
 def cleanup_placeholder_matches():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     if not flask_debug_truthy():
         abort(404)
     group_slot_pattern = re.compile(r"^[A-L][1-3]$", flags=re.IGNORECASE)
@@ -712,6 +756,9 @@ def cleanup_placeholder_matches():
 @login_required
 def reset_all_matches():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     if not flask_debug_truthy():
         abort(404)
     db.session.query(Prediction).delete(synchronize_session=False)
@@ -787,6 +834,9 @@ def payment_test_approve():
 @login_required
 def rename_entry(entry_id: int):
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     entry = db.session.get(Entry, entry_id)
     if entry is None:
         abort(404)
@@ -956,6 +1006,9 @@ def payment_reject(payment_id: int):
 @login_required
 def void_entry(entry_id: int):
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     reason = (request.form.get("cancellation_reason") or "").strip()
     if not reason:
         flash(tr("flash.admin.void_reason_required"), "error")
@@ -1036,6 +1089,9 @@ def payment_proof(payment_id: int):
 @login_required
 def seed_matches_admin():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     if not flask_debug_truthy():
         abort(404)
     generate_world_cup_2026_matches()
@@ -1047,6 +1103,9 @@ def seed_matches_admin():
 @login_required
 def import_real_matches():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     confirm = (request.form.get("confirm_overwrite") or "").strip().lower()
     if confirm not in {"yes", "true", "1", "on"}:
         flash(tr("admin.real_import.confirm_required"), "error")
@@ -1131,6 +1190,9 @@ def api_football_search_leagues():
 @login_required
 def api_football_import_fixtures():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
     if not api_key:
         flash(tr("admin.real_import.missing_key"), "error")
@@ -1169,6 +1231,9 @@ def api_football_import_fixtures():
 @login_required
 def api_football_sync_results():
     _require_admin()
+    blocked = _block_closed_tournament_mutation()
+    if blocked:
+        return blocked
     api_key = (current_app.config.get("API_FOOTBALL_KEY") or "").strip()
     if not api_key:
         flash(tr("admin.real_import.missing_key"), "error")

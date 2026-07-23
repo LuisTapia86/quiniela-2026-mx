@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{{ t("groups.heading") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block title %}{% if tournament_finished %}{{ t("history.heading") }}{% else %}{{ t("groups.heading") }}{% endif %} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("groups.heading") }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("groups.note") }}</p>
+  <h1 class="card__title">{% if tournament_finished %}{{ t("history.heading") }}{% else %}{{ t("groups.heading") }}{% endif %}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{% if tournament_finished %}{{ t("history.note") }}{% else %}{{ t("groups.note") }}{% endif %}</p>
 
   {% if not has_group_data %}
   <div class="empty-state">

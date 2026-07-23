@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   {% block head_extra %}{% endblock %}
 </head>
-<body class="{% if current_user %}app-auth{% else %}app-public{% endif %}">
+<body class="{% if current_user %}app-auth{% else %}app-public{% endif %}{% if tournament_finished %} tournament-finished{% endif %}">
   {% set page_main_class %}{% block main_class %}{% endblock %}{% endset %}
   {% set page_content %}{% block content %}{% endblock %}{% endset %}
   <header class="nav nav--app">
@@ -37,10 +37,31 @@
     </div>
   </header>
 
+  {% if tournament_finished %}
+  <aside class="tournament-finished-banner" role="status" aria-live="polite">
+    <p class="tournament-finished-banner__icon" aria-hidden="true">🏆</p>
+    <div class="tournament-finished-banner__copy">
+      <p class="tournament-finished-banner__title">{{ t("tournament.banner.title") }}</p>
+      <p class="tournament-finished-banner__text">{{ t("tournament.banner.thanks") }}</p>
+    </div>
+  </aside>
+  {% endif %}
+
   {% if current_user %}
   <div class="app-layout">
     <aside class="app-sidebar" aria-label="{{ t('nav.primary') }}">
       <nav class="sidebar-nav">
+        {% if tournament_finished %}
+        <a class="sidebar-link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.final_standings") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/hall-of-fame') %} is-active{% endif %}" href="{{ url_for('hall_of_fame.index') }}">{{ t("nav.hall_of_fame") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/history') %} is-active{% endif %}" href="{{ url_for('history.index') }}">{{ t("nav.history") }}</a>
+        <a class="sidebar-link{% if request.path.startswith('/statistics') %} is-active{% endif %}" href="{{ url_for('statistics.index') }}">{{ t("nav.statistics") }}</a>
+        <a class="sidebar-link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        {% if current_user.is_admin %}
+        <a class="sidebar-link{% if request.path.startswith('/admin') %} is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
+        {% endif %}
+        {% else %}
         <a class="sidebar-link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.dashboard") }}</a>
         <a class="sidebar-link{% if request.path.startswith('/groups') %} is-active{% endif %}" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
         <a class="sidebar-link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.leaderboard") }}</a>
@@ -49,9 +70,12 @@
         {% if current_user.is_admin %}
         <a class="sidebar-link{% if request.path.startswith('/admin') %} is-active{% endif %}" href="{{ url_for('admin.dashboard') }}">{{ t("nav.admin") }}</a>
         {% endif %}
+        {% endif %}
       </nav>
       <nav class="sidebar-nav sidebar-nav--bottom">
+        {% if not tournament_finished %}
         <a class="sidebar-link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
+        {% endif %}
         <a class="sidebar-link{% if request.path == '/profile' %} is-active{% endif %}" href="{{ url_for('main.profile') }}">{{ t("nav.profile") }}</a>
         <a class="sidebar-link" href="{{ url_for('auth.logout') }}">{{ t("nav.logout") }}</a>
       </nav>
@@ -75,10 +99,19 @@
     <div class="nav__inner nav__inner--public">
       <nav class="nav__links" aria-label="{{ t('nav.primary') }}">
         <a class="public-nav__link{% if request.path == '/' %} is-active{% endif %}" href="{{ url_for('main.index') }}">{{ t("nav.home") }}</a>
+        {% if tournament_finished %}
+        <a class="public-nav__link{% if request.path.startswith('/hall-of-fame') %} is-active{% endif %}" href="{{ url_for('hall_of_fame.index') }}">{{ t("nav.hall_of_fame") }}</a>
+        <a class="public-nav__link{% if request.path.startswith('/leaderboard') %} is-active{% endif %}" href="{{ url_for('leaderboard.index') }}">{{ t("nav.final_standings") }}</a>
+        <a class="public-nav__link{% if request.path.startswith('/history') %} is-active{% endif %}" href="{{ url_for('history.index') }}">{{ t("nav.history") }}</a>
+        <a class="public-nav__link{% if request.path.startswith('/statistics') %} is-active{% endif %}" href="{{ url_for('statistics.index') }}">{{ t("nav.statistics") }}</a>
+        {% else %}
         <a class="public-nav__link{% if request.path.startswith('/groups') %} is-active{% endif %}" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
+        {% endif %}
         <a class="public-nav__link{% if request.path == '/rules' %} is-active{% endif %}" href="{{ url_for('rules.index') }}">{{ t("nav.rules") }}</a>
         <a class="public-nav__link{% if request.path == '/login' %} is-active{% endif %}" href="{{ url_for('auth.login') }}">{{ t("nav.login") }}</a>
+        {% if not tournament_finished %}
         <a class="nav__btn" href="{{ url_for('auth.register') }}">{{ t("nav.register") }}</a>
+        {% endif %}
       </nav>
     </div>
   </header>

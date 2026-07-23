@@ -142,6 +142,19 @@ def sync_top3_certificates(*, refresh_prizes: bool = False) -> list[WinnerCertif
         for c in db.session.scalars(select(WinnerCertificate)).all()
     }
 
+    edition_id = None
+    try:
+        from app.models import TournamentEdition
+        from app.services.tournament_editions import current_edition_slug
+
+        edition = db.session.scalar(
+            select(TournamentEdition).where(TournamentEdition.slug == current_edition_slug()),
+        )
+        if edition is not None:
+            edition_id = edition.id
+    except Exception:
+        edition_id = None
+
     for cert in existing.values():
         if cert.entry_id not in winner_entry_ids and cert.is_active:
             cert.is_active = False
@@ -154,6 +167,7 @@ def sync_top3_certificates(*, refresh_prizes: bool = False) -> list[WinnerCertif
         if cert is None:
             cert = WinnerCertificate(
                 entry_id=w.entry.id,
+                tournament_edition_id=edition_id,
                 final_position=w.rank,
                 display_name=_default_certificate_display_name(w.public_name),
                 prize_amount=default_prize,
@@ -165,6 +179,8 @@ def sync_top3_certificates(*, refresh_prizes: bool = False) -> list[WinnerCertif
         else:
             cert.final_position = w.rank
             cert.is_active = True
+            if edition_id is not None and cert.tournament_edition_id is None:
+                cert.tournament_edition_id = edition_id
             if refresh_prizes:
                 cert.prize_amount = default_prize
             if not (cert.display_name or "").strip():

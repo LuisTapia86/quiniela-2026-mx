@@ -5,6 +5,52 @@
   <p class="dash__badge">{{ t("nav.admin") }}</p>
   <h1 class="card__title">{{ t("admin.heading") }}</h1>
 
+  {% if tournament_finished %}
+  <div class="admin-closed-banner" role="status">
+    <p class="admin-closed-banner__icon" aria-hidden="true">🏆</p>
+    <div class="admin-closed-banner__copy">
+      <p class="admin-closed-banner__title">{{ t("admin.closed.banner_title") }}</p>
+      <p class="admin-closed-banner__text">{{ t("admin.closed.banner_subtitle") }}</p>
+    </div>
+  </div>
+
+  {% if final_summary %}
+  <div class="admin-final-summary">
+    <h2 class="card__title card__title--sm">{{ t("admin.closed.summary_title") }}</h2>
+    <div class="stats-grid admin-final-summary__grid">
+      <article class="stat-card">
+        <span>{{ t("history.champion") }}</span>
+        <strong>{% if final_summary.champion %}{{ final_summary.champion.display_name|e }}{% else %}—{% endif %}</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.runner_up") }}</span>
+        <strong>{% if final_summary.runner_up %}{{ final_summary.runner_up.display_name|e }}{% else %}—{% endif %}</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.third_place") }}</span>
+        <strong>{% if final_summary.third_place %}{{ final_summary.third_place.display_name|e }}{% else %}—{% endif %}</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.participants") }}</span>
+        <strong>{{ final_summary.edition.participants_count }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.entries") }}</span>
+        <strong>{{ final_summary.edition.entries_count }}</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.prize_pool") }}</span>
+        <strong>${{ final_summary.edition.prize_pool_mxn }} MXN</strong>
+      </article>
+      <article class="stat-card">
+        <span>{{ t("history.status") }}</span>
+        <strong>{{ t("hall_of_fame.status.finished") }}</strong>
+      </article>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
   <div class="stats-grid">
     <article class="stat-card"><span>{{ t("admin.total_users") }}</span><strong>{{ total_users }}</strong></article>
     <article class="stat-card"><span>{{ t("admin.total_entries") }}</span><strong>{{ total_entries }}</strong></article>
@@ -25,8 +71,13 @@
 
   <div class="admin-lock card card--subtle">
     <h2 class="card__title card__title--sm">{{ t("admin.tournament_control") }}</h2>
+    <p class="form__hint">{{ t("admin.closed.status_label") }}: <strong>{{ tournament_status }}</strong></p>
+    {% if tournament_finished %}
+    <p class="entry-pay-badge entry-pay-badge--rejected">{{ t("hall_of_fame.status.finished") }} — {{ t("admin.closed.banner_subtitle") }}</p>
+    <p class="form__hint">{{ t("admin.closed.lock_hint") }}</p>
+    <button type="button" class="btn" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.open_predictions") }}</button>
+    {% elif predictions_locked %}
     <p class="form__hint">{{ t("admin.lock_warn") }}</p>
-    {% if predictions_locked %}
     <p class="entry-pay-badge entry-pay-badge--rejected">{{ t("admin.locked") }}</p>
     <p class="form__hint">{{ t("admin.locked_hint") }}</p>
     <form method="post" action="{{ url_for('admin.tournament_unlock') }}">
@@ -34,6 +85,7 @@
       <button type="submit" class="btn btn--primary">{{ t("admin.open_predictions") }}</button>
     </form>
     {% else %}
+    <p class="form__hint">{{ t("admin.lock_warn") }}</p>
     <p class="entry-pay-badge entry-pay-badge--approved">{{ t("admin.open_for_predictions") }}</p>
     <p class="form__hint">{{ t("admin.open_hint") }}</p>
     <form method="post" action="{{ url_for('admin.tournament_lock') }}">
@@ -43,27 +95,42 @@
     {% endif %}
   </div>
 
+  <h2 class="card__title card__title--sm">{{ t("admin.closed.views_title") if tournament_finished else t("admin.actions_title") }}</h2>
   <div class="dash-actions">
+    <a class="btn btn--primary" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
+    <a class="btn" href="{{ url_for('admin.payments') }}">{{ t("admin.payments") }}</a>
+    <a class="btn" href="{{ url_for('admin.certificates_index') }}">{{ t("admin.certificates") }}</a>
+    <a class="btn" href="{{ url_for('admin.users') }}">{{ t("admin.users") }}</a>
+    <a class="btn" href="{{ url_for('statistics.index') }}">{{ t("nav.statistics") }}</a>
+    <a class="btn" href="{{ url_for('hall_of_fame.index') }}">{{ t("nav.hall_of_fame") }}</a>
+    <a class="btn" href="{{ url_for('admin.matches') }}">{{ t("admin.matches") }}</a>
+    <a class="btn" href="{{ url_for('admin.results') }}">{{ t("admin.results") }}</a>
+  </div>
+
+  <h2 class="card__title card__title--sm" style="margin-top:1.25rem;">{{ t("admin.closed.mutations_title") }}</h2>
+  <div class="dash-actions">
+    {% if tournament_finished %}
+    <button class="btn" type="button" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.restore_wc2026.button") }}</button>
+    <a class="btn" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
+    <button class="btn" type="button" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.public_import.button") }}</button>
+    <a class="btn" href="{{ url_for('admin.api_football_panel') }}">{{ t("admin.api.heading") }}</a>
+    <button class="btn" type="button" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.recalc") }}</button>
+    {% else %}
     <form method="post" action="{{ url_for('admin.restore_wc2026_matches') }}" style="display:inline;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn--primary" type="submit">{{ t("admin.restore_wc2026.button") }}</button>
     </form>
-    <a class="btn" href="{{ url_for('admin.matches') }}">{{ t("admin.matches") }}</a>
     <a class="btn" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
     <form method="post" action="{{ url_for('admin.import_public_fixtures') }}" style="display:inline;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">{{ t("admin.public_import.button") }}</button>
     </form>
     <a class="btn" href="{{ url_for('admin.api_football_panel') }}">{{ t("admin.api.heading") }}</a>
-    <a class="btn" href="{{ url_for('admin.users') }}">{{ t("admin.users") }}</a>
-    <a class="btn" href="{{ url_for('admin.payments') }}">{{ t("admin.payments") }}</a>
-    <a class="btn" href="{{ url_for('admin.results') }}">{{ t("admin.results") }}</a>
-    <a class="btn" href="{{ url_for('admin.certificates_index') }}">Certificados</a>
     <form method="post" action="{{ url_for('admin.recalculate') }}" style="display:inline;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn" type="submit">{{ t("admin.recalc") }}</button>
     </form>
-    <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("dashboard.view_leaderboard") }}</a>
+    {% endif %}
   </div>
 
 </section>

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ edition.name }} — {{ t("history.archive_title") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/history.css') }}">
+{% endblock %}
+{% block main_class %} container--history{% endblock %}
+{% block content %}
+{% set c = card %}
+<section class="history-archive" aria-labelledby="archive-title">
+  <p class="history-archive__back">
+    <a href="{{ url_for('history.index') }}">← {{ t("history.back") }}</a>
+  </p>
+
+  <header class="history-archive__hero">
+    <div class="history-archive__logo">
+      {% if c.logo_url %}
+      <img src="{{ c.logo_url }}" alt="" class="history-archive__logo-img">
+      {% else %}
+      <div class="history-archive__logo-fallback" aria-hidden="true">🏆</div>
+      {% endif %}
+    </div>
+    <div>
+      <p class="history-archive__edition">{{ t("history.edition_label") }} {{ c.edition_label_display }}</p>
+      <h1 id="archive-title" class="history-archive__title">{{ edition.name }}</h1>
+      <p class="history-archive__dates">
+        {{ t("history.start_date") }}: {{ c.start_date_formatted }}
+        ·
+        {{ t("history.end_date") }}: {{ c.end_date_formatted }}
+      </p>
+      <p class="history-archive__status"><span class="history-status">{{ c.status_label }}</span></p>
+    </div>
+  </header>
+
+  <section class="history-archive__podium" aria-label="{{ t('history.podium') }}">
+    <article class="history-archive-place history-archive-place--gold">
+      <p class="history-archive-place__medal" aria-hidden="true">🏆</p>
+      <h2>{{ t("history.champion") }}</h2>
+      {% if c.champion %}
+      <p class="history-archive-place__name">{{ c.champion.display_name }}</p>
+      <p>{{ c.champion.total_points }} {{ t("hall_of_fame.pts") }}</p>
+      <p>${{ "{:,}".format(c.champion.prize_amount) }} MXN</p>
+      {% if c.champion.public_token %}
+      <p><a href="{{ url_for('certificates.public_view', token=c.champion.public_token) }}">{{ t("hall_of_fame.view_certificate") }}</a></p>
+      {% endif %}
+      {% else %}
+      <p>—</p>
+      {% endif %}
+    </article>
+    <article class="history-archive-place history-archive-place--silver">
+      <p class="history-archive-place__medal" aria-hidden="true">🥈</p>
+      <h2>{{ t("history.runner_up") }}</h2>
+      {% if c.runner_up %}
+      <p class="history-archive-place__name">{{ c.runner_up.display_name }}</p>
+      <p>{{ c.runner_up.total_points }} {{ t("hall_of_fame.pts") }}</p>
+      <p>${{ "{:,}".format(c.runner_up.prize_amount) }} MXN</p>
+      {% if c.runner_up.public_token %}
+      <p><a href="{{ url_for('certificates.public_view', token=c.runner_up.public_token) }}">{{ t("hall_of_fame.view_certificate") }}</a></p>
+      {% endif %}
+      {% else %}
+      <p>—</p>
+      {% endif %}
+    </article>
+    <article class="history-archive-place history-archive-place--bronze">
+      <p class="history-archive-place__medal" aria-hidden="true">🥉</p>
+      <h2>{{ t("history.third_place") }}</h2>
+      {% if c.third_place %}
+      <p class="history-archive-place__name">{{ c.third_place.display_name }}</p>
+      <p>{{ c.third_place.total_points }} {{ t("hall_of_fame.pts") }}</p>
+      <p>${{ "{:,}".format(c.third_place.prize_amount) }} MXN</p>
+      {% if c.third_place.public_token %}
+      <p><a href="{{ url_for('certificates.public_view', token=c.third_place.public_token) }}">{{ t("hall_of_fame.view_certificate") }}</a></p>
+      {% endif %}
+      {% else %}
+      <p>—</p>
+      {% endif %}
+    </article>
+  </section>
+
+  <section class="history-archive__summary" aria-label="{{ t('hall_of_fame.summary_title') }}">
+    <h2>{{ t("hall_of_fame.summary_title") }}</h2>
+    <dl class="history-archive__stats">
+      <div>
+        <dt>{{ t("history.champion_score") }}</dt>
+        <dd>{{ edition.champion_points }}</dd>
+      </div>
+      <div>
+        <dt>{{ t("history.participants") }}</dt>
+        <dd>{{ edition.participants_count }}</dd>
+      </div>
+      <div>
+        <dt>{{ t("history.entries") }}</dt>
+        <dd>{{ edition.entries_count }}</dd>
+      </div>
+      <div>
+        <dt>{{ t("history.prize_pool") }}</dt>
+        <dd>${{ "{:,}".format(edition.prize_pool_mxn) }} MXN</dd>
+      </div>
+      <div>
+        <dt>{{ t("history.status") }}</dt>
+        <dd>{{ c.status_label }}</dd>
+      </div>
+    </dl>
+  </section>
+
+  <div class="history-archive__links">
+    <a class="btn btn--primary" href="{{ url_for('hall_of_fame.index') }}">{{ t("nav.hall_of_fame") }}</a>
+    <a class="btn" href="{{ url_for('leaderboard.index') }}">{{ t("nav.final_standings") }}</a>
+    <a class="btn" href="{{ url_for('main.groups') }}">{{ t("nav.groups") }}</a>
+  </div>
+</section>
+{% endblock %}

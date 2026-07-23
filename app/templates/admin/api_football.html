@@ -3,6 +3,15 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("admin.api.heading") }}</h1>
+  {% if tournament_finished %}
+  <div class="admin-closed-banner" role="status">
+    <p class="admin-closed-banner__icon" aria-hidden="true">🏆</p>
+    <div class="admin-closed-banner__copy">
+      <p class="admin-closed-banner__title">{{ t("admin.closed.banner_title") }}</p>
+      <p class="admin-closed-banner__text">{{ t("admin.closed.banner_subtitle") }}</p>
+    </div>
+  </div>
+  {% endif %}
   <p class="form__hint">{{ t("admin.api.key_status") }}:
     {% if api_configured %}<strong>{{ t("common.yes") }}</strong>{% else %}<strong>{{ t("common.no") }}</strong>{% endif %}
   </p>
@@ -20,9 +29,9 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form__field">
         <span class="form__label">{{ t("admin.real_import.season") }}</span>
-        <input class="form__input" type="number" name="season" min="2020" max="2100" value="{{ season }}" required>
+        <input class="form__input" type="number" name="season" min="2020" max="2100" value="{{ season }}"{% if tournament_finished %} disabled{% else %} required{% endif %}>
       </label>
-      <button class="form__submit" type="submit">{{ t("admin.api.search_button") }}</button>
+      <button class="form__submit" type="{% if tournament_finished %}button{% else %}submit{% endif %}"{% if tournament_finished %} disabled title="{{ t('admin.closed.mutation_blocked') }}"{% endif %}>{{ t("admin.api.search_button") }}</button>
     </form>
   </div>
 
@@ -59,13 +68,13 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form__field">
         <span class="form__label">{{ t("admin.api.league_id") }}</span>
-        <input class="form__input" type="number" name="league_id" min="1" required value="{{ configured_league_id or '' }}">
+        <input class="form__input" type="number" name="league_id" min="1" value="{{ configured_league_id or '' }}"{% if tournament_finished %} disabled{% else %} required{% endif %}>
       </label>
       <label class="form__field">
         <span class="form__label">{{ t("admin.real_import.season") }}</span>
-        <input class="form__input" type="number" name="season" min="2020" max="2100" required value="{{ season }}">
+        <input class="form__input" type="number" name="season" min="2020" max="2100" value="{{ season }}"{% if tournament_finished %} disabled{% else %} required{% endif %}>
       </label>
-      <button class="form__submit" type="submit">{{ t("admin.api.import_button") }}</button>
+      <button class="form__submit" type="{% if tournament_finished %}button{% else %}submit{% endif %}"{% if tournament_finished %} disabled title="{{ t('admin.closed.mutation_blocked') }}"{% endif %}>{{ t("admin.api.import_button") }}</button>
     </form>
   </div>
 
@@ -75,13 +84,13 @@
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label class="form__field">
         <span class="form__label">{{ t("admin.api.league_id") }}</span>
-        <input class="form__input" type="number" name="league_id" min="1" required value="{{ configured_league_id or '' }}">
+        <input class="form__input" type="number" name="league_id" min="1" value="{{ configured_league_id or '' }}"{% if tournament_finished %} disabled{% else %} required{% endif %}>
       </label>
       <label class="form__field">
         <span class="form__label">{{ t("admin.real_import.season") }}</span>
-        <input class="form__input" type="number" name="season" min="2020" max="2100" required value="{{ season }}">
+        <input class="form__input" type="number" name="season" min="2020" max="2100" value="{{ season }}"{% if tournament_finished %} disabled{% else %} required{% endif %}>
       </label>
-      <button class="form__submit" type="submit">{{ t("admin.api.sync_button") }}</button>
+      <button class="form__submit" type="{% if tournament_finished %}button{% else %}submit{% endif %}"{% if tournament_finished %} disabled title="{{ t('admin.closed.mutation_blocked') }}"{% endif %}>{{ t("admin.api.sync_button") }}</button>
     </form>
   </div>
 

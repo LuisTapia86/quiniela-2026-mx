@@ -2,9 +2,11 @@
 {% block title %}{{ t("competitors.title") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("competitors.title") }}</h1>
-  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("competitors.list_hint") }}</p>
+  <h1 class="card__title">{% if tournament_finished %}{{ t("hall_of_fame.title") }}{% else %}{{ t("competitors.title") }}{% endif %}</h1>
+  <p class="form__hint" style="margin: -0.5rem 0 1rem;">{% if tournament_finished %}{{ t("hall_of_fame.list_hint") }}{% else %}{{ t("competitors.list_hint") }}{% endif %}</p>
+  {% if not tournament_finished %}
   <p class="lock-banner" role="status">{{ t("competitors.readonly_banner") }}</p>
+  {% endif %}
 
   {% if entries|length == 0 %}
   <p class="form__hint">{{ t("competitors.list_empty") }}</p>

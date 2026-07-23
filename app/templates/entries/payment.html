@@ -5,7 +5,9 @@
 <section class="card">
   <div class="entry-page-head">
     <h1 class="card__title">{{ t("payment.heading") }}: {{ entry_title(entry)|e }}</h1>
+    {% if not tournament_finished %}
     {{ entry_rename(entry, url_for('entries.rename_entry', entry_id=entry.id)) }}
+    {% endif %}
   </div>
 
   {% if payment_banking_configured %}
@@ -65,6 +67,12 @@
   <p class="form__hint">{{ t("payment.awaiting_review") }}</p>
   {% endif %}
 
+  {% if tournament_finished %}
+  <p class="tournament-finished-cta" role="status">
+    <span class="tournament-finished-cta__title">{{ t("tournament.finished.cta_title") }}</span>
+    <span class="tournament-finished-cta__text">{{ t("tournament.finished.cta_text") }}</span>
+  </p>
+  {% else %}
   <h2 class="card__title" style="font-size:1.1rem;margin-top:1.5rem;">
     {% if payment_banking_configured %}{{ t("payment.upload_title") }}{% else %}{{ t("payment.upload_test_title") }}{% endif %}
   </h2>
@@ -82,12 +90,15 @@
     </label>
     <button class="form__submit" type="submit">{% if payment_banking_configured %}{{ t("payment.send") }}{% else %}{{ t("payment.send_test") }}{% endif %}</button>
   </form>
+  {% endif %}
 
+  {% if not tournament_finished %}
   <p class="form__hint" style="margin-top:1rem;">{{ t("rules.lock_stages") }}</p>
   <p class="form__hint">{{ t("common.stages_simple") }}</p>
+  {% endif %}
   <p class="card__footer">
     <a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a>
-    · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">{{ t("common.fill_predictions") }}</a>
+    · <a href="{{ url_for('entries.predictions', entry_id=entry.id) }}">{% if tournament_finished %}{{ t("entry.view_predictions") }}{% else %}{{ t("common.fill_predictions") }}{% endif %}</a>
   </p>
 </section>
 {% endblock %}

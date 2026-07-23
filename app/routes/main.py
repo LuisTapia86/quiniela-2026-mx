@@ -3,8 +3,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
 
 from app import db
-from app.models import Entry, EntryStatus, Match, Payment, Prediction, TournamentState, User
+from app.models import Entry, EntryStatus, Match, Payment, Prediction, User
 from app.routes.auth import _validate_display_name, get_current_user, login_required
+from app.tournament_lifecycle import predictions_are_locked
 from app.tournament_stages import count_editable_matches, editable_matches_where, matches_chronological_order
 from app.translations import tr
 
@@ -28,7 +29,7 @@ def index():
     cancelled_entries = [e for e in entries if e.status != EntryStatus.ACTIVE]
     payments_by_entry: dict[int, Payment | None] = {}
     prediction_counts: dict[int, int] = {}
-    predictions_locked = TournamentState.get_singleton().predictions_locked
+    predictions_locked = predictions_are_locked()
     total_matches = count_editable_matches(current_app.config, global_locked=predictions_locked)
     visible_match_ids = select(Match.id).where(
         editable_matches_where(current_app.config, global_locked=predictions_locked)

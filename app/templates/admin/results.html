@@ -3,6 +3,15 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("admin.results.heading") }}</h1>
+  {% if tournament_finished %}
+  <div class="admin-closed-banner" role="status">
+    <p class="admin-closed-banner__icon" aria-hidden="true">🏆</p>
+    <div class="admin-closed-banner__copy">
+      <p class="admin-closed-banner__title">{{ t("admin.closed.banner_title") }}</p>
+      <p class="admin-closed-banner__text">{{ t("admin.closed.banner_subtitle") }}</p>
+    </div>
+  </div>
+  {% endif %}
   <p class="form__hint" style="margin: -0.5rem 0 1.25rem;">{{ t("admin.results.hint") }}</p>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">
     {{ t("admin.results.completed", done=completed_matches, total=total_matches) }}
@@ -12,7 +21,7 @@
   {% if not matches %}
   <p class="form__hint">{{ t("admin.results.none") }}</p>
   {% else %}
-  <form method="post" action="{{ url_for('admin.results') }}" id="admin-results-form">
+  <form method="post" action="{{ url_for('admin.results') }}" id="admin-results-form"{% if tournament_finished %} aria-disabled="true"{% endif %}>
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="table-wrap">
       <table class="data-table" aria-label="{{ t('admin.results.table_aria') }}">
@@ -44,11 +53,11 @@
             </td>
             <td>
               <input class="form__input form__input--num js-result-score" type="number" name="result_home_{{ m.id }}" min="0" step="1"
-                value="{% if m.result is not none %}{{ m.result.home_score }}{% endif %}">
+                value="{% if m.result is not none %}{{ m.result.home_score }}{% endif %}"{% if tournament_finished %} disabled{% endif %}>
             </td>
             <td>
               <input class="form__input form__input--num js-result-score" type="number" name="result_away_{{ m.id }}" min="0" step="1"
-                value="{% if m.result is not none %}{{ m.result.away_score }}{% endif %}">
+                value="{% if m.result is not none %}{{ m.result.away_score }}{% endif %}"{% if tournament_finished %} disabled{% endif %}>
             </td>
             <td>
               {% if is_knockout %}
@@ -57,12 +66,12 @@
                 <div class="pred-penalty__choices">
                   <label class="pred-penalty__choice">
                     <input type="radio" name="result_penalty_{{ m.id }}" value="{{ m.home_team|e }}" class="js-result-penalty"
-                      {% if m.result is not none and m.result.penalty_winner == m.home_team %}checked{% endif %}>
+                      {% if m.result is not none and m.result.penalty_winner == m.home_team %}checked{% endif %}{% if tournament_finished %} disabled{% endif %}>
                     <span>{{ m.home_team|e }}</span>
                   </label>
                   <label class="pred-penalty__choice">
                     <input type="radio" name="result_penalty_{{ m.id }}" value="{{ m.away_team|e }}" class="js-result-penalty"
-                      {% if m.result is not none and m.result.penalty_winner == m.away_team %}checked{% endif %}>
+                      {% if m.result is not none and m.result.penalty_winner == m.away_team %}checked{% endif %}{% if tournament_finished %} disabled{% endif %}>
                     <span>{{ m.away_team|e }}</span>
                   </label>
                 </div>
@@ -76,11 +85,16 @@
         </tbody>
       </table>
     </div>
+    {% if tournament_finished %}
+    <button class="form__submit form__submit--wide" type="button" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.results.save") }}</button>
+    {% else %}
     <button class="form__submit form__submit--wide" type="submit">{{ t("admin.results.save") }}</button>
+    {% endif %}
   </form>
   {% endif %}
   <p class="card__footer"><a href="{{ url_for('admin.dashboard') }}">{{ t("admin.back_admin") }}</a></p>
 </section>
+{% if not tournament_finished %}
 <script>
   (function () {
     var form = document.getElementById('admin-results-form');
@@ -117,4 +131,21 @@
     updatePenaltyRows();
   })();
 </script>
+{% else %}
+<script>
+  (function () {
+    document.querySelectorAll('.js-admin-result-penalty').forEach(function (picker) {
+      var row = picker.closest('tr');
+      if (!row) return;
+      var matchId = row.dataset.matchId;
+      var home = document.querySelector('[name="result_home_' + matchId + '"]');
+      var away = document.querySelector('[name="result_away_' + matchId + '"]');
+      if (!home || !away) return;
+      var h = (home.value || '').trim();
+      var a = (away.value || '').trim();
+      if (h !== '' && a !== '' && h === a) picker.hidden = false;
+    });
+  })();
+</script>
+{% endif %}
 {% endblock %}

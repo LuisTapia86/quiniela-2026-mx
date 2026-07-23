@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ t("stats.page_title") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/statistics.css') }}">
+{% endblock %}
+{% block main_class %} container--stats{% endblock %}
+{% block content %}
+<section class="stats-page" aria-labelledby="stats-title">
+  <header class="stats-hero">
+    <h1 id="stats-title" class="stats-hero__title">{{ t("stats.page_title") }}</h1>
+    <p class="stats-hero__subtitle">{{ t("stats.page_subtitle") }}</p>
+  </header>
+
+  {% if not has_data %}
+  <div class="stats-empty">
+    <p>{{ t("stats.empty") }}</p>
+  </div>
+  {% else %}
+
+  <div class="stats-grid">
+    <article class="stats-card stats-card--accent">
+      <p class="stats-card__label">{{ t("stats.most_accurate") }}</p>
+      <p class="stats-card__value">{{ most_accurate.display_name if most_accurate else "—" }}</p>
+      <p class="stats-card__meta">{{ most_accurate.value_label if most_accurate else "—" }}</p>
+    </article>
+
+    <article class="stats-card stats-card--accent">
+      <p class="stats-card__label">{{ t("stats.highest_score") }}</p>
+      <p class="stats-card__value">{{ highest_score.display_name if highest_score else "—" }}</p>
+      <p class="stats-card__meta">{{ highest_score.value_label if highest_score else "—" }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.most_exact") }}</p>
+      <p class="stats-card__value">{{ most_exact.display_name if most_exact else "—" }}</p>
+      <p class="stats-card__meta">{{ most_exact.value_label if most_exact else "—" }} {{ t("stats.exact_suffix") }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.most_correct_winners") }}</p>
+      <p class="stats-card__value">{{ most_correct_winners.display_name if most_correct_winners else "—" }}</p>
+      <p class="stats-card__meta">{{ most_correct_winners.value_label if most_correct_winners else "—" }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.most_penalties") }}</p>
+      <p class="stats-card__value">{{ most_penalties.display_name if most_penalties else "—" }}</p>
+      <p class="stats-card__meta">{{ most_penalties.value_label if most_penalties else "—" }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.best_group") }}</p>
+      <p class="stats-card__value">{{ best_group.display_name if best_group else "—" }}</p>
+      <p class="stats-card__meta">{{ best_group.value_label if best_group else "—" }} {{ t("stats.pts_suffix") }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.best_knockout") }}</p>
+      <p class="stats-card__value">{{ best_knockout.display_name if best_knockout else "—" }}</p>
+      <p class="stats-card__meta">{{ best_knockout.value_label if best_knockout else "—" }} {{ t("stats.pts_suffix") }}</p>
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.best_round") }}</p>
+      {% if best_round %}
+      <p class="stats-card__value">{{ best_round.stage_label }}</p>
+      <p class="stats-card__meta">{{ "%.2f"|format(best_round.average_points) }} {{ t("stats.avg_pts") }} · {{ best_round.predictions_count }} {{ t("stats.predictions_unit") }}</p>
+      {% else %}
+      <p class="stats-card__value">—</p>
+      {% endif %}
+    </article>
+
+    <article class="stats-card">
+      <p class="stats-card__label">{{ t("stats.worst_round") }}</p>
+      {% if worst_round %}
+      <p class="stats-card__value">{{ worst_round.stage_label }}</p>
+      <p class="stats-card__meta">{{ "%.2f"|format(worst_round.average_points) }} {{ t("stats.avg_pts") }} · {{ worst_round.predictions_count }} {{ t("stats.predictions_unit") }}</p>
+      {% else %}
+      <p class="stats-card__value">—</p>
+      {% endif %}
+    </article>
+
+    <article class="stats-card stats-card--metric">
+      <p class="stats-card__label">{{ t("stats.highest_accuracy") }}</p>
+      <p class="stats-card__value">{{ "%.1f"|format(highest_accuracy) }}%</p>
+    </article>
+
+    <article class="stats-card stats-card--metric">
+      <p class="stats-card__label">{{ t("stats.average_accuracy") }}</p>
+      <p class="stats-card__value">{{ "%.1f"|format(average_accuracy) }}%</p>
+    </article>
+
+    <article class="stats-card stats-card--metric">
+      <p class="stats-card__label">{{ t("stats.total_predictions") }}</p>
+      <p class="stats-card__value">{{ "{:,}".format(total_predictions) }}</p>
+    </article>
+
+    <article class="stats-card stats-card--metric">
+      <p class="stats-card__label">{{ t("stats.total_exact") }}</p>
+      <p class="stats-card__value">{{ "{:,}".format(total_exact) }}</p>
+      <p class="stats-card__meta">{{ t("stats.scored_of", scored=total_scored_predictions) }}</p>
+    </article>
+  </div>
+
+  {% endif %}
+</section>
+{% endblock %}

@@ -2,7 +2,7 @@
 {% block title %}{{ t("title.leaderboard") }} — {{ config.BRAND_NAME }}{% endblock %}
 {% block content %}
 <section class="card">
-  <h1 class="card__title">{{ t("leaderboard.heading") }}</h1>
+  <h1 class="card__title">{% if tournament_finished %}{{ t("final_standings.heading") }}{% else %}{{ t("leaderboard.heading") }}{% endif %}</h1>
   <p class="form__hint" style="margin: -0.5rem 0 1rem;">{{ t("leaderboard.only_approved") }}</p>
 
   <div class="prize-pool" aria-label="{{ t('leaderboard.pool_aria') }}">

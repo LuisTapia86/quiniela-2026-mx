@@ -269,9 +269,82 @@ def _ensure_winner_certificates_table() -> None:
     from app.models import WinnerCertificate
 
     inspector = inspect(db.engine)
-    if "winner_certificates" in inspector.get_table_names():
+    if "winner_certificates" not in inspector.get_table_names():
+        WinnerCertificate.__table__.create(bind=db.engine, checkfirst=True)
         return
-    WinnerCertificate.__table__.create(bind=db.engine, checkfirst=True)
+    cols = {c["name"] for c in inspector.get_columns("winner_certificates")}
+    if "tournament_edition_id" not in cols:
+        db.session.execute(
+            text("ALTER TABLE winner_certificates ADD COLUMN tournament_edition_id INTEGER"),
+        )
+        db.session.commit()
+    if "photo_path" not in cols:
+        db.session.execute(
+            text("ALTER TABLE winner_certificates ADD COLUMN photo_path VARCHAR(512)"),
+        )
+        db.session.commit()
+
+
+def _ensure_tournament_editions_table() -> None:
+    """Create tournament_editions and add additive history columns if missing."""
+    from app.models import TournamentEdition
+
+    inspector = inspect(db.engine)
+    if "tournament_editions" not in inspector.get_table_names():
+        TournamentEdition.__table__.create(bind=db.engine, checkfirst=True)
+        return
+    cols = {c["name"] for c in inspector.get_columns("tournament_editions")}
+    alters = []
+    if "edition_label" not in cols:
+        alters.append("ADD COLUMN edition_label VARCHAR(80)")
+    if "logo_path" not in cols:
+        alters.append("ADD COLUMN logo_path VARCHAR(512)")
+    if "start_date" not in cols:
+        alters.append("ADD COLUMN start_date DATE")
+    if "end_date" not in cols:
+        alters.append("ADD COLUMN end_date DATE")
+    for clause in alters:
+        db.session.execute(text(f"ALTER TABLE tournament_editions {clause}"))
+        db.session.commit()
+
+
+def _ensure_hall_of_fame_seed() -> None:
+    """Seed/link the current tournament edition for Hall of Fame + History."""
+    from app.services.tournament_editions import ensure_current_edition
+
+    try:
+        ensure_current_edition()
+    except Exception as exc:
+        from flask import current_app
+
+        current_app.logger.warning("Tournament edition ensure skipped: %s", exc)
+
+
+def _ensure_tournament_status_column() -> None:
+    """Add tournament_state.status and mark this edition FINISHED (additive; no data loss)."""
+    inspector = inspect(db.engine)
+    if "tournament_state" not in inspector.get_table_names():
+        return
+    cols = {c["name"] for c in inspector.get_columns("tournament_state")}
+    dialect = db.engine.dialect.name
+    if "status" not in cols:
+        db.session.execute(
+            text(
+                "ALTER TABLE tournament_state "
+                "ADD COLUMN status VARCHAR(20) DEFAULT 'FINISHED'",
+            ),
+        )
+        db.session.commit()
+    # This edition is closed: force FINISHED + locked predictions.
+    db.session.execute(
+        text("UPDATE tournament_state SET status = 'FINISHED' WHERE status IS NULL OR TRIM(status) = ''"),
+    )
+    db.session.execute(text("UPDATE tournament_state SET status = 'FINISHED' WHERE UPPER(TRIM(status)) = 'ACTIVE'"))
+    if dialect == "postgresql":
+        db.session.execute(text("UPDATE tournament_state SET predictions_locked = TRUE"))
+    else:
+        db.session.execute(text("UPDATE tournament_state SET predictions_locked = 1"))
+    db.session.commit()
 
 def _backfill_entry_number_and_alias() -> None:
     """ORM backfill: run only after ``_ensure_entry_table_columns()`` (all columns present)."""
@@ -332,9 +405,12 @@ def create_app(config_object: type = Config) -> Flask:
         certificates_bp,
         competitors_bp,
         entries_bp,
+        hall_of_fame_bp,
+        history_bp,
         leaderboard_bp,
         main_bp,
         rules_bp,
+        statistics_bp,
     )
     from app.routes.auth import get_current_user
 
@@ -345,6 +421,9 @@ def create_app(config_object: type = Config) -> Flask:
     app.register_blueprint(admin_bp)
     app.register_blueprint(leaderboard_bp)
     app.register_blueprint(certificates_bp)
+    app.register_blueprint(hall_of_fame_bp)
+    app.register_blueprint(history_bp)
+    app.register_blueprint(statistics_bp)
     app.register_blueprint(rules_bp)
     app.register_blueprint(api_bp, url_prefix="/api")
     register_cli(app)
@@ -379,6 +458,12 @@ def create_app(config_object: type = Config) -> Flask:
 
             return editable_entry_name(entry)
 
+        from app.tournament_lifecycle import (
+            predictions_are_locked,
+            tournament_is_finished,
+            tournament_status,
+        )
+
         return {
             "current_user": get_current_user(),
             "t": t,
@@ -386,6 +471,9 @@ def create_app(config_object: type = Config) -> Flask:
             "has_logo": logo_path.is_file(),
             "entry_title": entry_title,
             "entry_editable_name": entry_editable_name,
+            "tournament_finished": tournament_is_finished(),
+            "tournament_status": tournament_status().value,
+            "predictions_locked": predictions_are_locked(),
         }
 
     with app.app_context():
@@ -398,7 +486,10 @@ def create_app(config_object: type = Config) -> Flask:
         _ensure_match_group_name_column()
         _ensure_penalty_winner_columns()
         _ensure_entry_table_columns()
+        _ensure_tournament_editions_table()
         _ensure_winner_certificates_table()
+        _ensure_tournament_status_column()
+        _ensure_hall_of_fame_seed()
         _backfill_entry_number_and_alias()
         _admin_bootstrap_from_env(app)
         _emergency_admin_from_env(app)

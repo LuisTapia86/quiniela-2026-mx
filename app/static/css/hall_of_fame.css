@@ -1,0 +1,310 @@
+/* Hall of Fame — premium dark + gold */
+
+.container--hof {
+  max-width: 980px;
+}
+
+.hof {
+  position: relative;
+}
+
+.hof-hero {
+  text-align: center;
+  padding: 1.25rem 0 1.75rem;
+}
+
+.hof-hero__eyebrow {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.hof-hero__title {
+  margin: 0.35rem 0 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: 0.04em;
+  color: #f0d78c;
+  text-shadow: 0 2px 24px rgba(212, 175, 55, 0.25);
+}
+
+.hof-hero__subtitle {
+  margin: 0.55rem auto 0;
+  max-width: 34rem;
+  color: rgba(248, 250, 252, 0.72);
+  font-size: 0.98rem;
+}
+
+.hof-empty {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.hof-editions {
+  display: grid;
+  gap: 2rem;
+}
+
+.hof-edition {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.1rem;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(212, 175, 55, 0.16), transparent 55%),
+    linear-gradient(165deg, #0f1a2e 0%, #070d1a 55%, #050914 100%);
+  padding: 1.5rem 1.25rem 1.4rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.hof-edition__glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.05), transparent 40%);
+}
+
+.hof-edition__champ-label {
+  position: relative;
+  margin: 0 0 1rem;
+  text-align: center;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #f0d78c;
+}
+
+.hof-champion {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr;
+  gap: 1.25rem;
+  align-items: center;
+  padding: 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.hof-champion__photo {
+  aspect-ratio: 1;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(212, 175, 55, 0.5);
+  background: linear-gradient(160deg, #1a2438, #0b1220);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.hof-champion__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hof-champion__placeholder {
+  opacity: 0.9;
+}
+
+.hof-champion__crown {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.hof-champion__name {
+  margin: 0.15rem 0 0.75rem;
+  font-size: clamp(1.45rem, 3.2vw, 2.1rem);
+  color: #fffef8;
+  line-height: 1.15;
+}
+
+.hof-champion__stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem 1rem;
+  margin: 0;
+}
+
+.hof-champion__stats dt {
+  margin: 0;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.55);
+}
+
+.hof-champion__stats dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #f0d78c;
+}
+
+.hof-champion__link {
+  margin: 0.85rem 0 0;
+}
+
+.hof-champion__link a {
+  color: #f0d78c;
+  text-decoration: none;
+  font-size: 0.88rem;
+  border-bottom: 1px solid rgba(240, 215, 140, 0.45);
+}
+
+.hof-champion__link a:hover {
+  color: #fff;
+}
+
+.hof-edition__pending {
+  text-align: center;
+  color: rgba(248, 250, 252, 0.65);
+  margin: 0 0 1rem;
+}
+
+.hof-podium {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.hof-place {
+  border-radius: 0.8rem;
+  border: 1px solid rgba(212, 175, 55, 0.28);
+  background: rgba(0, 0, 0, 0.22);
+  padding: 1rem 0.9rem;
+  text-align: center;
+}
+
+.hof-place--silver {
+  border-color: rgba(192, 200, 214, 0.45);
+}
+
+.hof-place--bronze {
+  border-color: rgba(184, 115, 51, 0.45);
+}
+
+.hof-place__medal {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.hof-place__title {
+  margin: 0.2rem 0 0.55rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.7);
+}
+
+.hof-place__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fffef8;
+}
+
+.hof-place__stat {
+  margin: 0.3rem 0 0;
+  color: #f0d78c;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.hof-place__empty {
+  margin: 0.4rem 0 0;
+  color: rgba(248, 250, 252, 0.4);
+}
+
+.hof-summary {
+  position: relative;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(212, 175, 55, 0.22);
+}
+
+.hof-summary__title {
+  margin: 0 0 0.75rem;
+  text-align: center;
+  font-size: 0.85rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(240, 215, 140, 0.9);
+}
+
+.hof-summary__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin: 0;
+}
+
+.hof-summary__grid > div {
+  text-align: center;
+  padding: 0.55rem 0.35rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.15);
+}
+
+.hof-summary__grid dt {
+  margin: 0;
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(248, 250, 252, 0.5);
+}
+
+.hof-summary__grid dd {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.hof-status {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+
+.hof-status--finished,
+.hof-status--archived {
+  background: rgba(212, 175, 55, 0.15);
+  color: #f0d78c;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+
+.hof-status--active {
+  background: rgba(74, 222, 128, 0.12);
+  color: #86efac;
+  border: 1px solid rgba(74, 222, 128, 0.3);
+}
+
+@media (max-width: 720px) {
+  .hof-champion {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .hof-champion__photo {
+    width: min(160px, 55vw);
+  }
+
+  .hof-champion__stats {
+    width: 100%;
+  }
+
+  .hof-podium {
+    grid-template-columns: 1fr;
+  }
+
+  .hof-summary__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

@@ -3,7 +3,25 @@
 {% block content %}
 <section class="card">
   <h1 class="card__title">{{ t("admin.matches.heading") }}</h1>
+  {% if tournament_finished %}
+  <div class="admin-closed-banner" role="status">
+    <p class="admin-closed-banner__icon" aria-hidden="true">🏆</p>
+    <div class="admin-closed-banner__copy">
+      <p class="admin-closed-banner__title">{{ t("admin.closed.banner_title") }}</p>
+      <p class="admin-closed-banner__text">{{ t("admin.closed.banner_subtitle") }}</p>
+    </div>
+  </div>
+  {% endif %}
   <div class="dash-actions" style="margin-bottom:1rem;">
+    {% if tournament_finished %}
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
+    <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_template") }}</a>
+    <button type="button" class="btn btn--sm" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.public_import.button") }}</button>
+    {% if show_match_destroy_tools %}
+    <button type="button" class="btn btn--sm" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.matches.cleanup_test") }}</button>
+    <button type="button" class="btn btn--sm" disabled title="{{ t('admin.closed.mutation_blocked') }}">{{ t("admin.matches.reset_all_debug") }}</button>
+    {% endif %}
+    {% else %}
     <a class="btn btn--sm" href="{{ url_for('admin.matches_import') }}">{{ t("admin.import_csv") }}</a>
     <a class="btn btn--sm" href="{{ url_for('admin.matches_template') }}">{{ t("admin.download_template") }}</a>
     <form method="post" action="{{ url_for('admin.import_public_fixtures') }}" style="display:inline;">
@@ -20,8 +38,9 @@
       <button type="submit" class="btn btn--sm">{{ t("admin.matches.reset_all_debug") }}</button>
     </form>
     {% endif %}
+    {% endif %}
   </div>
-  {% if show_match_destroy_tools %}
+  {% if show_match_destroy_tools and not tournament_finished %}
   <p class="form__hint" style="margin-top:-0.5rem; margin-bottom:1rem;">{{ t("admin.matches.cleanup_hint") }}</p>
   <p class="form__hint" style="margin-top:-0.5rem; margin-bottom:1rem;">{{ t("admin.matches.reset_hint") }}</p>
   {% endif %}

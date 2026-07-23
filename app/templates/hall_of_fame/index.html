@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ t("hall_of_fame.page_title") }} — {{ config.BRAND_NAME }}{% endblock %}
+{% block head_extra %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/hall_of_fame.css') }}">
+{% endblock %}
+{% block main_class %} container--hof{% endblock %}
+{% block content %}
+<section class="hof" aria-labelledby="hof-title">
+  <header class="hof-hero">
+    <p class="hof-hero__eyebrow" aria-hidden="true">🏆</p>
+    <h1 id="hof-title" class="hof-hero__title">{{ t("hall_of_fame.page_title") }}</h1>
+    <p class="hof-hero__subtitle">{{ t("hall_of_fame.page_subtitle") }}</p>
+  </header>
+
+  {% if not has_editions %}
+  <div class="hof-empty">
+    <p>{{ t("hall_of_fame.empty") }}</p>
+  </div>
+  {% else %}
+  <div class="hof-editions">
+    {% for card in editions %}
+    {% set edition = card.edition %}
+    <article class="hof-edition" aria-labelledby="hof-edition-{{ edition.slug }}">
+      <div class="hof-edition__glow" aria-hidden="true"></div>
+
+      <p class="hof-edition__champ-label" id="hof-edition-{{ edition.slug }}">{{ edition.champion_title }}</p>
+
+      {% if card.champion %}
+      <div class="hof-champion">
+        <div class="hof-champion__photo" aria-hidden="true">
+          {% if card.champion.photo_url %}
+          <img src="{{ card.champion.photo_url }}" alt="" class="hof-champion__img">
+          {% else %}
+          <div class="hof-champion__placeholder">
+            <svg viewBox="0 0 64 64" width="72" height="72" role="img" aria-label="">
+              <circle cx="32" cy="24" r="12" fill="#d4af37" opacity="0.85"/>
+              <path d="M12 56c4-14 14-20 20-20s16 6 20 20" fill="#d4af37" opacity="0.55"/>
+            </svg>
+          </div>
+          {% endif %}
+        </div>
+        <div class="hof-champion__meta">
+          <p class="hof-champion__crown" aria-hidden="true">🏆</p>
+          <h2 class="hof-champion__name">{{ card.champion.display_name }}</h2>
+          <dl class="hof-champion__stats">
+            <div>
+              <dt>{{ t("hall_of_fame.stat.points") }}</dt>
+              <dd>{{ card.champion.total_points }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("hall_of_fame.stat.prize") }}</dt>
+              <dd>${{ "{:,}".format(card.champion.prize_amount) }} MXN</dd>
+            </div>
+            <div>
+              <dt>{{ t("hall_of_fame.stat.tournament") }}</dt>
+              <dd>{{ edition.name }}</dd>
+            </div>
+            <div>
+              <dt>{{ t("hall_of_fame.stat.date") }}</dt>
+              <dd>{{ card.champion.recognition_date_formatted }}</dd>
+            </div>
+          </dl>
+          {% if card.champion.public_token %}
+          <p class="hof-champion__link">
+            <a href="{{ url_for('certificates.public_view', token=card.champion.public_token) }}">{{ t("hall_of_fame.view_certificate") }}</a>
+          </p>
+          {% endif %}
+        </div>
+      </div>
+      {% else %}
+      <p class="hof-edition__pending">{{ t("hall_of_fame.pending_champions") }}</p>
+      {% endif %}
+
+      <div class="hof-podium">
+        <article class="hof-place hof-place--silver">
+          <p class="hof-place__medal" aria-hidden="true">🥈</p>
+          <h3 class="hof-place__title">{{ t("hall_of_fame.runner_up") }}</h3>
+          {% if card.runner_up %}
+          <p class="hof-place__name">{{ card.runner_up.display_name }}</p>
+          <p class="hof-place__stat">{{ card.runner_up.total_points }} {{ t("hall_of_fame.pts") }}</p>
+          <p class="hof-place__stat">${{ "{:,}".format(card.runner_up.prize_amount) }} MXN</p>
+          {% else %}
+          <p class="hof-place__empty">—</p>
+          {% endif %}
+        </article>
+        <article class="hof-place hof-place--bronze">
+          <p class="hof-place__medal" aria-hidden="true">🥉</p>
+          <h3 class="hof-place__title">{{ t("hall_of_fame.third_place") }}</h3>
+          {% if card.third_place %}
+          <p class="hof-place__name">{{ card.third_place.display_name }}</p>
+          <p class="hof-place__stat">{{ card.third_place.total_points }} {{ t("hall_of_fame.pts") }}</p>
+          <p class="hof-place__stat">${{ "{:,}".format(card.third_place.prize_amount) }} MXN</p>
+          {% else %}
+          <p class="hof-place__empty">—</p>
+          {% endif %}
+        </article>
+      </div>
+
+      <section class="hof-summary" aria-label="{{ t('hall_of_fame.summary_title') }}">
+        <h3 class="hof-summary__title">{{ t("hall_of_fame.summary_title") }}</h3>
+        <dl class="hof-summary__grid">
+          <div>
+            <dt>{{ t("hall_of_fame.summary.participants") }}</dt>
+            <dd>{{ edition.participants_count }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("hall_of_fame.summary.entries") }}</dt>
+            <dd>{{ edition.entries_count }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("hall_of_fame.summary.prize_pool") }}</dt>
+            <dd>${{ "{:,}".format(edition.prize_pool_mxn) }} MXN</dd>
+          </div>
+          <div>
+            <dt>{{ t("hall_of_fame.summary.champion_score") }}</dt>
+            <dd>{{ edition.champion_points }}</dd>
+          </div>
+          <div>
+            <dt>{{ t("hall_of_fame.summary.status") }}</dt>
+            <dd><span class="hof-status hof-status--{{ edition.status.value|lower if edition.status.value is defined else 'finished' }}">{{ card.status_label }}</span></dd>
+          </div>
+        </dl>
+      </section>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

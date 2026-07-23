@@ -4,9 +4,12 @@ from app.routes.auth import bp as auth_bp
 from app.routes.certificates import bp as certificates_bp
 from app.routes.competitors import bp as competitors_bp
 from app.routes.entries import bp as entries_bp
+from app.routes.hall_of_fame import bp as hall_of_fame_bp
+from app.routes.history import bp as history_bp
 from app.routes.leaderboard import bp as leaderboard_bp
 from app.routes.main import bp as main_bp
 from app.routes.rules import bp as rules_bp
+from app.routes.statistics import bp as statistics_bp
 
 __all__ = [
     "admin_bp",
@@ -15,7 +18,10 @@ __all__ = [
     "certificates_bp",
     "competitors_bp",
     "entries_bp",
+    "hall_of_fame_bp",
+    "history_bp",
     "leaderboard_bp",
     "main_bp",
     "rules_bp",
+    "statistics_bp",
 ]

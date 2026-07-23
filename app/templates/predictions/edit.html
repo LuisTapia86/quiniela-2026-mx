@@ -6,7 +6,9 @@
 <section class="card">
   <div class="entry-page-head">
     <h1 class="card__title">{{ t("pred.heading") }}: {{ entry_title(entry)|e }}</h1>
+    {% if not tournament_finished %}
     {{ entry_rename(entry, url_for('entries.rename_entry', entry_id=entry.id)) }}
+    {% endif %}
   </div>
   {% if rows|length > 0 %}
   <div class="pred-actions no-print">
@@ -23,19 +25,23 @@
   <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">
     {{ t("pred.progress") }}: <strong>{{ completed_predictions }}/{{ total_matches }}</strong> {{ t("pred.matches_captured") }}.
   </p>
-  {% if locked %}
+  {% if tournament_finished %}
+  {# Finished edition: read-only history view — no lock warnings or edit hints. #}
+  {% elif locked %}
   <p class="lock-banner no-print" role="status">{{ t("pred.locked_readonly") }}</p>
   {% endif %}
-  {% if not locked and has_editable_matches %}
+  {% if not tournament_finished and not locked and has_editable_matches %}
   <p class="form__hint no-print" style="margin: -0.5rem 0 1.25rem;">{{ t("pred.edit_hint") }}</p>
   {% endif %}
+  {% if not tournament_finished %}
   <p class="form__hint no-print" style="margin: -0.5rem 0 0.75rem;">{{ t("pred.auto_lock_hint") }}</p>
   <p class="form__hint no-print" style="margin: -0.5rem 0 1rem;">{{ t("common.local_time_note") }}</p>
+  {% endif %}
 
   {% if rows|length == 0 %}
   <p class="form__hint">{{ t("pred.no_matches") }}</p>
   {% else %}
-  {% if not locked and has_editable_matches %}
+  {% if not tournament_finished and not locked and has_editable_matches %}
   <p class="pred-save-reminder" role="note">{{ t("pred.save_reminder") }}</p>
   {% endif %}
   <form class="pred-form" method="post" action="{{ url_for('entries.predictions', entry_id=entry.id) }}" novalidate>
@@ -177,7 +183,7 @@
         </tbody>
       </table>
     </div>
-    {% if not locked and has_editable_matches %}
+    {% if not tournament_finished and not locked and has_editable_matches %}
     <div class="sticky-save-wrap" id="pred-sticky-save">
       {% if saved_banner %}
       <p class="pred-save-feedback pred-save-feedback--ok js-pred-save-success" role="status" aria-live="polite">{{ t("pred.saved_success") }}</p>
@@ -188,12 +194,13 @@
     </div>
     {% endif %}
   </form>
-  {% if locked %}
+  {% if locked and not tournament_finished %}
   <p class="card__footer no-print">{{ t("pred.locked_footer") }}</p>
   {% endif %}
   {% endif %}
   <p class="card__footer no-print"><a href="{{ url_for('main.index') }}">{{ t("common.back_dashboard") }}</a></p>
 </section>
+{% if not tournament_finished and not locked %}
 <script>
   document.querySelectorAll('.pred-detail-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
@@ -365,4 +372,28 @@
     });
   });
 </script>
+{% else %}
+<script>
+  document.querySelectorAll('.pred-detail-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var targetId = btn.getAttribute('aria-controls');
+      var row = document.getElementById(targetId);
+      if (!row) return;
+      var isOpen = btn.getAttribute('aria-expanded') === 'true';
+      btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+      btn.textContent = isOpen ? btn.dataset.openText : btn.dataset.closeText;
+      row.hidden = isOpen;
+    });
+  });
+  window.addEventListener('beforeprint', function () {
+    var el = document.querySelector('.js-print-date');
+    if (!el) return;
+    var locale = {{ lang|tojson }} === 'en' ? 'en-US' : 'es-MX';
+    el.textContent = new Date().toLocaleString(locale, {
+      dateStyle: 'long',
+      timeStyle: 'short'
+    });
+  });
+</script>
+{% endif %}
 {% endblock %}

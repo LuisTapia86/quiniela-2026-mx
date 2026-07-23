@@ -5,12 +5,14 @@ from __future__ import annotations
 from flask import current_app
 
 from app.datetime_fmt import kickoff_as_local, server_now_local
-from app.models import Match, TournamentState
+from app.models import Match
 from app.tournament_stages import is_knockout_stage, is_match_editable
 
 
 def global_predictions_locked() -> bool:
-    return TournamentState.get_singleton().predictions_locked
+    from app.tournament_lifecycle import predictions_are_locked
+
+    return predictions_are_locked()
 
 
 def competitor_prediction_visible(match: Match, *, global_locked: bool | None = None) -> bool:
